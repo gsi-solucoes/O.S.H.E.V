@@ -94,6 +94,7 @@ table{border-collapse:collapse;width:100%;font-size:14px}
 th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 th{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag.pri{background:var(--accent);color:#fff}
 .tag{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--soft);font-size:12px;white-space:nowrap}
 .tag.bk{background:color-mix(in srgb,var(--accent) 18%,transparent)}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
@@ -128,7 +129,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </div>
 </header>
 <nav class="tabs" id="tabs">
-  <a href="#dashboard">Dashboard</a><a href="#relatorios">Relatórios</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
+  <a href="#dashboard">Dashboard</a><a href="#relatorios">Relatórios</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#repetidas">Repetidas</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
 </nav>
 <main class="band">
   <section id="emptyState" class="empty">
@@ -148,6 +149,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
     <section class="view" id="v-equipe"></section>
     <section class="view" id="v-setores"></section>
     <section class="view" id="v-inconsistencias"></section>
+    <section class="view" id="v-repetidas"></section>
   </div>
   <section class="view" id="v-arquivos">
     <h2 id="filesSum">Arquivos carregados</h2>
@@ -430,7 +432,44 @@ var Core = (function () {
   }
   function ageBand(d) { return d <= 7 ? '0–7 dias' : d <= 15 ? '8–15 dias' : d <= 30 ? '16–30 dias' : 'Mais de 30 dias'; }
 
-  return { REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, PEND: PEND, TERC: TERC };
+  // ---- possíveis OS repetidas (mesmo setor, descrição parecida, ainda pendentes) ----
+  var STOPW = 'SOLICITO SOLICITAMOS SOLICITA SOLICITACAO FAVOR GENTILEZA PARA COM DOS DAS NOS NAS QUE UMA UNS UMAS ESTA ESTAO ESTAR MESMA MESMO MANUTENCAO REALIZAR VERIFICAR VERIFICACAO NECESSARIO PRECISA PRECISAMOS PELO PELA AOS SEU SUA SEM MAIS MUITO URGENTE URGENCIA ENCONTRA POR BOM DIA TARDE NOITE PFV OBRIGADO AGRADECO EVIDENCIADO'.split(' ');
+  function palavras(x) { return norm(x).replace(/[\/.]/g, ' ').split(' ').filter(function (w) { return (w.length >= 3 && STOPW.indexOf(w) < 0) || /^\d+$/.test(w); }).filter(function (w, i, a) { return a.indexOf(w) === i; }); }
+  function pareceW(a, b) { if (a === b) return true; if (/^\d+$/.test(a) || /^\d+$/.test(b)) return false; if (a.length > 3 && b.length > 3 && 1 - lev(a, b) / Math.max(a.length, b.length) >= 0.8) return true; return a.length >= 5 && b.length >= 5 && a.slice(0, 5) === b.slice(0, 5); }
+  function simDesc(A, B) { if (!A.length || !B.length) return 0; var nA = A.filter(function (w) { return /^\d+$/.test(w); }), nB = B.filter(function (w) { return /^\d+$/.test(w); });
+    if (nA.length && nB.length && !nA.some(function (n) { return nB.indexOf(n) >= 0; })) return 0; // leito 3 x leito 5: não é a mesma coisa
+    var k = 0, kt = 0; A.forEach(function (a) { if (B.some(function (b) { return pareceW(a, b); })) { k++; if (!/^\d+$/.test(a)) kt++; } }); return kt < 2 ? 0 : 2 * k / (A.length + B.length); }
+  var RX_LINK = /REALIZAD[OA]\s+(?:NA|PELA|PELO|ATRAV[EÉ]S\s+DA)\s+O\.?\s?S\.?\s*N?[º°.]?\s*(\d{5,6})/i;
+  function repetidas(list) {
+    var by = {}, pai = {}, motivo = {};
+    list.forEach(function (o) { by[o.os] = o; pai[o.os] = o.os; o.repGrupo = null; o.repDe = null; o._w = palavras(o.desc); });
+    function raiz(x) { while (pai[x] !== x) x = pai[x] = pai[pai[x]]; return x; }
+    function une(a, b, m) { pai[raiz(a)] = raiz(b); motivo[a + '|' + b] = m; }
+    var ativa = function (o) { return o.backlog || o.terceiros; };
+    // 1) a equipe já escreveu "serviço será realizado na O.S nº X"
+    list.forEach(function (o) { var m = ((o.obs || '') + ' ' + (o.desc || '')).match(RX_LINK); if (m && m[1] !== o.os) { o.repDe = m[1]; if (by[m[1]]) une(o.os, m[1], 'Observação: realizado na OS ' + m[1]); } });
+    // 2) pendentes no mesmo setor com descrição parecida
+    var A = list.filter(ativa);
+    for (var i = 0; i < A.length; i++) for (var j = i + 1; j < A.length; j++) {
+      var a = A[i], b = A[j]; if (a.setor !== b.setor) continue;
+      var s = simDesc(a._w, b._w), loc = a.localidade && a.localidade === b.localidade;
+      if (s >= 0.7 || (s >= 0.55 && loc)) une(a.os, b.os, 'Descrição parecida');
+    }
+    var g = {}; list.forEach(function (o) { var r = raiz(o.os); (g[r] = g[r] || []).push(o); });
+    var grupos = Object.keys(g).map(function (k) { return g[k]; }).filter(function (a) { return a.length > 1 && a.some(ativa); });
+    var peso = function (o) { return o.terceiros ? 0 : /Comprador|Externo|Material/.test(o.pendente || '') ? 1 : ativa(o) ? 2 : 3; };
+    grupos.forEach(function (a, n) {
+      a.sort(function (x, y) { return peso(x) - peso(y) || (x.pedido || 0) - (y.pedido || 0); });
+      a.forEach(function (o) { o.repGrupo = n + 1; o.repPrincipal = a[0].os; });
+      a.mesmoSolic = a.every(function (o) { return o.solicitante && o.solicitante === a[0].solicitante; });
+      a.mesmaLoc = a.every(function (o) { return o.localidade && o.localidade === a[0].localidade; });
+      a.link = a.some(function (o) { return o.repDe; });
+    });
+    grupos.sort(function (x, y) { return peso(x[0]) - peso(y[0]) || y.length - x.length; });
+    return grupos;
+  }
+
+  return { REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
 })();
 
 </script>
@@ -602,7 +641,7 @@ function render(){
   $('#cpList').onclick = () => copy(tsv(L));
   const m = $('#more'); if (m) m.onclick = () => {shown+=100; render()};
   if (!$('#v-relatorios').childElementCount || relStale) { drawRel(); relStale = false; }
-  renderBacklog(L); renderTempos(L); renderEquipe(L); renderSetores(L); renderInc();
+  renderBacklog(L); renderTempos(L); renderEquipe(L); renderSetores(L); renderInc(); renderRep();
 }
 
 function renderBacklog(L){
@@ -686,6 +725,17 @@ function renderInc(){
   const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
 }
 
+// ===================== POSSÍVEIS REPETIDAS =====================
+function renderRep(){
+  const G = Core.repetidas(data);
+  const card = o => `<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span>${o.os===o.repPrincipal?`<span class="tag pri">${o.terceiros||/Comprador|Externo|Material/.test(o.pendente||'')?'já em andamento':'mais antiga'}</span>`:''}</div><div>${esc(o.desc)}</div><div class="muted">${esc(o.localidade||'')}${o.solicitante?' · Solicitante: '+esc(o.solicitante):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`;
+  $('#v-repetidas').innerHTML = `<h2>Possíveis OS repetidas (${G.length} grupos · ${G.reduce((s,a)=>s+a.length,0)} OS)</h2>
+  <p class="muted">Mesmo setor e descrição parecida, com pelo menos uma ainda pendente, ou observação "serviço será realizado na O.S nº…". A primeira de cada grupo é a que já está andando (terceiros, compra ou material). É só um aviso para você conferir: nada é alterado.</p>
+  <p><button id="cpRep">Copiar lista para o Excel</button></p>
+  ${G.map((a,i)=>`<div class="card rq"><h3>${i+1}. ${esc(a[0].setor)}</h3><p>${a.link?'<span class="tag">observação cita outra OS</span> ':''}${a.mesmaLoc?'<span class="tag">mesma localidade</span> ':''}${a.mesmoSolic?'<span class="tag">mesmo solicitante</span> ':''}<span class="tag">${a.length} OS</span></p><div class="drill" style="margin:0">${a.map(card).join('')}</div></div>`).join('') || '<div class="card">Nenhuma OS repetida encontrada.</div>'}`;
+  const b = $('#cpRep'); if (b) b.onclick = () => copy(['Grupo\tOS\tFila\tPendente de\tPedido\tSetor\tLocalidade\tSolicitante\tDescrição\tObservação', ...G.flatMap((a,i)=>a.map(o=>[i+1,o.os,o.fila,o.pendente||'',fd(o.pedido),o.setor,o.localidade||'',o.solicitante||'',o.desc,o.obs||''].map(x=>String(x).replace(/[\t\n\r]+/g,' ')).join('\t')))].join('\n'));
+}
+
 // ===================== GERADOR DE RELATÓRIOS (Excel) =====================
 const REL = [
   ['ind','Indicadores do período','Total, realizadas e %, por fila, especialidade e tipo (OS abertas no período)'],
@@ -695,7 +745,8 @@ const REL = [
   ['tp','Tempos de atendimento','Espera até o 1º atendimento, execução e pedido → término, por especialidade e tipo'],
   ['pend','Pendências por responsável','Com quem as OS pendentes estão paradas (campo Observação) e a lista'],
   ['lista','Lista de OS','Todas as OS do período com todos os campos'],
-  ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV']
+  ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV'],
+  ['rep','Possíveis OS repetidas','Mesmo setor e descrição parecida, com uma já em compra, material ou externo']
 ];
 const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 function relMeses(){ const m = {}; data.forEach(o => { if (o.pedido) m[o.pedido.getFullYear()*100+o.pedido.getMonth()] = 1; }); return Object.keys(m).map(Number).sort((a,b)=>b-a); }
@@ -776,6 +827,7 @@ function relBlocos(k, L, Lall, P){
   }
   if (k === 'lista') return [['Lista de OS: '+P.rot], [], ...tabela('OS', cabOS, L.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(linhaOS))];
   if (k === 'arr') { const I = P.todos.filter(o=>o.arrumar.length && (!P.ini || (o.pedido && o.pedido>=P.ini && o.pedido<=E))); return [['Para arrumar no MV: '+P.rot], [], ...tabela('OS', ['Problema',...cabOS], I.map(o=>[o.arrumar.join('; '), ...linhaOS(o)]))]; }
+  if (k === 'rep') { const G = Core.repetidas(P.todos); return [['Possíveis OS repetidas (situação atual)'], [], ...tabela('Grupos', ['Grupo','Motivo',...cabOS,'Solicitante'], G.flatMap((a,i)=>a.map(o=>[i+1, [a.link?'observação cita outra OS':'', a.mesmaLoc?'mesma localidade':'', a.mesmoSolic?'mesmo solicitante':''].filter(Boolean).join(', ') || 'descrição parecida', ...linhaOS(o), o.solicitante||''])))]; }
   return [];
 }
 function wsDe(aoa){ const ws = XLSX.utils.aoa_to_sheet(aoa); const w = []; aoa.forEach(r => r.forEach((c,i) => { const l = String(c??'').length; w[i] = Math.min(60, Math.max(w[i]||8, l+2)); })); ws['!cols'] = w.map(x=>({wch:x})); return ws; }
@@ -812,7 +864,7 @@ function route(){
   const h = (location.hash||'#dashboard').slice(1);
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id==='v-'+h));
   document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.hash==='#'+h));
-  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos'||h==='relatorios') ? 'none' : '';
+  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos'||h==='relatorios'||h==='repetidas') ? 'none' : '';
   $('#app').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
   $('#emptyState').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
   if (!document.querySelector('.view.on')) $('#v-dashboard').classList.add('on');
