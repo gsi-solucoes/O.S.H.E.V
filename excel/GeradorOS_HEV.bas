@@ -17,13 +17,14 @@ Private Const SH_CFG As String = "Config"
 Private Const SH_CALC As String = "Calc"
 Private Const SH_HIST As String = "Histórico"
 Private Const SH_ARQ As String = "Arquivos"
-Private Const NCOL As Long = 22
+Private Const NCOL As Long = 26
 
 Private gLabels As Object
 Private gDePara As Object
 Private gGenericos As Collection
 Private gMaxExec As Double
 Private gLog As Collection
+Private gRegras As Collection
 
 '------------------------------------------------------------ instalação
 Public Sub Instalar()
@@ -183,7 +184,9 @@ Private Function LerTexto(caminho As String) As String
         t = st.ReadText
         st.Close
     End If
-    If Len(t) > 0 Then If AscW(Left$(t, 1)) = &HFEFF Then t = Mid$(t, 2)
+    If Len(t) > 0 Then
+        If AscW(Left$(t, 1)) = &HFEFF Then t = Mid$(t, 2)
+    End If
     LerTexto = t
 End Function
 
@@ -318,7 +321,9 @@ Private Function LerMV(rows As Collection, arq As String, recs As Object) As Lon
         If LCase$(first) Like "ordem de servi?o relacionadas*" Then
             modo = "rel"
         ElseIf LCase$(first) Like "ordem de servi?o" Then
-            If Not cur Is Nothing Then If cur("os") <> "" Then LerMV = LerMV + 1
+            If Not cur Is Nothing Then
+                If cur("os") <> "" Then LerMV = LerMV + 1
+            End If
             FecharRec cur, arq, recs
             Set cur = NovoRec(arq): modo = "head": pendFim = ""
         ElseIf cur Is Nothing Then
@@ -380,7 +385,9 @@ Private Function LerMV(rows As Collection, arq As String, recs As Object) As Lon
             End If
         End If
     Next row
-    If Not cur Is Nothing Then If cur("os") <> "" Then LerMV = LerMV + 1
+    If Not cur Is Nothing Then
+        If cur("os") <> "" Then LerMV = LerMV + 1
+    End If
     FecharRec cur, arq, recs
 End Function
 
@@ -418,6 +425,7 @@ Private Sub GarantirConfig()
     ws.Range("F3").Value = "Limite de horas por execução": ws.Range("F4").Value = 12
     ws.Range("A3:F3").Font.Bold = True
     ws.Columns("A").ColumnWidth = 40: ws.Columns("C:D").ColumnWidth = 36: ws.Columns("F").ColumnWidth = 30
+    GravarRegrasPadrao ws
     ws.Range("A20").Value = "Lançamentos com nome genérico aparecem como 'WALTER / LANÇAMENTOS GENÉRICOS'. " & _
         "Execuções acima do limite de horas vão para a aba 'Para arrumar' e ficam fora dos relatórios."
 End Sub
@@ -432,8 +440,15 @@ Private Sub LerConfig()
         If Trim$(ws.Cells(r, 3).Value) <> "" And Trim$(ws.Cells(r, 4).Value) <> "" Then _
             gDePara(UCase$(Trim$(ws.Cells(r, 3).Value))) = UCase$(Trim$(ws.Cells(r, 4).Value))
     Next r
+    If Trim$(ws.Range("J4").Value) = "" Then GravarRegrasPadrao ws
+    Set gRegras = New Collection
+    For r = 4 To 60
+        If Trim$(ws.Cells(r, 10).Value) <> "" And Trim$(ws.Cells(r, 11).Value) <> "" Then gRegras.Add Array(Trim$(ws.Cells(r, 10).Value), Split(ws.Cells(r, 11).Value, ";"))
+    Next r
     gMaxExec = 12
-    If IsNumeric(ws.Range("F4").Value) Then If ws.Range("F4").Value > 0 Then gMaxExec = ws.Range("F4").Value
+    If IsNumeric(ws.Range("F4").Value) Then
+        If ws.Range("F4").Value > 0 Then gMaxExec = ws.Range("F4").Value
+    End If
 End Sub
 
 Private Function NomeTecnico(ByVal n As String) As String
@@ -446,6 +461,162 @@ Private Function NomeTecnico(ByVal n As String) As String
     If n = "" Then n = "SEM FUNCIONÁRIO"
     NomeTecnico = n
 End Function
+
+Private Sub GravarRegrasPadrao(ws As Worksheet)
+    ws.Range("J3").Value = "Pendente de (responsável)": ws.Range("K3").Value = "Expressões na observação (separadas por ;) - aceita 80% de semelhança, sem acento"
+    ws.Range("J3:K3").Font.Bold = True
+    Dim regs As Variant, q As Long
+    regs = Array("Supervisão", "TRATATIVA (SUPERVISÃO; TRATATIVA DA SUPERVISÃO; TRATATIVA SUPERVISÃO; AGUARDAR SUPERVISOR; AGUARDANDO SUPERVISOR; (SUPERVISOR)", _
+        "Comprador", "TRATATIVA DE COMPRA; (COMPRADOR); TRATATIVA (COMPRA; TRATATIVA DO COMPRADOR; AGUARDANDO COMPRADOR", _
+        "Planejador", "PLANEJADOR; PLANEJAMENTO; A AGENDAR; MATERIAL ENTREGUE", _
+        "Gestor", "(GESTOR); TRATATIVA (GESTOR; TRATATIVA DO GESTOR; AGUARDANDO GESTOR", _
+        "Externo", "TRATATIVA EXTERNA; SERVIÇO EXTERNO; SERVICO EXTERNO; TRATATIVA DE SERVIÇO EXTERNO", _
+        "Material", "AGUARDANDO MATERIAL; MATERIAL SOLICITADO; SOLICITADO MATERIAL; PEDIDO FEITO")
+    For q = 0 To UBound(regs) Step 2
+        ws.Cells(4 + q \ 2, 10).Value = regs(q)
+        ws.Cells(4 + q \ 2, 11).Value = regs(q + 1)
+    Next q
+    ws.Columns("J").ColumnWidth = 22: ws.Columns("K").ColumnWidth = 90
+End Sub
+
+'------------------------------------------------------------ observação -> pendente de
+Private Function NormTxt(ByVal s As String) As String
+    Dim i As Long, c As String, o As String, de As String, para As String, k As Long
+    de = "ÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇ": para = "AAAAAEEEEIIIIOOOOOUUUUC"
+    s = UCase$(s)
+    For i = 1 To Len(s)
+        c = Mid$(s, i, 1)
+        k = InStr(1, de, c, vbBinaryCompare)
+        If k > 0 Then c = Mid$(para, k, 1)
+        If Not (c Like "[A-Z0-9/.]") Then c = " "
+        o = o & c
+    Next i
+    NormTxt = Tz(o)
+End Function
+
+Private Function Lev(a As String, b As String) As Long
+    Dim m As Long, n As Long, i As Long, j As Long, d() As Long, prev As Long, tmp As Long, cost As Long
+    m = Len(a): n = Len(b)
+    If m = 0 Then Lev = n: Exit Function
+    If n = 0 Then Lev = m: Exit Function
+    ReDim d(0 To n)
+    For j = 0 To n: d(j) = j: Next j
+    For i = 1 To m
+        prev = d(0): d(0) = i
+        For j = 1 To n
+            tmp = d(j)
+            If Mid$(a, i, 1) = Mid$(b, j, 1) Then cost = 0 Else cost = 1
+            d(j) = Application.Min(d(j) + 1, d(j - 1) + 1, prev + cost)
+            prev = tmp
+        Next j
+    Next i
+    Lev = d(n)
+End Function
+
+' posição (palavra) da última ocorrência parecida da expressão; -1 se não achar
+Private Function Achar(sg As String, ByVal expr As String) As Long
+    Dim w() As String, kw() As String, n As Long, i As Long, t As Long, ok As Boolean, a As String, b As String
+    Achar = -1
+    expr = NormTxt(expr): If expr = "" Or sg = "" Then Exit Function
+    w = Split(sg, " "): kw = Split(expr, " "): n = UBound(kw) + 1
+    For i = 0 To UBound(w) - n + 1
+        ok = True
+        For t = 0 To n - 1
+            a = w(i + t): b = kw(t)
+            If a <> b Then
+                If Len(a) <= 3 Or Len(b) <= 3 Then
+                    ok = False
+                ElseIf Len(b) >= 5 And Left$(a, Len(b)) = b Then
+                    ' palavra encurtada (ex.: SUPERVIS)
+                ElseIf 1 - Lev(a, b) / Application.Max(Len(a), Len(b)) < 0.8 Then
+                    ok = False
+                End If
+            End If
+            If Not ok Then Exit For
+        Next t
+        If ok Then Achar = i
+    Next i
+End Function
+
+Private Function DataNoTexto(seg As String) As Variant
+    Dim toks() As String, tk As Variant, p() As String, sep As String, d As Long, m As Long, y As Long, melhor As Variant, dt As Date
+    DataNoTexto = Empty
+    toks = Split(Replace(Replace(Replace(Replace(seg, ",", " "), "(", " "), ")", " "), "-", " "), " ")
+    For Each tk In toks
+        tk = Trim$(tk)
+        Do While Len(tk) > 0 And (Right$(tk, 1) = "." Or Right$(tk, 1) = "/")
+            tk = Left$(tk, Len(tk) - 1)
+        Loop
+        sep = ""
+        If InStr(tk, "/") > 0 Then
+            sep = "/"
+        ElseIf InStr(tk, ".") > 0 Then
+            sep = "."
+        End If
+        If sep <> "" Then
+            p = Split(tk, sep)
+            If (UBound(p) = 2 Or (UBound(p) = 1 And sep = "/")) Then
+                If IsNumeric(p(0)) And IsNumeric(p(1)) And Len(p(0)) <= 2 And Len(p(1)) <= 2 Then
+                    d = CLng(p(0)): m = CLng(p(1)): y = Year(Date)
+                    If UBound(p) = 2 Then
+                        If IsNumeric(p(2)) Then y = CLng(p(2)) Else y = 0
+                        If y < 100 And y > 0 Then y = y + 2000
+                    End If
+                    If d >= 1 And d <= 31 And m >= 1 And m <= 12 And y > 2000 Then
+                        dt = DateSerial(y, m, d)
+                        If IsEmpty(melhor) Then
+                            melhor = dt
+                        ElseIf dt > melhor Then
+                            melhor = dt
+                        End If
+                    End If
+                End If
+            End If
+        End If
+    Next tk
+    DataNoTexto = melhor
+End Function
+
+' descobre com quem a OS está parada: divide a observação em trechos e usa o trecho mais recente
+Private Sub Classificar(ByVal obs As String, resp As String, em As Variant)
+    Dim segs() As String, i As Long, sg As String, rg As Variant, ex As Variant, x As Long, pos As Long
+    Dim rsp As String, dt As Variant, ultEm As Variant, proprio As Boolean
+    Dim bEm As Double, bProp As Long, bIdx As Long, achou As Boolean
+    resp = "": em = Empty
+    If Trim$(obs) = "" Then resp = "Sem observação": Exit Sub
+    obs = UCase$(obs)
+    obs = Replace(Replace(Replace(obs, " - ", Chr(1)), "|", Chr(1)), ";", Chr(1))
+    segs = Split(obs, Chr(1))
+    For i = 0 To UBound(segs)
+        sg = NormTxt(segs(i)): rsp = "": pos = -1
+        For Each rg In gRegras
+            For Each ex In rg(1)
+                If Trim$(ex) <> "" Then
+                    x = Achar(sg, CStr(ex))
+                    If x >= 0 And x >= pos Then pos = x: rsp = rg(0)
+                End If
+            Next ex
+        Next rg
+        dt = DataNoTexto(CStr(segs(i)))
+        proprio = Not IsEmpty(dt)
+        If proprio Then ultEm = dt Else dt = ultEm
+        If rsp = "" And proprio And achou Then
+            If IsEmpty(em) Then
+                em = dt
+            ElseIf dt > em Then
+                em = dt
+            End If
+        End If
+        If rsp <> "" Then
+            Dim kEm As Double
+            If IsEmpty(dt) Then kEm = 0 Else kEm = CDbl(dt)
+            If Not achou Or kEm > bEm Or (kEm = bEm And (IIf(proprio, 1, 0) > bProp Or (IIf(proprio, 1, 0) = bProp And i > bIdx))) Then
+                achou = True: resp = rsp: em = dt: bEm = kEm: bProp = IIf(proprio, 1, 0): bIdx = i
+            End If
+        End If
+    Next i
+    If Not achou Then resp = "Outro": em = ultEm
+End Sub
 
 '------------------------------------------------------------ cálculos e montagem
 Private Function Campo(r As Object, k As String, padrao As String) As String
@@ -463,6 +634,8 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
     Set cEsp = CreateObject("Scripting.Dictionary"): Set cTipo = CreateObject("Scripting.Dictionary")
     Set cSetor = CreateObject("Scripting.Dictionary"): Set cTec = CreateObject("Scripting.Dictionary")
     Set cCrit = CreateObject("Scripting.Dictionary")
+    Dim cPend As Object
+    Set cPend = CreateObject("Scripting.Dictionary")
     agora = Now
     ReDim okA(1 To Application.Max(1, recs.Count), 1 To NCOL - 1)
     ReDim errA(1 To Application.Max(1, recs.Count), 1 To NCOL)
@@ -487,7 +660,9 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
             ElseIf Not IsEmpty(x("ini")) Then
                 iss = iss & "; Execução sem hora de fim"
             End If
-            If Not IsEmpty(x("ini")) Then If x("ini") > agora Then iss = iss & "; Execução com data futura"
+            If Not IsEmpty(x("ini")) Then
+                If x("ini") > agora Then iss = iss & "; Execução com data futura"
+            End If
         Next x
         esp = Empty: tot = Empty
         If IsEmpty(ped) Then
@@ -501,11 +676,13 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
                 If ter < ped Then iss = iss & "; Término antes da abertura" Else tot = (ter - ped) * 24
             End If
         End If
-        If Not IsEmpty(ter) And Not IsEmpty(ini) Then If ter < ini Then iss = iss & "; Término antes do início do atendimento"
+        If Not IsEmpty(ter) And Not IsEmpty(ini) Then
+            If ter < ini Then iss = iss & "; Término antes do início do atendimento"
+        End If
         f = r("fila")
         If f = "concluída" And r("exec").Count = 0 Then iss = iss & "; Concluída sem execução lançada"
 
-        Dim linha(1 To 21) As Variant
+        Dim linha(1 To 25) As Variant
         linha(1) = CDbl(r("os")): linha(2) = r("desc"): linha(3) = f
         linha(4) = Campo(r, "tipo", "Sem tipo"): linha(5) = Campo(r, "especialidade", "Sem especialidade")
         linha(6) = Campo(r, "criticidade", "Não informada"): linha(7) = Campo(r, "solicitante", "")
@@ -519,17 +696,42 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
         linha(19) = IIf(f = "aberta" Or f = "não atendida" Or f = "agendar", "S", "N")
         linha(20) = IIf(f = "aguardando material" Or f = "conserto externo", "S", "N")
         linha(21) = r("arquivo")
+        linha(22) = Campo(r, "obs", "")
+        Dim pResp As String, pEm As Variant
+        pResp = "": pEm = Empty
+        If f <> "concluída" And f <> "cancelada" Then Classificar CStr(linha(22)), pResp, pEm
+        linha(23) = pResp: linha(24) = pEm
+        If Not IsEmpty(pEm) Then linha(25) = Application.Max(0, Int(agora - pEm)) Else linha(25) = Empty
+        If pResp <> "" Then cPend(pResp) = cPend(pResp) + 1
+        ' provável erro de dia: execução fora do período da OS, mas cabe trocando 1 dia
+        If (InStr(iss, "antes da abertura") > 0 Or InStr(iss, "antes do início do atendimento") > 0) And Not IsEmpty(ini) And Not IsEmpty(ped) Then
+            Dim sh As Long, ni As Date, nfim As Variant, lim As Date
+            If IsEmpty(ter) Then lim = agora Else lim = ter
+            For sh = -1 To 1 Step 2
+                ni = ini + sh
+                If IsEmpty(fim) Then nfim = Empty Else nfim = fim + sh
+                If ni >= ped And ni <= lim Then
+                    If IsEmpty(nfim) Then
+                        iss = "; Provável erro de dia na execução: data sugerida " & Format(ni, "dd/mm/yyyy hh:nn") & iss: Exit For
+                    ElseIf nfim <= lim Then
+                        iss = "; Provável erro de dia na execução: data sugerida " & Format(ni, "dd/mm/yyyy hh:nn") & iss: Exit For
+                    End If
+                End If
+            Next sh
+        End If
 
         If iss = "" Then
             nOk = nOk + 1
-            For i = 1 To 21: okA(nOk, i) = linha(i): Next i
+            For i = 1 To 25: okA(nOk, i) = linha(i): Next i
             Contar cEsp, linha(5): Contar cTipo, linha(4): Contar cSetor, linha(8): Contar cCrit, linha(6)
             If linha(13) <> "" Then cTec(linha(13)) = cTec(linha(13)) + horas
-            If Not IsEmpty(ped) Then If ped > maxPed Then maxPed = ped
+            If Not IsEmpty(ped) Then
+                If ped > maxPed Then maxPed = ped
+            End If
         Else
             nErr = nErr + 1
             errA(nErr, 1) = Mid$(iss, 3)
-            For i = 1 To 21: errA(nErr, i + 1) = linha(i): Next i
+            For i = 1 To 25: errA(nErr, i + 1) = linha(i): Next i
         End If
     Next key
 
@@ -547,7 +749,7 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
     ThisWorkbook.Names.Add Name:="DataCorte", RefersTo:="='" & SH_BL & "'!$B$3"
     MontarDashboard okA, nOk, recs.Count, nErr, nArq, nVazios, errA, cEsp, cTipo, cSetor
     MontarErros errA, nErr
-    MontarBacklog corte, cEsp
+    MontarBacklog corte, cEsp, cPend
     MontarEquipe cTec
     MontarTempos cEsp, cTipo, cCrit
     MontarArquivos
@@ -581,7 +783,8 @@ End Sub
 Private Function Cabecalhos() As Variant
     Cabecalhos = Array("OS", "Descrição", "Fila", "Tipo", "Especialidade", "Criticidade", "Solicitante", "Setor", _
         "Localidade", "Pedido", "Término", "Serviço", "Técnico", "Início atend.", "Fim atend.", "Espera_h", _
-        "Execucao_h", "Total_h", "Backlog", "Terceiros", "Arquivo", "Visivel")
+        "Execucao_h", "Total_h", "Backlog", "Terceiros", "Arquivo", "Observações", "Pendente de", "Encaminhado em", _
+        "Parado_dias", "Visivel")
 End Function
 
 Private Function OrdenarPorValor(d As Object, maxItens As Long) As Variant
@@ -632,7 +835,10 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     lo.ListColumns("Espera_h").DataBodyRange.NumberFormat = "0.0"
     lo.ListColumns("Execucao_h").DataBodyRange.NumberFormat = "0.0"
     lo.ListColumns("Total_h").DataBodyRange.NumberFormat = "0.0"
-    ws.Columns("A:V").ColumnWidth = 14
+    lo.ListColumns("Encaminhado em").DataBodyRange.NumberFormat = "dd/mm/yyyy"
+    lo.ListColumns("Observações").DataBodyRange.WrapText = False
+    ws.Columns("A:Z").ColumnWidth = 14
+    ws.Columns("V").ColumnWidth = 48
     ws.Columns("B").ColumnWidth = 48
     ws.Cells(tRow - 1, 1).Value = "Ordens de serviço (a lista segue os filtros acima)"
     ws.Cells(tRow - 1, 1).Font.Bold = True: ws.Cells(tRow - 1, 1).Font.Size = 13
@@ -670,11 +876,11 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     ' filtros (segmentações) e gráficos
     Dim topo As Double, esq As Double, nomes As Variant, sc As SlicerCache
     topo = ws.Range("A8").Top: esq = ws.Range("A8").Left
-    nomes = Array("Fila", "Especialidade", "Técnico", "Tipo", "Setor", "Criticidade")
+    nomes = Array("Fila", "Pendente de", "Especialidade", "Técnico", "Tipo", "Setor", "Criticidade")
     On Error Resume Next
     For i = 0 To UBound(nomes)
         Set sc = ThisWorkbook.SlicerCaches.Add2(lo, nomes(i))
-        sc.Slicers.Add ws, , "sl" & i, nomes(i), topo, esq + i * 150, 145, 150
+        sc.Slicers.Add ws, , "sl" & i, nomes(i), topo, esq + i * 130, 125, 150
     Next i
     On Error GoTo 0
     topo = topo + 160
@@ -742,11 +948,12 @@ Private Sub MontarErros(errA() As Variant, nErr As Long)
     If nErr > 0 Then ws.Range("A5").Resize(nErr, NCOL).Value = errA
     ws.Range("A4").Resize(1, NCOL).Font.Bold = True
     ws.Range("K:L,O:P").NumberFormat = "dd/mm/yyyy hh:mm"
+    ws.Range("Y:Y").NumberFormat = "dd/mm/yyyy"
     ws.Columns("A").ColumnWidth = 45: ws.Columns("C").ColumnWidth = 45: ws.Columns("B,D:V").ColumnWidth = 14
     If nErr > 0 Then ws.Range("A4").Resize(nErr + 1, NCOL).AutoFilter
 End Sub
 
-Private Sub MontarBacklog(corte As Date, cEsp As Object)
+Private Sub MontarBacklog(corte As Date, cEsp As Object, cPend As Object)
     Dim ws As Worksheet, E As String, filas As Variant, rot As Variant, faixas As Variant, i As Long, j As Long, r As Long
     Dim esp As Variant, base As String
     Set ws = ThisWorkbook.Worksheets(SH_BL)
@@ -794,6 +1001,18 @@ Private Sub MontarBacklog(corte As Date, cEsp As Object)
     For Each esp In OrdenarPorValor(cEsp, 0)
         ws.Cells(r, 1).Value = esp
         ws.Cells(r, 2).Formula = "=" & FormBacklog(",tbOS[Especialidade],A" & r)
+        r = r + 1
+    Next esp
+
+    ' pendências por responsável (campo Observações, trecho mais recente)
+    r = r + 1
+    ws.Cells(r, 1).Resize(1, 3).Value = Array("Pendências por responsável (OS pendentes)", "OS", "Mediana de dias parada")
+    ws.Cells(r, 1).Resize(1, 3).Font.Bold = True
+    r = r + 1
+    For Each esp In OrdenarPorValor(cPend, 0)
+        ws.Cells(r, 1).Value = esp
+        ws.Cells(r, 2).Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Pendente de],A" & r & ")"
+        ws.Cells(r, 3).FormulaArray = "=IFERROR(MEDIAN(IF((tbOS[Visivel]=1)*(tbOS[Pendente de]=A" & r & ")*(tbOS[Parado_dias]<>),tbOS[Parado_dias])),)"
         r = r + 1
     Next esp
 
