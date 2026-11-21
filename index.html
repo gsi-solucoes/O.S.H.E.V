@@ -72,10 +72,11 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 .view{display:none}.view.on{display:block}
 .note{font-size:13px;color:var(--muted);margin-top:8px}
 .warn{color:var(--warn)}
+.ic{font-size:20px;font-weight:700;width:28px}.f-ok .ic{color:#1a8f4c}.f-vazio .ic{color:var(--warn)}.f-erro .ic{color:var(--accent)}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--band);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.on{opacity:1}
 @media(prefers-reduced-motion:reduce){#toast{transition:none}}
-@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 0;text-align:right}.stack td::before{content:attr(data-l);color:var(--muted);text-align:left}.stack td:empty{display:none}.bar{grid-template-columns:minmax(0,7.5em) minmax(0,1fr) auto}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:12px;border-bottom:2px solid var(--accent)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 0;text-align:right}.stack td::before{content:attr(data-l);color:var(--muted);text-align:left}.stack td:empty{display:none}.bar{grid-template-columns:minmax(0,7.5em) minmax(0,1fr) auto}}
 </style>
 </head>
 <body>
@@ -83,7 +84,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   <h1>Gerador de OS – HEV</h1>
   <p>Escolha os CSVs do relatório R_ORDEM_SERVICO do MV (um por fila, todos de uma vez). Os arquivos são lidos só no seu aparelho.</p>
   <div class="cmd">
-    <label class="btn prim pick">Escolher CSVs do MV<input type="file" id="files" multiple accept=".csv,text/csv,text/comma-separated-values,text/plain,application/vnd.ms-excel,application/octet-stream"></label>
+    <label class="btn prim pick">Escolher CSVs do MV<input type="file" id="files" multiple accept=".csv,.zip,application/zip,application/x-zip-compressed,text/csv,text/comma-separated-values,text/plain,application/vnd.ms-excel,application/octet-stream"></label>
     <button class="ghost" id="demo">Dados de exemplo</button>
     <button class="ghost" id="clear">Limpar</button>
     <span class="status" id="status">Nenhum arquivo carregado.</span>
@@ -93,11 +94,12 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#config">Config</a>
 </nav>
 <main class="band">
+  <details class="card" id="filesBox" open hidden style="margin-bottom:18px"><summary id="filesSum" style="cursor:pointer;font-weight:600;min-height:32px">Arquivos carregados</summary><div class="scroll"><table><tbody id="filesList"></tbody></table></div><p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Faltou algum arquivo? Toque em Escolher CSVs de novo e selecione só ele: os que já estão aqui continuam.</p></details>
   <section id="emptyState" class="empty">
     <h2>Como usar</h2>
     <ol>
       <li>No MV, puxe o R_ORDEM_SERVICO de cada fila: aberta, agendar, aguardando material, externo, não atendida, cancelada e concluída.</li>
-      <li>Toque em <b>Escolher CSVs do MV</b> e selecione todos de uma vez. Pode adicionar mais arquivos depois (ex.: o backlog).</li>
+      <li>Toque em <b>Escolher CSVs do MV</b> e selecione todos de uma vez (ou um único .zip com todos dentro). Pode adicionar mais arquivos depois (ex.: o backlog).</li>
       <li>Para o backlog completo, puxe as filas pendentes sem filtro de mês.</li>
     </ol>
     <p class="muted">Quer só ver como fica? Toque em <b>Dados de exemplo</b>.</p>
@@ -124,6 +126,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 </main>
 <div id="toast"></div>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>/* ===== Núcleo: leitura dos CSVs do MV (R_ORDEM_SERVICO) e cálculos ===== */
 var Core = (function () {
   function decode(buf) {
@@ -336,9 +339,20 @@ function rebuild(){
   const bad = data.filter(o=>!o.ok).length;
   $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s) · ${nf(data.length-bad)} entraram · ${nf(bad)} fora por erro${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
   $('#emptyState').hidden = !!data.length; $('#app').hidden = !data.length;
+  drawFiles();
   drawFilters(); render();
 }
 
+function drawFiles(){
+  const L = Object.values(flog), box = $('#filesBox');
+  if (!L.length) { box.hidden = true; return }
+  box.hidden = false;
+  const ic = {ok:'✓', vazio:'⚠', erro:'✗'};
+  const hrs = n => nf(data.filter(o=>o.file===n && o.ok).reduce((s,o)=>s+o.horas,0),1);
+  const nok = L.filter(x=>x.st==='ok').length, ner = L.filter(x=>x.st==='erro').length;
+  $('#filesSum').textContent = `Arquivos carregados: ${L.length} · ${nok} com OS${ner?` · ${ner} com erro`:''}`;
+  $('#filesList').innerHTML = L.map(x=>`<tr class="f-${x.st}"><td class="ic">${ic[x.st]}</td><td><b>${esc(x.name)}</b><br><span class="muted">${x.st==='ok'?esc(x.filas)+' · '+hrs(x.name)+' h lançadas':esc(x.msg)} · ${nf(x.size/1024)} KB</span></td><td class="num">${nf(x.n)} OS</td></tr>`).join('');
+}
 function filtered(skipFila){
   const de = F.de ? new Date(F.de+'T00:00') : null, ate = F.ate ? new Date(F.ate+'T23:59') : null, q = F.q.toUpperCase();
   return data.filter(o => o.ok && FL.every(([k]) => !F[k] || (skipFila && k==='fila') || (k==='tecnico' ? o.tecnicos.includes(F[k]) : o[k]===F[k]))
@@ -370,7 +384,7 @@ function osTable(list){
   const rows = list.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
   return `<div class="row"><h3>Ordens de serviço (${nf(rows.length)})</h3><button id="cpList">Copiar lista para o Excel</button></div>
   <div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor</th><th>Descrição</th><th>Técnico</th><th class="num">Espera</th><th class="num">Idade</th></tr></thead><tbody>
-  ${rows.slice(0,shown).map(o=>`<tr><td><b>${o.os}</b></td><td>${fd(o.pedido)}</td><td><span class="tag${o.backlog?' bk':''}">${o.fila}</span></td><td>${esc(o.especialidade)}</td><td>${esc(o.setor)}</td><td>${esc(o.desc)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td class="num">${fh(o.espera)}</td><td class="num">${o.pedido&&!o.termino?nf((cut-o.pedido)/864e5)+' d':''}</td></tr>`).join('')}
+  ${rows.slice(0,shown).map(o=>`<tr><td><b>${o.os}</b></td><td>${fd(o.pedido)}</td><td><span class="tag${o.backlog?' bk':''}">${o.fila}</span></td><td>${esc(o.especialidade)}</td><td>${esc(o.setor)}</td><td>${esc(o.desc)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td class="num">${fh(o.espera)}</td><td class="num">${o.pedido&&!o.termino?nf(Math.max(0,(cut.getTime()+864e5-o.pedido)/864e5))+' d':''}</td></tr>`).join('')}
   </tbody></table></div>${rows.length>shown?`<p><button id="more">Mostrar mais ${Math.min(100,rows.length-shown)}</button></p>`:''}`;
 }
 function tsv(list){
@@ -421,7 +435,7 @@ function render(){
 function renderBacklog(L){
   const B = blStats(L, cut), V = $('#v-backlog');
   const bands = ['0–7 dias','8–15 dias','16–30 dias','Mais de 30 dias'];
-  const age = o => Core.ageBand((cut - o.pedido)/864e5);
+  const age = o => Core.ageBand(Math.max(0,(cut.getTime()+864e5-1 - o.pedido)/864e5));
   const filas = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
   const rowsF = filas.map(([f,l]) => {const s=B.bl.filter(o=>o.fila===f);return `<tr><td>${l}</td>${bands.map(b=>`<td class="num">${nf(s.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(s.length)}</b></td></tr>`}).join('');
   const dep = B.bl.filter(o=>!o.backlog);
@@ -491,11 +505,27 @@ function route(){
   if (!document.querySelector('.view.on')) $('#v-dashboard').classList.add('on');
 }
 
-let empties = new Set();
-async function readFiles(list){
+let empties = new Set(), flog = {};
+async function expandZips(list){
+  const out = [];
   for (const f of list) {
-    try { const txt = Core.decode(await f.arrayBuffer()); const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os); if(!os.length) empties.add(f.name); else empties.delete(f.name) }
-    catch(e){ toast(`Não consegui ler ${f.name}`) }
+    if (/\.zip$/i.test(f.name)) {
+      if (!window.JSZip) { flog[f.name] = {name:f.name,size:f.size,n:0,filas:'',st:'erro',msg:'sem internet para abrir o .zip'}; continue }
+      try { const z = await JSZip.loadAsync(f); for (const e of Object.values(z.files)) { if (e.dir || !/\.(csv|txt)$/i.test(e.name)) continue; const buf = await e.async('uint8array'); const nm = e.name.split('/').pop(); out.push({name:nm, size:buf.length, arrayBuffer:async()=>buf}) } }
+      catch(e){ flog[f.name] = {name:f.name,size:f.size,n:0,filas:'',st:'erro',msg:'não consegui abrir o .zip'} }
+    } else out.push(f);
+  }
+  return out;
+}
+async function readFiles(list){
+  list = await expandZips(list);
+  toast(`Lendo ${list.length} arquivo(s)...`);
+  for (const f of list) {
+    try { const txt = Core.decode(await f.arrayBuffer()); const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os);
+      if(!os.length) empties.add(f.name); else empties.delete(f.name);
+      const looksMV = /Ordem de Servi/i.test(txt.slice(0,3000));
+      flog[f.name] = {name:f.name, size:f.size, n:os.length, filas:Core.count(os,'fila').map(([k,v])=>`${k} ${v}`).join(', '), st: os.length ? 'ok' : (looksMV ? 'vazio' : 'erro'), msg: os.length ? '' : (looksMV ? 'fila vazia no MV' : 'não parece um relatório R_ORDEM_SERVICO')} }
+    catch(e){ flog[f.name] = {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'não foi possível ler o arquivo'} }
   }
   if (demo) { raw = raw.filter(o=>o.file!=='exemplo'); demo=false }
   cut = null; rebuild();
@@ -503,7 +533,7 @@ async function readFiles(list){
 $('#files').onchange = e => { readFiles([...e.target.files]); e.target.value=''; };
 document.addEventListener('dragover', e => e.preventDefault());
 document.addEventListener('drop', e => { e.preventDefault(); readFiles([...e.dataTransfer.files]); });
-$('#clear').onclick = () => { raw=[]; empties=new Set(); demo=false; cut=null; rebuild(); };
+$('#clear').onclick = () => { raw=[]; empties=new Set(); flog={}; demo=false; cut=null; rebuild(); };
 
 $('#demo').onclick = () => {
   let s = 7; const r = () => (s = s*16807 % 2147483647) / 2147483647, pick = a => a[Math.floor(r()*a.length)];
