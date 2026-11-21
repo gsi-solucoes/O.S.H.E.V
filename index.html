@@ -124,6 +124,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </section>
   <section class="view" id="v-config">
     <h2>Configurações</h2>
+    <div class="card" style="margin-bottom:16px"><h3>Regras da observação (Pendente de)</h3><p class="muted">Uma linha por responsável: RESPONSÁVEL = expressão; expressão; ... Aceita erro de digitação (80% parecido) e ignora acentos. Vale o trecho mais recente da observação.</p><textarea id="cfgRegras" style="min-height:180px"></textarea></div>
     <div class="grid2">
       <div class="card"><h3>Nomes genéricos</h3><p class="muted">Lançamentos no nome destas pessoas aparecem como "Walter / lançamentos genéricos". Um nome (ou começo de nome) por linha.</p><textarea id="cfgGen"></textarea></div>
       <div class="card"><h3>De-para de técnicos</h3><p class="muted">Corrige nomes. Uma linha por pessoa: NOME NO MV = NOME CORRETO</p><textarea id="cfgDepara"></textarea></div>
@@ -292,11 +293,83 @@ var Core = (function () {
       if (o.termino && o.inicio && o.termino < o.inicio) o.issues.push('Término antes do início do atendimento');
       if (o.fila === 'concluída' && !o.exec.length) o.issues.push('Concluída sem execução lançada');
       if (o.especialidade === 'Sem especialidade' && o.fila !== 'aberta') o.issues.push('Sem especialidade');
+      // provável erro de dia: execução fora do período da OS, mas cabe trocando 1 dia
+      if (e && e.ini && o.pedido && o.issues.some(function (x) { return /antes da abertura|antes do início do atendimento/.test(x); })) {
+        var lim = o.termino || agora;
+        [-1, 1].forEach(function (sh) {
+          var ni = new Date(e.ini.getTime() + sh * 864e5), nf = e.fim ? new Date(e.fim.getTime() + sh * 864e5) : null;
+          if (!o.sugestao && ni >= o.pedido && ni <= lim && (!nf || nf <= lim)) o.sugestao = ni;
+        });
+        if (o.sugestao) o.issues.unshift('Provável erro de dia na execução: data sugerida ' + o.sugestao.toLocaleDateString('pt-BR') + ' ' + o.sugestao.toTimeString().slice(0, 5));
+      }
+      var c = classificar(o.obs, cfg.regrasObs);
+      o.pendente = (o.fila === 'concluída' || o.fila === 'cancelada') ? '' : c.resp;
+      o.encaminhado = o.pendente ? c.em : null;
+      o.parado = o.encaminhado ? Math.max(0, Math.floor((agora - o.encaminhado) / 864e5)) : null;
       o.ok = o.issues.length === 0;
       o.backlog = PEND.indexOf(o.fila) >= 0;
       o.terceiros = TERC.indexOf(o.fila) >= 0;
     });
     return list;
+  }
+
+  var REGRAS_PADRAO = [
+    ['Supervisão', ['TRATATIVA (SUPERVIS', 'TRATATIVA DA SUPERVIS', 'TRATATIVA SUPERVIS', 'AGUARDAR SUPERVISOR', 'AGUARDANDO SUPERVISOR', '(SUPERVISOR)', '(SUPERVISÃO)']],
+    ['Comprador', ['TRATATIVA DE COMPRA', '(COMPRADOR)', 'TRATATIVA (COMPRA', 'TRATATIVA DO COMPRADOR', 'AGUARDANDO COMPRADOR']],
+    ['Planejador', ['PLANEJADOR', 'PLANEJAMENTO', 'A AGENDAR', 'MATERIAL ENTREGUE']],
+    ['Gestor', ['(GESTOR)', 'TRATATIVA (GESTOR', 'TRATATIVA DO GESTOR', 'AGUARDANDO GESTOR']],
+    ['Externo', ['TRATATIVA EXTERNA', 'SERVIÇO EXTERNO', 'SERVICO EXTERNO', 'TRATATIVA DE SERVIÇO EXTERNO']],
+    ['Material', ['AGUARDANDO MATERIAL', 'MATERIAL SOLICITADO', 'SOLICITADO MATERIAL', 'PEDIDO FEITO']]
+  ];
+  var RX_D = /(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?![\d\/.]*\d)/g;
+  function dataTxt(m) { if (m[0].indexOf('.') > 0 && !m[3]) return null; var y = m[3] ? +m[3] : new Date().getFullYear(); if (y < 100) y += 2000; var d = new Date(y, +m[2] - 1, +m[1]); return isNaN(d) || +m[2] > 12 || +m[1] > 31 ? null : d; }
+  // normaliza: maiúsculas, sem acento, sem pontuação
+  function norm(x) { return (x || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9/.\s]/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function lev(a, b) {
+    var m = a.length, n = b.length, d = [], i, j;
+    if (!m) return n; if (!n) return m;
+    for (j = 0; j <= n; j++) d[j] = j;
+    for (i = 1; i <= m; i++) { var prev = d[0]; d[0] = i; for (j = 1; j <= n; j++) { var tmp = d[j]; d[j] = Math.min(d[j] + 1, d[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = tmp; } }
+    return d[n];
+  }
+  // posição da última ocorrência "parecida" (>= 80%) da expressão k no trecho; -1 se não achar
+  function achar(sg, k, tol) {
+    var kw = norm(k).split(' ').filter(Boolean), w = sg.split(' '), n = kw.length, best = -1, kj = kw.join(' ');
+    if (!n) return -1;
+    for (var i = 0; i + n <= w.length; i++) {
+      var ok = true;
+      for (var t = 0; t < n && ok; t++) {
+        var a = w[i + t], b = kw[t];
+        if (a === b) continue;
+        if (b.length <= 3 || a.length <= 3) { ok = false; continue; }
+        // aceita palavra cortada/encurtada no fim (ex.: SUPERVIS) e erro de digitação de até 20%
+        if (a.indexOf(b) === 0 && b.length >= 5) continue;
+        ok = 1 - lev(a, b) / Math.max(a.length, b.length) >= tol;
+      }
+      if (ok) best = i;
+    }
+    return best;
+  }
+  // descobre com quem a OS está parada: divide a observação em trechos e usa o trecho mais recente
+  function classificar(obs, regras, tol) {
+    tol = tol || 0.8;
+    var raw = (obs || '').toUpperCase();
+    if (!raw.trim()) return { resp: 'Sem observação', em: null };
+    var segs = raw.split(/\s+-\s+|\s*\|\s*|;\s*|\/(?=\s*[A-ZÀ-Ú]{3})/), best = null, bestKey = null, ultEm = null, m;
+    segs.forEach(function (sgRaw, idx) {
+      var sg = norm(sgRaw), resp = null, pos = -1;
+      (regras || REGRAS_PADRAO).forEach(function (r) { r[1].forEach(function (k) { var x = achar(sg, k, tol); if (x >= 0 && x >= pos) { pos = x; resp = r[0]; } }); });
+      var em = null; RX_D.lastIndex = 0;
+      while ((m = RX_D.exec(sgRaw))) { var d = dataTxt(m); if (d && (!em || d > em)) em = d; }
+      var proprio = !!em;
+      if (!em) em = ultEm; else ultEm = em;
+      if (!resp && proprio && best && (!best.em || em > best.em)) best.em = em;
+      if (resp) {
+        var key = [em ? +em : 0, proprio ? 1 : 0, idx];
+        if (!bestKey || key[0] > bestKey[0] || (key[0] === bestKey[0] && (key[1] > bestKey[1] || (key[1] === bestKey[1] && key[2] > bestKey[2])))) { best = { resp: resp, em: em }; bestKey = key; }
+      }
+    });
+    return best || { resp: 'Outro', em: ultEm };
   }
 
   function median(a) { if (!a.length) return null; a = a.slice().sort(function (x, y) { return x - y; }); var m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
@@ -319,7 +392,7 @@ var Core = (function () {
   }
   function ageBand(d) { return d <= 7 ? '0–7 dias' : d <= 15 ? '8–15 dias' : d <= 30 ? '16–30 dias' : 'Mais de 30 dias'; }
 
-  return { decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, PEND: PEND, TERC: TERC };
+  return { REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, PEND: PEND, TERC: TERC };
 })();
 
 </script>
@@ -336,7 +409,7 @@ const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(
 let raw = [], data = [], cut = null, shown = 50, demo = false;
 let cfg = Object.assign({genericos:['WALTER ANDR'], depara:{}, maxExec:12}, store.get('gos_cfg', {}));
 const F = {fila:'', especialidade:'', tecnico:'', tipo:'', setor:'', criticidade:'', de:'', ate:'', q:''};
-const FL = [['fila','Fila'],['especialidade','Especialidade'],['tecnico','Técnico'],['tipo','Tipo'],['setor','Setor'],['criticidade','Criticidade']];
+const FL = [['fila','Fila'],['pendente','Pendente de'],['especialidade','Especialidade'],['tecnico','Técnico'],['tipo','Tipo'],['setor','Setor'],['criticidade','Criticidade']];
 
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
 function copy(text,msg){navigator.clipboard.writeText(text).then(()=>toast(msg||'Copiado. Cole no Excel.'),()=>toast('Não foi possível copiar neste aparelho.'))}
@@ -366,11 +439,11 @@ function filtered(skipFila){
   const de = F.de ? new Date(F.de+'T00:00') : null, ate = F.ate ? new Date(F.ate+'T23:59') : null, q = F.q.toUpperCase();
   return data.filter(o => o.ok && FL.every(([k]) => !F[k] || (skipFila && k==='fila') || (k==='tecnico' ? o.tecnicos.includes(F[k]) : o[k]===F[k]))
     && (!de || (o.pedido && o.pedido>=de)) && (!ate || (o.pedido && o.pedido<=ate))
-    && (!q || (o.os+' '+o.desc+' '+o.localidade+' '+o.servico).toUpperCase().includes(q)));
+    && (!q || (o.os+' '+o.desc+' '+o.localidade+' '+o.servico+' '+(o.obs||'')).toUpperCase().includes(q)));
 }
 
 function drawFilters(){
-  const opts = k => Core.count(data.filter(o=>o.ok), o => k==='tecnico' ? o.tecnico : o[k]).map(([v,n]) => `<option value="${esc(v)}"${F[k]===v?' selected':''}>${esc(v)} (${n})</option>`).join('');
+  const opts = k => Core.count(data.filter(o=>o.ok && (k!=='pendente' || o.pendente)), o => k==='tecnico' ? o.tecnico : o[k]).map(([v,n]) => `<option value="${esc(v)}"${F[k]===v?' selected':''}>${esc(v)} (${n})</option>`).join('');
   $('#filters').innerHTML = FL.map(([k,l]) => `<label>${l}<select id="f-${k}"><option value="">Todas</option>${opts(k)}</select></label>`).join('')
     + `<label>Pedido de<input type="date" id="f-de" value="${F.de}"></label><label>Pedido até<input type="date" id="f-ate" value="${F.ate}"></label>`
     + `<label>Buscar<input type="search" id="f-q" value="${esc(F.q)}" placeholder="Nº, descrição, local"></label>`
@@ -392,15 +465,21 @@ function wireBars(root){root.querySelectorAll('.bar[data-k]').forEach(b => {if(b
 function osTable(list){
   const rows = list.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
   return `<div class="row"><h3>Ordens de serviço (${nf(rows.length)})</h3><button id="cpList">Copiar lista para o Excel</button></div>
-  <div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor</th><th>Descrição</th><th>Técnico</th><th class="num">Espera</th><th class="num">Idade</th></tr></thead><tbody>
-  ${rows.slice(0,shown).map(o=>`<tr><td><b>${o.os}</b></td><td>${fd(o.pedido)}</td><td><span class="tag${o.backlog?' bk':''}">${o.fila}</span></td><td>${esc(o.especialidade)}</td><td>${esc(o.setor)}</td><td>${esc(o.desc)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td class="num">${fh(o.espera)}</td><td class="num">${o.pedido&&!o.termino?nf(Math.max(0,(cut.getTime()+864e5-o.pedido)/864e5))+' d':''}</td></tr>`).join('')}
+  <div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor</th><th>Descrição</th><th>Observação</th><th>Pendente de</th><th>Técnico</th><th class="num">Espera</th><th class="num">Idade</th></tr></thead><tbody>
+  ${rows.slice(0,shown).map(o=>`<tr><td><b>${o.os}</b></td><td>${fd(o.pedido)}</td><td><span class="tag${o.backlog?' bk':''}">${o.fila}</span></td><td>${esc(o.especialidade)}</td><td>${esc(o.setor)}</td><td>${esc(o.desc)}</td><td>${esc(o.obs||'')}</td><td>${o.pendente?`<b>${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}`:''}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td class="num">${fh(o.espera)}</td><td class="num">${o.pedido&&!o.termino?nf(Math.max(0,(cut.getTime()+864e5-o.pedido)/864e5))+' d':''}</td></tr>`).join('')}
   </tbody></table></div>${rows.length>shown?`<p><button id="more">Mostrar mais ${Math.min(100,rows.length-shown)}</button></p>`:''}`;
 }
 function tsv(list){
-  const h=['OS','Descrição','Fila','Tipo','Especialidade','Criticidade','Solicitante','Setor','Localidade','Pedido','Término','Serviço','Técnico','Início atend.','Fim atend.','Espera (h)','Execução (h)','Total (h)','Inconsistência'];
-  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),nf(o.espera,1),nf(o.horas,1),nf(o.total,1),o.issues.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
+  const h=['OS','Descrição','Observações','Pendente de','Encaminhado em','Parado (dias)','Fila','Tipo','Especialidade','Criticidade','Solicitante','Setor','Localidade','Pedido','Término','Serviço','Técnico','Início atend.','Fim atend.','Espera (h)','Execução (h)','Total (h)','Inconsistência'];
+  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.obs||'',o.pendente||'',o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'',o.parado??'',o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),nf(o.espera,1),nf(o.horas,1),nf(o.total,1),o.issues.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
 }
 
+function pendCard(L){
+  const P = L.filter(o=>o.pendente), g = {};
+  P.forEach(o => { const r = g[o.pendente] = g[o.pendente] || {n:0, d:[]}; r.n++; if (o.parado!=null) r.d.push(o.parado); });
+  const rows = Object.entries(g).sort((a,b)=>b[1].n-a[1].n), mx = Math.max(1,...rows.map(r=>r[1].n));
+  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc" data-k="pendente" data-v="${esc(k)}"><span class="n">${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque para filtrar.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
+}
 function blStats(list, c){
   const bl = Core.backlogAt(list, c), terc = Core.terceirosAt(list, c);
   const by = f => bl.filter(o=>o.fila===f).length;
@@ -428,6 +507,7 @@ function render(){
     <div class="kpi"><span>Homem-hora lançado</span><b>${nf(hh)} h</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
   </div>
   <div class="grid2">
+    <div class="card"><h3>Pendências por responsável</h3>${pendCard(L)}</div>
     <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
     <div class="card"><h3>OS por especialidade</h3>${bars(L,'especialidade',{f:'especialidade'})}</div>
     <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
@@ -570,10 +650,13 @@ $('#clear').onclick = () => { raw=[]; empties=new Set(); flog={}; try{localStora
 
 $('#cfgGen').value = cfg.genericos.join('\n');
 $('#cfgMax').value = cfg.maxExec;
+$('#cfgRegras').value = (cfg.regrasObs || Core.REGRAS_PADRAO).map(([r,ks])=>r+' = '+ks.join('; ')).join('\n');
 $('#cfgDepara').value = Object.entries(cfg.depara).map(([a,b])=>a+' = '+b).join('\n');
 $('#cfgSave').onclick = () => {
   cfg.genericos = $('#cfgGen').value.split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);
   cfg.maxExec = Math.max(1, +$('#cfgMax').value || 12);
+  const rg = $('#cfgRegras').value.split('\n').map(l=>l.split('=')).filter(x=>x.length>1&&x[0].trim()).map(([r,k])=>[r.trim(), k.split(';').map(t=>t.trim()).filter(Boolean)]);
+  cfg.regrasObs = rg.length ? rg : null;
   cfg.depara = {}; $('#cfgDepara').value.split('\n').forEach(l => {const [a,b]=l.split('='); if(a&&b) cfg.depara[a.trim().toUpperCase()]=b.trim().toUpperCase()});
   store.set('gos_cfg', cfg); rebuild(); toast('Configurações salvas.');
 };
