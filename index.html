@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de OS HEV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;700&family=Red+Hat+Text:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE work: painel de manutenção para o planejador e o gerente operacional
+   IDEA o quadro de controle da oficina: faixa azul de comando, filas como prateleiras
+   PICTURE quadro de backlog grande + barras por fila e especialidade, lista de OS embaixo
+   COLOUR azul oxford #0b1f4b na faixa, branco nos painéis, magenta #e0115f para backlog
+   TYPE Red Hat Display 700 + Red Hat Text
+   LAYOUT laptop: faixa de comando, filtros em linha, números, gráficos em 2 colunas, lista; celular: tudo empilhado */
+:root{color-scheme:light dark;--bg:light-dark(#f4f6fb,#070f26);--panel:light-dark(#fff,#0f1c3d);--ink:light-dark(#0b1630,#e8ecf6);--muted:light-dark(#5b6683,#9aa6c4);--line:light-dark(#dfe4ef,#22305a);--band:#0b1f4b;--accent:#e0115f;--blue:light-dark(#2347c5,#7d9bff);--soft:light-dark(#e9edf8,#18264d);--warn:light-dark(#b35a00,#ffb066)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:72px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Red Hat Text",system-ui,sans-serif;overflow-x:clip}
+h1,h2,h3{font-family:"Red Hat Display",system-ui,sans-serif;letter-spacing:-.02em;line-height:1.1;margin:0}
+h1{font-size:clamp(28px,5vw,44px)}
+h2{font-size:22px;margin-bottom:12px}
+h3{font-size:16px;margin-bottom:10px}
+.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
+.top{background:var(--band);color:#fff}
+.top p{color:#c9d3ee;margin:6px 0 0;max-width:62ch}
+.cmd{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center}
+button,.btn{font:600 15px/1 "Red Hat Text",sans-serif;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.prim{background:var(--accent);border-color:var(--accent);color:#fff}
+.top .ghost{background:transparent;color:#fff;border-color:#40558f}
+label.btn{display:inline-flex;align-items:center}
+.pick{position:relative;overflow:hidden}
+.pick input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px}
+.status{color:#c9d3ee;font-size:14px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);padding:0 max(4vw,16px);position:sticky;top:0;z-index:5}
+nav.tabs a{flex:none;padding:14px 12px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:3px solid transparent}
+nav.tabs a.on{color:var(--ink);border-color:var(--accent)}
+.fbox{margin-bottom:18px}.fbox summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px}
+.filters label{font-size:13px;color:var(--muted);display:grid;gap:4px}
+select,input[type=date],input[type=search],textarea{font:16px "Red Hat Text",sans-serif;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;width:100%}
+textarea{min-height:120px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px;margin-bottom:18px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi b{display:block;font:700 clamp(26px,4vw,34px)/1.1 "Red Hat Display",sans-serif;white-space:nowrap}
+.kpi span{font-size:14px;color:var(--muted)}
+.kpi.hot{background:var(--band);color:#fff;border-color:var(--band)}
+.kpi.hot span{color:#c9d3ee}
+.kpi.hot b{color:#ff5c96}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;margin-bottom:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+.bars{display:grid;gap:7px}
+.bar{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px;cursor:pointer;background:none;border:0;padding:0;min-height:28px;text-align:left;color:var(--ink);font-weight:400}
+.bar .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .t{height:16px;background:var(--soft);border-radius:4px;overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--blue);border-radius:4px}
+.bar.acc .t i{background:var(--accent)}
+.bar .v{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--soft);font-size:12px;white-space:nowrap}
+.tag.bk{background:color-mix(in srgb,var(--accent) 18%,transparent)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.muted{color:var(--muted);font-size:14px}
+.empty{max-width:640px}
+.empty ol{padding-left:20px}
+.view{display:none}.view.on{display:block}
+.note{font-size:13px;color:var(--muted);margin-top:8px}
+.warn{color:var(--warn)}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--band);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:10px;border-bottom:1px solid var(--line)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 0;text-align:right}.stack td::before{content:attr(data-l);color:var(--muted);text-align:left}.stack td:empty{display:none}.bar{grid-template-columns:minmax(0,7.5em) minmax(0,1fr) auto}}
+</style>
+</head>
+<body>
+<header class="band top">
+  <h1>Gerador de OS – HEV</h1>
+  <p>Escolha os CSVs do relatório R_ORDEM_SERVICO do MV (um por fila, todos de uma vez). Os arquivos são lidos só no seu aparelho.</p>
+  <div class="cmd">
+    <label class="btn prim pick">Escolher CSVs do MV<input type="file" id="files" multiple accept=".csv,text/csv,text/comma-separated-values,text/plain,application/vnd.ms-excel,application/octet-stream"></label>
+    <button class="ghost" id="demo">Dados de exemplo</button>
+    <button class="ghost" id="clear">Limpar</button>
+    <span class="status" id="status">Nenhum arquivo carregado.</span>
+  </div>
+</header>
+<nav class="tabs" id="tabs">
+  <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#config">Config</a>
+</nav>
+<main class="band">
+  <section id="emptyState" class="empty">
+    <h2>Como usar</h2>
+    <ol>
+      <li>No MV, puxe o R_ORDEM_SERVICO de cada fila: aberta, agendar, aguardando material, externo, não atendida, cancelada e concluída.</li>
+      <li>Toque em <b>Escolher CSVs do MV</b> e selecione todos de uma vez. Pode adicionar mais arquivos depois (ex.: o backlog).</li>
+      <li>Para o backlog completo, puxe as filas pendentes sem filtro de mês.</li>
+    </ol>
+    <p class="muted">Quer só ver como fica? Toque em <b>Dados de exemplo</b>.</p>
+  </section>
+  <div id="app" hidden>
+    <details class="fbox" id="fbox"><summary id="fsum">Filtros</summary><div class="filters" id="filters"></div></details>
+    <section class="view" id="v-dashboard"></section>
+    <section class="view" id="v-backlog"></section>
+    <section class="view" id="v-tempos"></section>
+    <section class="view" id="v-equipe"></section>
+    <section class="view" id="v-setores"></section>
+    <section class="view" id="v-inconsistencias"></section>
+  </div>
+  <section class="view" id="v-config">
+    <h2>Configurações</h2>
+    <div class="grid2">
+      <div class="card"><h3>Nomes genéricos</h3><p class="muted">Lançamentos no nome destas pessoas aparecem como "Walter / lançamentos genéricos". Um nome (ou começo de nome) por linha.</p><textarea id="cfgGen"></textarea></div>
+      <div class="card"><h3>De-para de técnicos</h3><p class="muted">Corrige nomes. Uma linha por pessoa: NOME NO MV = NOME CORRETO</p><textarea id="cfgDepara"></textarea></div>
+    </div>
+    <div class="card" style="margin-bottom:16px"><h3>Limite de horas por execução</h3><p class="muted">Execução acima deste limite é tratada como erro de lançamento e a OS vai para "Para arrumar".</p><label class="muted">Horas <input type="number" id="cfgMax" min="1" max="72" step="1" style="font-size:16px;min-height:44px;width:7em"></label></div>
+    <button class="prim" id="cfgSave">Salvar e recalcular</button>
+    <p class="note">As configurações ficam guardadas só neste navegador.</p>
+  </section>
+</main>
+<div id="toast"></div>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+<script>/* ===== Núcleo: leitura dos CSVs do MV (R_ORDEM_SERVICO) e cálculos ===== */
+var Core = (function () {
+  function decode(buf) {
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+    catch (e) { return new TextDecoder('windows-1252').decode(buf); }
+  }
+
+  function parseCSV(text) {
+    var rows = [], row = [], cell = '', q = false, i = 0, c, n = text.length;
+    var sep = ',';
+    var firstLine = text.slice(0, 2000).split('\n')[0];
+    if ((firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length) sep = ';';
+    for (; i < n; i++) {
+      c = text[i];
+      if (q) {
+        if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; }
+        else cell += c;
+      } else if (c === '"') q = true;
+      else if (c === sep) { row.push(cell); cell = ''; }
+      else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else if (c !== '\r') cell += c;
+    }
+    if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+    return rows;
+  }
+
+  var LABELS = {
+    'situação': 'situacao', 'situacao': 'situacao', 'tipo': 'tipo', 'especialidade': 'especialidade',
+    'solicitante': 'solicitante', 'data pedido': 'pedido', 'data término': 'termino', 'data termino': 'termino',
+    'setor': 'setor', 'localidade': 'localidade', 'bem': 'bem', 'nr. do patrimônio': 'patrimonio',
+    'marca': 'marca', 'modelo': 'modelo', 'série': 'serie', 'serie': 'serie', 'observações': 'obs',
+    'observacoes': 'obs', 'prioridade': 'criticidade', 'criticidade': 'criticidade'
+  };
+  var RX_DATE = /^(\d{2})\/(\d{2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})/;
+
+  function toDate(s) {
+    var m = RX_DATE.exec((s || '').trim());
+    if (!m) return null;
+    var y = +m[3]; if (y < 100) y += 2000;
+    return new Date(y, +m[2] - 1, +m[1], +m[4], +m[5]);
+  }
+  function t(s) { return (s || '').replace(/\s+/g, ' ').trim(); }
+
+  var FILAS = [
+    ['aberta', /abert/], ['agendar', /agend/], ['aguardando material', /aguard|material/],
+    ['conserto externo', /extern/], ['não atendida', /n[aã]o.?atend|nao_atend/],
+    ['cancelada', /cancel/], ['concluída', /conclu/]
+  ];
+  function filaFrom(s) {
+    s = (s || '').toLowerCase();
+    if (/n[aã]o.?atend/.test(s)) return 'não atendida';
+    for (var i = 0; i < FILAS.length; i++) if (FILAS[i][1].test(s)) return FILAS[i][0];
+    return '';
+  }
+
+  function parseMV(rows, fileName) {
+    var out = [], cur = null, mode = '', pendingFim = null;
+    function close() { if (cur) out.push(cur); cur = null; }
+    for (var r = 0; r < rows.length; r++) {
+      var row = rows[r], first = t(row[0]);
+      if (/^Ordem de Servi[çc]o Relacionadas/i.test(first)) { mode = 'rel'; continue; }
+      if (/^Ordem de Servi[çc]o$/i.test(first)) { close(); cur = { os: '', desc: '', exec: [], file: fileName }; mode = 'head'; pendingFim = null; continue; }
+      if (!cur) continue;
+      if (mode === 'head' && !cur.os) {
+        for (var k = 0; k < row.length; k++) {
+          var v = t(row[k]);
+          if (!cur.os && /^\d{4,7}$/.test(v)) { cur.os = v; continue; }
+          if (cur.os && v) { cur.desc = v; break; }
+        }
+        if (cur.os) mode = 'fields';
+        continue;
+      }
+      if (/^Servi[çc]o$/i.test(first)) { mode = 'exec'; continue; }
+      if (mode === 'fields') {
+        var lab = null;
+        for (var j = 0; j < row.length; j++) {
+          var cv = t(row[j]); if (!cv) continue;
+          var key = LABELS[cv.toLowerCase()];
+          if (key) { lab = key; continue; }
+          if (lab && cur[lab] === undefined) { cur[lab] = cv; lab = null; }
+        }
+        continue;
+      }
+      if (mode === 'exec') {
+        var vals = row.map(t).filter(function (x) { return x && x !== ':'; });
+        if (!vals.length) continue;
+        var dates = vals.filter(function (x) { return RX_DATE.test(x); });
+        if (!first) { if (dates.length) pendingFim = dates[0]; continue; }
+        var func = '';
+        for (var z = 1; z < vals.length; z++) if (!RX_DATE.test(vals[z]) && !/^\d+:\d+$/.test(vals[z])) { func = vals[z]; break; }
+        var ini = dates[0] || null, fim = dates[1] || pendingFim;
+        cur.exec.push({ servico: first, func: func, ini: toDate(ini), fim: toDate(fim) });
+        pendingFim = null;
+      }
+    }
+    close();
+    var filaArq = filaFrom(fileName);
+    return out.filter(function (o) { return o.os; }).map(function (o) {
+      o.fila = filaFrom(o.situacao) || filaArq || 'sem fila';
+      o.pedido = toDate(o.pedido); o.termino = toDate(o.termino);
+      o.especialidade = o.especialidade || 'Sem especialidade';
+      o.tipo = o.tipo || 'Sem tipo';
+      o.setor = o.setor || 'Sem setor';
+      o.criticidade = o.criticidade || 'Não informada';
+      return o;
+    });
+  }
+
+  var RANK = { 'concluída': 3, 'cancelada': 3 };
+  function merge(list) {
+    var map = {};
+    list.forEach(function (o) {
+      var a = map[o.os];
+      if (!a || (RANK[o.fila] || 0) >= (RANK[a.fila] || 0)) map[o.os] = o;
+    });
+    return Object.keys(map).map(function (k) { return map[k]; });
+  }
+
+  var PEND = ['aberta', 'agendar', 'não atendida'];
+  var TERC = ['aguardando material', 'conserto externo'];
+  var H = 3600000;
+
+  function enrich(list, cfg) {
+    var gen = (cfg.genericos || []).map(function (s) { return s.toUpperCase(); });
+    var depara = cfg.depara || {};
+    list.forEach(function (o) {
+      o.issues = [];
+      var e = o.exec[0];
+      o.tecnicos = o.exec.map(function (x) {
+        var n = (x.func || '').toUpperCase();
+        if (depara[n]) n = depara[n];
+        if (gen.some(function (g) { return g && n.indexOf(g) === 0; })) n = 'WALTER / LANÇAMENTOS GENÉRICOS';
+        return n || 'SEM FUNCIONÁRIO';
+      });
+      o.tecnico = o.tecnicos[0] || 'SEM FUNCIONÁRIO';
+      o.servico = e ? e.servico : '';
+      o.inicio = e && e.ini; o.fim = e && e.fim;
+      o.espera = (o.inicio && o.pedido) ? (o.inicio - o.pedido) / H : null;
+      o.horas = 0;
+      o.exec.forEach(function (x) { if (x.ini && x.fim && x.fim >= x.ini) o.horas += (x.fim - x.ini) / H; });
+      o.total = (o.termino && o.pedido) ? (o.termino - o.pedido) / H : null;
+      if (!o.pedido) o.issues.push('Sem data do pedido');
+      if (o.espera !== null && o.espera < 0) { o.issues.push('Atendimento antes da abertura'); o.espera = null; }
+      if (o.total !== null && o.total < 0) { o.issues.push('Término antes da abertura'); o.total = null; }
+      var maxH = cfg.maxExec || 12, agora = cfg.agora || new Date();
+      o.exec.forEach(function (x) {
+        if (x.ini && x.fim && x.fim < x.ini) o.issues.push('Fim da execução antes do início');
+        if (x.ini && x.fim && (x.fim - x.ini) / H > maxH) o.issues.push('Execução de ' + Math.round((x.fim - x.ini) / H) + ' h (acima de ' + maxH + ' h)');
+        if (x.ini && !x.fim) o.issues.push('Execução sem hora de fim');
+        if ((x.ini && x.ini > agora) || (x.fim && x.fim > agora)) o.issues.push('Execução com data futura');
+      });
+      if ((o.pedido && o.pedido > agora) || (o.termino && o.termino > agora)) o.issues.push('Data futura no pedido ou término');
+      if (o.termino && o.inicio && o.termino < o.inicio) o.issues.push('Término antes do início do atendimento');
+      if (o.fila === 'concluída' && !o.exec.length) o.issues.push('Concluída sem execução lançada');
+      if (o.especialidade === 'Sem especialidade' && o.fila !== 'aberta') o.issues.push('Sem especialidade');
+      o.ok = o.issues.length === 0;
+      o.backlog = PEND.indexOf(o.fila) >= 0;
+      o.terceiros = TERC.indexOf(o.fila) >= 0;
+    });
+    return list;
+  }
+
+  function median(a) { if (!a.length) return null; a = a.slice().sort(function (x, y) { return x - y; }); var m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+  function mean(a) { return a.length ? a.reduce(function (s, x) { return s + x; }, 0) / a.length : null; }
+  function count(list, key) { var m = {}; list.forEach(function (o) { var k = typeof key === 'function' ? key(o) : o[key]; m[k] = (m[k] || 0) + 1; }); return Object.keys(m).map(function (k) { return [k, m[k]]; }).sort(function (a, b) { return b[1] - a[1]; }); }
+
+  // Backlog numa data de corte: aberto até a data e ainda pendente para a equipe
+  function backlogAt(list, cut) {
+    var end = new Date(cut.getFullYear(), cut.getMonth(), cut.getDate(), 23, 59, 59);
+    return list.filter(function (o) {
+      if (!o.pedido || o.pedido > end) return false;
+      if (o.backlog) return true;
+      if ((o.fila === 'concluída' || o.fila === 'cancelada') && o.termino && o.termino > end) return true;
+      return false;
+    });
+  }
+  function terceirosAt(list, cut) {
+    var end = new Date(cut.getFullYear(), cut.getMonth(), cut.getDate(), 23, 59, 59);
+    return list.filter(function (o) { return o.terceiros && o.pedido && o.pedido <= end; });
+  }
+  function ageBand(d) { return d <= 7 ? '0–7 dias' : d <= 15 ? '8–15 dias' : d <= 30 ? '16–30 dias' : 'Mais de 30 dias'; }
+
+  return { decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, PEND: PEND, TERC: TERC };
+})();
+
+</script>
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const nf = (x, d=0) => x == null || isNaN(x) ? '–' : x.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
+const fh = h => h == null ? '–' : h < 48 ? nf(h,1) + ' h' : nf(h/24,1) + ' dias';
+const fd = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
+const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+let raw = [], data = [], cut = null, shown = 50, demo = false;
+let cfg = Object.assign({genericos:['WALTER ANDR'], depara:{}, maxExec:12}, store.get('gos_cfg', {}));
+const F = {fila:'', especialidade:'', tecnico:'', tipo:'', setor:'', criticidade:'', de:'', ate:'', q:''};
+const FL = [['fila','Fila'],['especialidade','Especialidade'],['tecnico','Técnico'],['tipo','Tipo'],['setor','Setor'],['criticidade','Criticidade']];
+
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
+function copy(text,msg){navigator.clipboard.writeText(text).then(()=>toast(msg||'Copiado. Cole no Excel.'),()=>toast('Não foi possível copiar neste aparelho.'))}
+
+function rebuild(){
+  data = Core.enrich(Core.merge(raw), cfg);
+  const dates = data.map(o => o.pedido).filter(Boolean);
+  if (!cut && dates.length) { const mx = new Date(Math.max(...dates)); cut = new Date(mx.getFullYear(), mx.getMonth()+1, 0); }
+  const files = [...new Set(raw.map(o=>o.file))];
+  const bad = data.filter(o=>!o.ok).length;
+  $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s) · ${nf(data.length-bad)} entraram · ${nf(bad)} fora por erro${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
+  $('#emptyState').hidden = !!data.length; $('#app').hidden = !data.length;
+  drawFilters(); render();
+}
+
+function filtered(skipFila){
+  const de = F.de ? new Date(F.de+'T00:00') : null, ate = F.ate ? new Date(F.ate+'T23:59') : null, q = F.q.toUpperCase();
+  return data.filter(o => o.ok && FL.every(([k]) => !F[k] || (skipFila && k==='fila') || (k==='tecnico' ? o.tecnicos.includes(F[k]) : o[k]===F[k]))
+    && (!de || (o.pedido && o.pedido>=de)) && (!ate || (o.pedido && o.pedido<=ate))
+    && (!q || (o.os+' '+o.desc+' '+o.localidade+' '+o.servico).toUpperCase().includes(q)));
+}
+
+function drawFilters(){
+  const opts = k => Core.count(data.filter(o=>o.ok), o => k==='tecnico' ? o.tecnico : o[k]).map(([v,n]) => `<option value="${esc(v)}"${F[k]===v?' selected':''}>${esc(v)} (${n})</option>`).join('');
+  $('#filters').innerHTML = FL.map(([k,l]) => `<label>${l}<select id="f-${k}"><option value="">Todas</option>${opts(k)}</select></label>`).join('')
+    + `<label>Pedido de<input type="date" id="f-de" value="${F.de}"></label><label>Pedido até<input type="date" id="f-ate" value="${F.ate}"></label>`
+    + `<label>Buscar<input type="search" id="f-q" value="${esc(F.q)}" placeholder="Nº, descrição, local"></label>`
+    + `<label>&nbsp;<button id="f-reset">Limpar filtros</button></label>`;
+  FL.forEach(([k]) => $('#f-'+k).onchange = e => {F[k]=e.target.value; shown=50; render()});
+  $('#f-de').onchange = e => {F.de=e.target.value; render()}; $('#f-ate').onchange = e => {F.ate=e.target.value; render()};
+  $('#f-q').oninput = e => {F.q=e.target.value; shown=50; render()};
+  $('#f-reset').onclick = () => {Object.keys(F).forEach(k=>F[k]=''); shown=50; drawFilters(); render()};
+}
+function updSum(){const n=Object.values(F).filter(Boolean).length;$('#fsum').textContent=n?`Filtros (${n} ativo${n>1?'s':''})`:'Filtros'}
+function setF(k,v){F[k]=F[k]===v?'':v; shown=50; drawFilters(); render(); toast(F[k]?`Filtro: ${v}`:'Filtro removido')}
+
+function bars(list, key, opt={}){
+  const rows = Core.count(list, key).slice(0, opt.top || 12), mx = Math.max(1, ...rows.map(r=>r[1]));
+  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}" data-k="${opt.f||''}" data-v="${esc(n)}"><span class="n" title="${esc(n)}">${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
+}
+function wireBars(root){root.querySelectorAll('.bar[data-k]').forEach(b => {if(b.dataset.k) b.onclick = () => setF(b.dataset.k, b.dataset.v)})}
+
+function osTable(list){
+  const rows = list.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
+  return `<div class="row"><h3>Ordens de serviço (${nf(rows.length)})</h3><button id="cpList">Copiar lista para o Excel</button></div>
+  <div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor</th><th>Descrição</th><th>Técnico</th><th class="num">Espera</th><th class="num">Idade</th></tr></thead><tbody>
+  ${rows.slice(0,shown).map(o=>`<tr><td><b>${o.os}</b></td><td>${fd(o.pedido)}</td><td><span class="tag${o.backlog?' bk':''}">${o.fila}</span></td><td>${esc(o.especialidade)}</td><td>${esc(o.setor)}</td><td>${esc(o.desc)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td class="num">${fh(o.espera)}</td><td class="num">${o.pedido&&!o.termino?nf((cut-o.pedido)/864e5)+' d':''}</td></tr>`).join('')}
+  </tbody></table></div>${rows.length>shown?`<p><button id="more">Mostrar mais ${Math.min(100,rows.length-shown)}</button></p>`:''}`;
+}
+function tsv(list){
+  const h=['OS','Descrição','Fila','Tipo','Especialidade','Criticidade','Solicitante','Setor','Localidade','Pedido','Término','Serviço','Técnico','Início atend.','Fim atend.','Espera (h)','Execução (h)','Total (h)','Inconsistência'];
+  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),nf(o.espera,1),nf(o.horas,1),nf(o.total,1),o.issues.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
+}
+
+function blStats(list, c){
+  const bl = Core.backlogAt(list, c), terc = Core.terceirosAt(list, c);
+  const by = f => bl.filter(o=>o.fila===f).length;
+  return {bl, terc, aberta:by('aberta'), nao:by('não atendida'), agendar:by('agendar'), depois:bl.filter(o=>!o.backlog).length};
+}
+function monthEnds(n){const out=[];for(let i=n-1;i>=0;i--)out.push(new Date(cut.getFullYear(),cut.getMonth()-i+1,0));return out}
+
+function render(){
+  if (!data.length) return;
+  updSum();
+  const L = filtered(), V = $('#v-dashboard');
+  const done = L.filter(o=>o.fila==='concluída').length;
+  const esp = L.map(o=>o.espera).filter(x=>x!=null), hh = L.reduce((s,o)=>s+o.horas,0);
+  const B = blStats(L, cut), prev = blStats(L, new Date(cut.getFullYear(), cut.getMonth(), 0));
+  const diff = B.bl.length - prev.bl.length, pm0 = new Date(cut.getFullYear(), cut.getMonth()-1, 1), pm1 = new Date(cut.getFullYear(), cut.getMonth(), 1);
+  const hasPrev = L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
+  const bad = data.filter(o=>!o.ok);
+  V.innerHTML = `
+  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length)}</b> entraram nos cálculos · <a href="#inconsistencias" class="${bad.length?'warn':''}"><b>${nf(bad.length)}</b> ficaram fora por erro de data/hora</a>${bad.length?` <span class="muted">(${Core.count(bad,o=>o.issues[0].replace(/\d+ h/,'X h')).map(([k,n])=>`${n} ${k.toLowerCase()}`).join(', ')})</span>`:''}</div>
+  <div class="kpis">
+    <div class="kpi hot"><span>Backlog em ${cut.toLocaleDateString('pt-BR')}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?'importe o mês anterior para comparar':diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
+    <div class="kpi"><span>Total de OS</span><b>${nf(L.length)}</b><span>${nf(done)} concluídas (${nf(L.length?done/L.length*100:0)}%)</span></div>
+    <div class="kpi"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
+    <div class="kpi"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
+    <div class="kpi"><span>Homem-hora lançado</span><b>${nf(hh)} h</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
+    <div class="card"><h3>OS por especialidade</h3>${bars(L,'especialidade',{f:'especialidade'})}</div>
+    <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
+    <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
+  </div>
+  <p class="note">Toque numa barra para filtrar por ela.</p>
+  <div class="card">${osTable(L)}</div>`;
+  wireBars(V);
+  $('#cpList').onclick = () => copy(tsv(L));
+  const m = $('#more'); if (m) m.onclick = () => {shown+=100; render()};
+  renderBacklog(L); renderTempos(L); renderEquipe(L); renderSetores(L); renderInc();
+}
+
+function renderBacklog(L){
+  const B = blStats(L, cut), V = $('#v-backlog');
+  const bands = ['0–7 dias','8–15 dias','16–30 dias','Mais de 30 dias'];
+  const age = o => Core.ageBand((cut - o.pedido)/864e5);
+  const filas = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
+  const rowsF = filas.map(([f,l]) => {const s=B.bl.filter(o=>o.fila===f);return `<tr><td>${l}</td>${bands.map(b=>`<td class="num">${nf(s.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(s.length)}</b></td></tr>`}).join('');
+  const dep = B.bl.filter(o=>!o.backlog);
+  const hist = monthEnds(6).map(d => [d, blStats(L,d).bl.length]), mx = Math.max(1,...hist.map(h=>h[1]));
+  V.innerHTML = `
+  <div class="row"><h2>Backlog mensal</h2><label class="muted">Data de corte <input type="date" id="cut" value="${iso(cut)}"></label></div>
+  <div class="kpis">
+    <div class="kpi hot"><span>Backlog total</span><b>${nf(B.bl.length)}</b><span>aberta + não atendida + agendar</span></div>
+    <div class="kpi"><span>Aguardando triagem</span><b>${nf(B.aberta)}</b><span>abertas</span></div>
+    <div class="kpi"><span>Triadas, aguardando execução</span><b>${nf(B.nao)}</b><span>não atendidas</span></div>
+    <div class="kpi"><span>Agendar</span><b>${nf(B.agendar)}</b><span>aguardando data</span></div>
+  </div>
+  <div class="card" style="margin-bottom:16px"><h3>Backlog por fila e idade</h3><div class="scroll"><table><thead><tr><th>Fila</th>${bands.map(b=>`<th class="num">${b}</th>`).join('')}<th class="num">Total</th></tr></thead><tbody>${rowsF}
+  ${dep.length?`<tr><td>Pendentes no corte, resolvidas depois</td>${bands.map(b=>`<td class="num">${nf(dep.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(dep.length)}</b></td></tr>`:''}
+  <tr><td><b>Total</b></td>${bands.map(b=>`<td class="num"><b>${nf(B.bl.filter(o=>age(o)===b).length)}</b></td>`).join('')}<td class="num"><b>${nf(B.bl.length)}</b></td></tr></tbody></table></div></div>
+  <div class="grid2">
+    <div class="card"><h3>Backlog por especialidade</h3>${bars(B.bl,'especialidade',{acc:1})}</div>
+    <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v])=>`<div class="bar acc"><span class="n">${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></div>`).join('')}</div><p class="note">Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
+    <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
+  </div>
+  <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
+  $('#cut').onchange = e => {if(e.target.value){cut=new Date(e.target.value+'T00:00');render()}};
+  const txt = `Backlog da manutenção em ${cut.toLocaleDateString('pt-BR')}\nBacklog total: ${B.bl.length}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
+  $('#cpBl').onclick = () => copy(txt, 'Resumo copiado.');
+  $('#cpBlList').onclick = () => copy(tsv(B.bl));
+}
+
+function groupTable(L, key, title){
+  const g = {}; L.forEach(o => (key==='tecnico'?o.tecnicos.slice(0,1):[o[key]]).forEach(k => (g[k]=g[k]||[]).push(o)));
+  const rows = Object.entries(g).map(([k,a]) => {const e=a.map(o=>o.espera).filter(x=>x!=null), x=a.filter(o=>o.horas>0).map(o=>o.horas), t=a.map(o=>o.total).filter(v=>v!=null);return [k,a.length,Core.median(e),Core.mean(e),Core.mean(x),Core.mean(t)]}).sort((a,b)=>b[1]-a[1]);
+  return `<div class="card" style="margin-bottom:16px"><h3>${title}</h3><div class="scroll"><table class="stack"><thead><tr><th></th><th class="num">OS</th><th class="num">Espera mediana</th><th class="num">Espera média</th><th class="num">Execução média</th><th class="num">Pedido → término</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r[0])}</b></td><td class="num">${nf(r[1])}</td><td class="num">${fh(r[2])}</td><td class="num">${fh(r[3])}</td><td class="num">${fh(r[4])}</td><td class="num">${fh(r[5])}</td></tr>`).join('')}</tbody></table></div></div>`;
+}
+function renderTempos(L){
+  $('#v-tempos').innerHTML = `<h2>Tempos de atendimento</h2><p class="muted">Espera = início do 1º atendimento − pedido. Execução = fim − início lançados no MV. OS inconsistentes ficam fora.</p>`
+    + groupTable(L,'especialidade','Por especialidade') + groupTable(L,'tipo','Por tipo de OS') + groupTable(L,'criticidade','Por criticidade');
+}
+function renderEquipe(L){
+  const g = {}; L.forEach(o => o.exec.forEach((x,i) => {const n=o.tecnicos[i]; const r=g[n]=g[n]||{os:new Set(),h:0,esp:{}}; r.os.add(o.os); if(x.ini&&x.fim&&x.fim>=x.ini) r.h+=(x.fim-x.ini)/36e5; r.esp[o.especialidade]=(r.esp[o.especialidade]||0)+1}));
+  const rows = Object.entries(g).sort((a,b)=>b[1].h-a[1].h);
+  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Horas = soma de fim − início das execuções lançadas. "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
+  <div class="card"><div class="row"><span></span><button id="cpEq">Copiar para o Excel</button></div><div class="scroll"><table class="stack"><thead><tr><th>Técnico</th><th class="num">OS</th><th class="num">Horas</th><th class="num">Média por OS</th><th>Especialidade principal</th></tr></thead><tbody>
+  ${rows.map(([n,r])=>`<tr><td><b>${esc(n)}</b></td><td class="num">${nf(r.os.size)}</td><td class="num">${nf(r.h,1)}</td><td class="num">${fh(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
+  $('#cpEq').onclick = () => copy(['Técnico\tOS\tHoras'].concat(rows.map(([n,r])=>`${n}\t${r.os.size}\t${nf(r.h,1)}`)).join('\n'));
+}
+function renderSetores(L){
+  const V = $('#v-setores');
+  V.innerHTML = `<h2>Setores, serviços e solicitantes</h2><div class="grid2">
+  <div class="card"><h3>Setores</h3>${bars(L,'setor',{f:'setor',top:15})}</div>
+  <div class="card"><h3>Localidades</h3>${bars(L.filter(o=>o.localidade),'localidade',{top:15})}</div>
+  <div class="card"><h3>Serviços mais executados</h3>${bars(L.filter(o=>o.servico),'servico',{top:15})}</div>
+  <div class="card"><h3>Solicitantes que mais abrem OS</h3>${bars(L.filter(o=>o.solicitante),'solicitante',{top:15})}</div></div>`;
+  wireBars(V);
+}
+function renderInc(){
+  const I = data.filter(o=>!o.ok);
+  $('#v-inconsistencias').innerHTML = `<h2>Para arrumar no MV (${nf(I.length)})</h2><p class="muted">Estas OS ficam fora de todos os relatórios e do dashboard até a data/hora ser corrigida no MV e o relatório ser importado de novo. Limite de execução: ${cfg.maxExec} h (muda em Config).</p><p><button id="cpInc">Copiar lista para o Excel</button></p>
+  <div class="card"><div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Problema</th><th>Pedido</th><th>Início atend.</th><th>Fim atend.</th><th>Término</th><th>Técnico</th><th>Fila</th><th>Descrição</th></tr></thead><tbody>
+  ${I.map(o=>`<tr><td><b>${o.os}</b></td><td class="warn">${esc(o.issues.join('; '))}</td><td>${fd(o.pedido)}</td><td>${fd(o.inicio)}</td><td>${fd(o.fim)}</td><td>${fd(o.termino)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td>${o.fila}</td><td>${esc(o.desc)}</td></tr>`).join('') || '<tr><td colspan="9">Nenhuma inconsistência.</td></tr>'}</tbody></table></div></div>`;
+  const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
+}
+
+function route(){
+  const h = (location.hash||'#dashboard').slice(1);
+  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id==='v-'+h));
+  document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.hash==='#'+h));
+  $('#fbox').style.display = (h==='config'||h==='inconsistencias') ? 'none' : '';
+  if (!document.querySelector('.view.on')) $('#v-dashboard').classList.add('on');
+}
+
+let empties = new Set();
+async function readFiles(list){
+  for (const f of list) {
+    try { const txt = Core.decode(await f.arrayBuffer()); const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os); if(!os.length) empties.add(f.name); else empties.delete(f.name) }
+    catch(e){ toast(`Não consegui ler ${f.name}`) }
+  }
+  if (demo) { raw = raw.filter(o=>o.file!=='exemplo'); demo=false }
+  cut = null; rebuild();
+}
+$('#files').onchange = e => { readFiles([...e.target.files]); e.target.value=''; };
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => { e.preventDefault(); readFiles([...e.dataTransfer.files]); });
+$('#clear').onclick = () => { raw=[]; empties=new Set(); demo=false; cut=null; rebuild(); };
+
+$('#demo').onclick = () => {
+  let s = 7; const r = () => (s = s*16807 % 2147483647) / 2147483647, pick = a => a[Math.floor(r()*a.length)];
+  const esp = ['HIDRAULICA','HIDRAULICA','CIVIL','ELETRICA','MARCENARIA','CABISTA','PINTURA'], tipos=['CORRETIVA','CORRETIVA','CORRETIVA','PREVENTIVA','VISITA MULTI','PROATIVA'];
+  const set = ['UTI ADULTO','PRONTO SOCORRO ADULTO','U.I. 2º ANDAR','U.I. 5º ANDAR','CENTRO CIRURGICO','CME 3º ANDAR','HOTELARIA','FARMACIA CENTRAL','LABORATORIO'];
+  const tec = ['TÉCNICO A','TÉCNICO B','TÉCNICO C','TÉCNICO D','TÉCNICO E','WALTER ANDRÉ (EXEMPLO)'];
+  const filas = [['concluída',70],['não atendida',10],['aguardando material',7],['conserto externo',3],['agendar',4],['aberta',3],['cancelada',1]];
+  const pf = () => {let x=r()*98,a=0;for(const [f,w] of filas){a+=w;if(x<a)return f}return 'concluída'};
+  const base = new Date(); base.setDate(1); base.setHours(0,0,0,0);
+  raw = Array.from({length:420}, (_,i) => {
+    const ped = new Date(base.getTime() - r()*75*864e5), f = pf(), ini = new Date(ped.getTime() + (r()<.6? r()*20 : r()*200)*36e5), fim = new Date(ini.getTime() + (.2+r()*3)*36e5);
+    const ex = f==='aberta' || f==='agendar' ? [] : [{servico:'SERV MANUT '+pick(esp), func: pick(tec), ini, fim}];
+    return {os:String(300000+i), desc:'Exemplo de solicitação '+(i+1), exec:ex, file:'exemplo', fila:f, tipo:pick(tipos), especialidade: f==='aberta'?'Sem especialidade':pick(esp), setor:pick(set), localidade:'', solicitante:'S'+Math.floor(r()*40), pedido:ped, termino: f==='concluída'?new Date(fim.getTime()+r()*48*36e5):null, criticidade:'Não informada'};
+  });
+  cfg.genericos = cfg.genericos.includes('WALTER ANDR') ? cfg.genericos : cfg.genericos.concat('WALTER ANDR');
+  demo = true; cut = null; rebuild();
+};
+
+$('#cfgGen').value = cfg.genericos.join('\n');
+$('#cfgMax').value = cfg.maxExec;
+$('#cfgDepara').value = Object.entries(cfg.depara).map(([a,b])=>a+' = '+b).join('\n');
+$('#cfgSave').onclick = () => {
+  cfg.genericos = $('#cfgGen').value.split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);
+  cfg.maxExec = Math.max(1, +$('#cfgMax').value || 12);
+  cfg.depara = {}; $('#cfgDepara').value.split('\n').forEach(l => {const [a,b]=l.split('='); if(a&&b) cfg.depara[a.trim().toUpperCase()]=b.trim().toUpperCase()});
+  store.set('gos_cfg', cfg); rebuild(); toast('Configurações salvas.');
+};
+
+if (matchMedia('(min-width:601px)').matches) $('#fbox').open = true;
+window.addEventListener('hashchange', route); route(); rebuild();
+}
+</script>
+</body>
+</html>
