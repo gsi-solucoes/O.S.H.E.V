@@ -100,7 +100,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#config">Config</a>
 </nav>
 <main class="band">
-  <details class="card" id="filesBox" open hidden style="margin-bottom:18px"><summary id="filesSum" style="cursor:pointer;font-weight:600;min-height:32px">Arquivos carregados</summary><div class="scroll"><table><tbody id="filesList"></tbody></table></div><p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Para adicionar, toque em Escolher CSVs de novo: os que já estão aqui continuam (ficam guardados neste navegador até você tocar em Limpar). Arquivo repetido é ignorado.</p></details>
+  <details class="card" id="filesBox" hidden style="margin-bottom:18px"><summary id="filesSum" style="cursor:pointer;font-weight:600;min-height:32px">Arquivos carregados</summary><div class="scroll"><table><tbody id="filesList"></tbody></table></div><p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Para adicionar, toque em Escolher CSVs de novo: os que já estão aqui continuam (ficam guardados neste navegador até você tocar em Limpar). Arquivo repetido é ignorado.</p></details>
   <section id="emptyState" class="empty">
     <h2>Como usar</h2>
     <ol>
@@ -356,7 +356,8 @@ function drawFiles(){
   const ic = {ok:'✓', vazio:'⚠', erro:'✗'};
   const hrs = n => nf(data.filter(o=>o.file===n && o.ok).reduce((s,o)=>s+o.horas,0),1);
   const nok = L.filter(x=>x.st==='ok').length, ner = L.filter(x=>x.st==='erro').length;
-  $('#filesSum').textContent = `Arquivos carregados: ${L.length} · ${nok} com OS${ner?` · ${ner} com erro`:''}`;
+  if (ner) box.open = true;
+  $('#filesSum').textContent = `Arquivos carregados: ${L.length} · ${nok} com OS${ner?` · ${ner} com erro`:''} (toque para ver)`;
   $('#filesList').innerHTML = L.map(x=>`<tr class="f-${x.st}"><td class="ic">${ic[x.st]}</td><td><b>${esc(x.name)}</b><br><span class="muted">${x.st==='ok'?esc(x.filas)+' · '+hrs(x.name)+' h lançadas':esc(x.msg)} · ${nf(x.size/1024)} KB</span></td><td class="num">${nf(x.n)} OS</td></tr>`).join('');
 }
 function filtered(skipFila){
@@ -573,7 +574,7 @@ $('#cfgSave').onclick = () => {
 
 if (matchMedia('(min-width:601px)').matches) $('#fbox').open = true;
 loadState();
-window.addEventListener('hashchange', route); route(); rebuild();
+window.addEventListener('hashchange', () => { route(); const t = $('#tabs'); window.scrollTo({top: t.offsetTop, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'}); }); route(); rebuild();
 }
 </script>
 </body>
