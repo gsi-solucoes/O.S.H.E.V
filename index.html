@@ -64,6 +64,9 @@ textarea{min-height:120px}
 .bar .t i{display:block;height:100%;background:var(--blue);border-radius:4px}
 .bar.acc .t i{background:var(--accent)}
 .bar.open .n{font-weight:700}
+.chev{display:inline-block;width:1.2em;font-size:18px;line-height:1;text-align:center;color:var(--accent);font-weight:700;transition:transform .15s}
+.bar.open .chev,tr.eq.open .chev{transform:rotate(90deg)}
+@media(prefers-reduced-motion:reduce){.chev{transition:none}}
 .drill{display:grid;gap:8px;margin:2px 0 10px;padding:10px;border-left:3px solid var(--accent);background:var(--soft);border-radius:0 8px 8px 0;font-size:14px}
 .dr{display:grid;gap:2px;padding-bottom:8px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
 .dr:last-of-type{border-bottom:0}
@@ -492,7 +495,7 @@ function setF(k,v){F[k]=F[k]===v?'':v; shown=50; drawFilters(); render(); toast(
 let SETS = [], openDr = null;
 function bars(list, key, opt={}){
   const rows = Core.count(list, key).slice(0, opt.top || 12), mx = Math.max(1, ...rows.map(r=>r[1])), sid = SETS.push({list, key}) - 1;
-  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}" data-s="${sid}" data-k="${opt.f||''}" data-v="${esc(n)}" aria-expanded="false"><span class="n" title="${esc(n)}">${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
+  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}" data-s="${sid}" data-k="${opt.f||''}" data-v="${esc(n)}" aria-expanded="false"><span class="n" title="${esc(n)}"><span class="chev" aria-hidden="true">▸</span>${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
 }
 function miniDash(items){
   const grp = (t, f, top=8) => { const c = Core.count(items.filter(o => f(o)), f).slice(0, top); return c.length ? `<div class="mg"><span class="mt">${t}</span><div class="chips">${c.map(([k,n])=>`<span class="chip">${esc(k)}<b>${nf(n)}</b></span>`).join('')}</div></div>` : ''; };
@@ -548,7 +551,7 @@ function pendCard(L){
   P.forEach(o => { const r = g[o.pendente] = g[o.pendente] || {n:0, d:[]}; r.n++; if (o.parado!=null) r.d.push(o.parado); });
   const rows = Object.entries(g).sort((a,b)=>b[1].n-a[1].n), mx = Math.max(1,...rows.map(r=>r[1].n));
   const sid = SETS.push({list:P, key:'pendente'}) - 1;
-  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc" data-s="${sid}" data-k="pendente" data-v="${esc(k)}" aria-expanded="false"><span class="n">${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para filtrar e ver as OS; toque de novo para desfazer.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
+  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc" data-s="${sid}" data-k="pendente" data-v="${esc(k)}" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para filtrar e ver as OS; toque de novo para desfazer.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
 }
 function blStats(list, c){
   const bl = Core.backlogAt(list, c), terc = Core.terceirosAt(list, c);
@@ -642,9 +645,9 @@ function renderTempos(L){
 function renderEquipe(L){
   const g = {}; L.forEach(o => o.exec.forEach((x,i) => {const n=o.tecnicos[i]; const r=g[n]=g[n]||{os:new Set(),h:0,esp:{}}; r.os.add(o.os); let hh = 0; if(x.ini&&x.fim&&x.fim>=x.ini){ hh=(x.fim-x.ini)/36e5; if(hh>(cfg.maxExec||12)) hh=1; } else if(x.ini&&!x.fim&&o.fila==='concluída') hh=1; r.h+=hh; r.esp[o.especialidade]=(r.esp[o.especialidade]||0)+1}));
   const rows = Object.entries(g).sort((a,b)=>b[1].h-a[1].h);
-  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Toque no técnico para ver as OS dele; toque de novo para fechar. Horas = soma de fim − início das execuções lançadas (horário ajustado conta 1 h). "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
+  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Toque no técnico (▸) para ver as OS dele; toque de novo para fechar. Horas = soma de fim − início das execuções lançadas (horário ajustado conta 1 h). "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
   <div class="card"><div class="row"><span></span><button id="cpEq">Copiar para o Excel</button></div><div class="scroll"><table class="stack"><thead><tr><th>Técnico</th><th class="num">OS</th><th class="num">Horas</th><th class="num">Média por OS</th><th>Especialidade principal</th></tr></thead><tbody>
-  ${rows.map(([n,r])=>`<tr class="eq" data-t="${esc(n)}" tabindex="0" role="button" aria-expanded="false"><td><b>${esc(n)}</b> <span class="muted">▸ ver OS</span></td><td class="num">${nf(r.os.size)}</td><td class="num">${nf(r.h,1)}</td><td class="num">${fh(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
+  ${rows.map(([n,r])=>`<tr class="eq" data-t="${esc(n)}" tabindex="0" role="button" aria-expanded="false"><td><span class="chev" aria-hidden="true">▸</span><b>${esc(n)}</b></td><td class="num">${nf(r.os.size)}</td><td class="num">${nf(r.h,1)}</td><td class="num">${fh(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
   document.querySelectorAll('#v-equipe tr.eq').forEach(tr => { const tog = () => {
     const nx = tr.nextElementSibling;
     if (nx && nx.classList.contains('drtr')) { nx.remove(); tr.setAttribute('aria-expanded','false'); tr.classList.remove('open'); return; }
