@@ -81,19 +81,46 @@ Public Sub ImportarCSVs()
     Set gLog = New Collection
     Dim caminhos As Collection, cam As Variant
     Dim txt As String, nLidas As Long, st As String, msg As String
+    Dim wsCfg As Worksheet, rr As Long, vistos As Object, chave As String, nDup As Long
     Set caminhos = New Collection
-    For i = 1 To fd.SelectedItems.Count
-        If LCase$(Right$(fd.SelectedItems(i), 4)) = ".zip" Then
-            Application.StatusBar = "Abrindo .zip: " & NomeArquivo(CStr(fd.SelectedItems(i))) & "..."
-            DoEvents
-            ExtrairZip CStr(fd.SelectedItems(i)), caminhos
-        Else
-            caminhos.Add fd.SelectedItems(i)
+    Set vistos = CreateObject("Scripting.Dictionary")
+    Set wsCfg = ThisWorkbook.Worksheets(SH_CFG)
+    ' fontes = arquivos/zips escolhidos agora + (se adicionar) os que já estavam carregados
+    Dim fontes As Collection, fpath As Variant
+    Set fontes = New Collection
+    If wsCfg.Range("H4").Value <> "" Then
+        If MsgBox("Já existem arquivos carregados." & vbCrLf & vbCrLf & _
+            "Sim = ADICIONAR os novos aos que já estão" & vbCrLf & "Não = começar do zero", _
+            vbYesNo + vbQuestion, "Gerador de OS") = vbYes Then
+            rr = 4
+            Do While wsCfg.Cells(rr, 8).Value <> ""
+                If Dir(CStr(wsCfg.Cells(rr, 8).Value)) <> "" Then AddUnico fontes, CStr(wsCfg.Cells(rr, 8).Value)
+                rr = rr + 1
+            Loop
         End If
+    End If
+    For i = 1 To fd.SelectedItems.Count
+        AddUnico fontes, CStr(fd.SelectedItems(i))
     Next i
+    wsCfg.Range("H3").Value = "Arquivos carregados (não apague; use Importar para trocar)"
+    wsCfg.Range("H4:H1000").ClearContents
+    rr = 4
+    For Each fpath In fontes
+        wsCfg.Cells(rr, 8).Value = fpath: rr = rr + 1
+        If LCase$(Right$(fpath, 4)) = ".zip" Then
+            Application.StatusBar = "Abrindo .zip: " & NomeArquivo(CStr(fpath)) & "..."
+            DoEvents
+            ExtrairZip CStr(fpath), caminhos
+        Else
+            caminhos.Add CStr(fpath)
+        End If
+    Next fpath
     Dim kArq As Long
     For Each cam In caminhos
         kArq = kArq + 1
+        chave = LCase$(NomeArquivo(CStr(cam))) & "|" & FileLen(CStr(cam))
+        If vistos.Exists(chave) Then nDup = nDup + 1: GoTo Proximo
+        vistos(chave) = True
         Application.StatusBar = "Carregando " & Format(kArq / (caminhos.Count + 1), "0%") & " - lendo arquivo " & kArq & " de " & caminhos.Count & ": " & NomeArquivo(CStr(cam)) & " (" & Format(FileLen(CStr(cam)) / 1024, "0") & " KB)..."
         DoEvents
         txt = "": nLidas = 0: msg = ""
@@ -113,7 +140,9 @@ Public Sub ImportarCSVs()
         End If
         gLog.Add Array(NomeArquivo(CStr(cam)), st, nLidas, msg, FileLen(CStr(cam)))
         nArq = nArq + 1
+Proximo:
     Next cam
+    If nDup > 0 Then Application.StatusBar = nDup & " arquivo(s) repetido(s) ignorado(s).
 
     Application.StatusBar = "Carregando 95% - montando relatórios (" & recs.Count & " OS)..."
     DoEvents
@@ -130,6 +159,14 @@ Falha:
     Application.StatusBar = False
     Application.ScreenUpdating = True
     MsgBox "Erro ao importar: " & Err.Description, vbExclamation, "Gerador de OS"
+End Sub
+
+Private Sub AddUnico(c As Collection, ByVal v As String)
+    Dim x As Variant
+    For Each x In c
+        If LCase$(x) = LCase$(v) Then Exit Sub
+    Next x
+    c.Add v
 End Sub
 
 '------------------------------------------------------------ leitura do arquivo

@@ -100,7 +100,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#config">Config</a>
 </nav>
 <main class="band">
-  <details class="card" id="filesBox" open hidden style="margin-bottom:18px"><summary id="filesSum" style="cursor:pointer;font-weight:600;min-height:32px">Arquivos carregados</summary><div class="scroll"><table><tbody id="filesList"></tbody></table></div><p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Faltou algum arquivo? Toque em Escolher CSVs de novo e selecione só ele: os que já estão aqui continuam.</p></details>
+  <details class="card" id="filesBox" open hidden style="margin-bottom:18px"><summary id="filesSum" style="cursor:pointer;font-weight:600;min-height:32px">Arquivos carregados</summary><div class="scroll"><table><tbody id="filesList"></tbody></table></div><p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Para adicionar, toque em Escolher CSVs de novo: os que já estão aqui continuam (ficam guardados neste navegador até você tocar em Limpar). Arquivo repetido é ignorado.</p></details>
   <section id="emptyState" class="empty">
     <h2>Como usar</h2>
     <ol>
@@ -515,6 +515,17 @@ let empties = new Set(), flog = {};
 const tick = () => new Promise(r => setTimeout(r, 30));
 async function prog(txt, sub, frac){ $('#prog').hidden = false; $('#progTxt').textContent = txt; $('#progSub').textContent = sub || ''; $('#progBar').style.width = Math.round((frac||0)*100) + '%'; $('#progPct').textContent = Math.round((frac||0)*100) + '%'; await tick(); }
 function progEnd(){ $('#prog').hidden = true; }
+function saveState(){
+  try { localStorage.setItem('gos_dados', JSON.stringify({raw: raw.map(o => ({...o, pedido:o.pedido&&o.pedido.getTime(), termino:o.termino&&o.termino.getTime(), exec:o.exec.map(x=>({servico:x.servico,func:x.func,ini:x.ini&&x.ini.getTime(),fim:x.fim&&x.fim.getTime()}))})), flog, empties:[...empties]})) }
+  catch(e){ toast('Aviso: muitos dados para guardar no navegador; se a página recarregar, carregue de novo.') }
+}
+function loadState(){
+  try { const d = JSON.parse(localStorage.getItem('gos_dados')||'null'); if (!d) return;
+    const D = t => t ? new Date(t) : null;
+    raw = d.raw.map(o => ({...o, pedido:D(o.pedido), termino:D(o.termino), exec:o.exec.map(x=>({...x, ini:D(x.ini), fim:D(x.fim)}))}));
+    flog = d.flog || {}; empties = new Set(d.empties || []);
+  } catch(e){}
+}
 async function expandZips(list){
   const out = [];
   for (const f of list) {
@@ -530,9 +541,10 @@ async function readFiles(list){
   if (!list.length) return;
   await prog('Preparando arquivos...', `${list.length} selecionado(s)`, 0.02);
   list = await expandZips(list);
-  let k = 0;
+  let k = 0; const dups = [];
   for (const f of list) {
     k++; await prog(`Lendo arquivo ${k} de ${list.length}`, `${f.name} · ${nf(f.size/1024)} KB`, k/(list.length+1));
+    if (flog[f.name] && flog[f.name].size === f.size && flog[f.name].st !== 'erro') { dups.push(f.name); continue }
     try { const txt = Core.decode(await f.arrayBuffer()); const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os);
       if(!os.length) empties.add(f.name); else empties.delete(f.name);
       const looksMV = /Ordem de Servi/i.test(txt.slice(0,3000));
@@ -541,13 +553,13 @@ async function readFiles(list){
   }
   if (demo) { raw = raw.filter(o=>o.file!=='exemplo'); demo=false }
   await prog('Montando relatórios...', `${nf(raw.length)} OS lidas`, 0.95);
-  try { cut = null; rebuild(); } finally { progEnd(); }
-  toast(`Pronto: ${nf(data.length)} OS carregadas.`);
+  try { cut = null; rebuild(); saveState(); } finally { progEnd(); }
+  toast(dups.length ? `${dups.length} arquivo(s) já estavam carregados e foram ignorados. Total: ${nf(data.length)} OS.` : `Pronto: ${nf(data.length)} OS carregadas.`);
 }
 $('#files').onchange = e => { readFiles([...e.target.files]); e.target.value=''; };
 document.addEventListener('dragover', e => e.preventDefault());
 document.addEventListener('drop', e => { e.preventDefault(); readFiles([...e.dataTransfer.files]); });
-$('#clear').onclick = () => { raw=[]; empties=new Set(); flog={}; demo=false; cut=null; rebuild(); };
+$('#clear').onclick = () => { raw=[]; empties=new Set(); flog={}; try{localStorage.removeItem('gos_dados')}catch(e){} demo=false; cut=null; rebuild(); };
 
 $('#cfgGen').value = cfg.genericos.join('\n');
 $('#cfgMax').value = cfg.maxExec;
@@ -560,6 +572,7 @@ $('#cfgSave').onclick = () => {
 };
 
 if (matchMedia('(min-width:601px)').matches) $('#fbox').open = true;
+loadState();
 window.addEventListener('hashchange', route); route(); rebuild();
 }
 </script>
