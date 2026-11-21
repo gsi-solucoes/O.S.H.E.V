@@ -97,10 +97,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </div>
 </header>
 <nav class="tabs" id="tabs">
-  <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#config">Config</a>
+  <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
 </nav>
 <main class="band">
-  <details class="card" id="filesBox" hidden style="margin-bottom:18px"><summary id="filesSum" style="cursor:pointer;font-weight:600;min-height:32px">Arquivos carregados</summary><div class="scroll"><table><tbody id="filesList"></tbody></table></div><p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Para adicionar, toque em Escolher CSVs de novo: os que já estão aqui continuam (ficam guardados neste navegador até você tocar em Limpar). Arquivo repetido é ignorado.</p></details>
   <section id="emptyState" class="empty">
     <h2>Como usar</h2>
     <ol>
@@ -118,6 +117,11 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
     <section class="view" id="v-setores"></section>
     <section class="view" id="v-inconsistencias"></section>
   </div>
+  <section class="view" id="v-arquivos">
+    <h2 id="filesSum">Arquivos carregados</h2>
+    <div class="card"><div class="scroll"><table><tbody id="filesList"><tr><td>Nenhum arquivo carregado ainda.</td></tr></tbody></table></div></div>
+    <p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Para adicionar, toque em Escolher CSVs de novo: os que já estão aqui continuam (ficam guardados neste navegador até você tocar em Limpar). Arquivo repetido é ignorado.</p>
+  </section>
   <section class="view" id="v-config">
     <h2>Configurações</h2>
     <div class="grid2">
@@ -350,15 +354,13 @@ function rebuild(){
 }
 
 function drawFiles(){
-  const L = Object.values(flog), box = $('#filesBox');
-  if (!L.length) { box.hidden = true; return }
-  box.hidden = false;
+  const L = Object.values(flog);
+  if (!L.length) { $('#filesSum').textContent = 'Arquivos carregados'; $('#filesList').innerHTML = '<tr><td>Nenhum arquivo carregado ainda.</td></tr>'; return }
   const ic = {ok:'✓', vazio:'⚠', erro:'✗'};
   const hrs = n => nf(data.filter(o=>o.file===n && o.ok).reduce((s,o)=>s+o.horas,0),1);
   const nok = L.filter(x=>x.st==='ok').length, ner = L.filter(x=>x.st==='erro').length;
-  if (ner) box.open = true;
-  $('#filesSum').textContent = `Arquivos carregados: ${L.length} · ${nok} com OS${ner?` · ${ner} com erro`:''} (toque para ver)`;
-  $('#filesList').innerHTML = L.map(x=>`<tr class="f-${x.st}"><td class="ic">${ic[x.st]}</td><td><b>${esc(x.name)}</b><br><span class="muted">${x.st==='ok'?esc(x.filas)+' · '+hrs(x.name)+' h lançadas':esc(x.msg)} · ${nf(x.size/1024)} KB</span></td><td class="num">${nf(x.n)} OS</td></tr>`).join('');
+  $('#filesSum').textContent = `Arquivos carregados: ${L.length} · ${nok} com OS${ner?` · ${ner} com erro`:''}`;
+  $('#filesList').innerHTML = L.map(x=>`<tr class="f-${x.st}"><td class="ic">${ic[x.st]}</td><td style="overflow-wrap:anywhere"><b>${esc(x.name)}</b><br><span class="muted"><b>${nf(x.n)} OS</b> · ${x.st==='ok'?esc(x.filas)+' · '+hrs(x.name)+' h lançadas':esc(x.msg)} · ${nf(x.size/1024)} KB</span></td></tr>`).join('');
 }
 function filtered(skipFila){
   const de = F.de ? new Date(F.de+'T00:00') : null, ate = F.ate ? new Date(F.ate+'T23:59') : null, q = F.q.toUpperCase();
@@ -508,7 +510,9 @@ function route(){
   const h = (location.hash||'#dashboard').slice(1);
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id==='v-'+h));
   document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.hash==='#'+h));
-  $('#fbox').style.display = (h==='config'||h==='inconsistencias') ? 'none' : '';
+  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos') ? 'none' : '';
+  $('#app').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
+  $('#emptyState').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
   if (!document.querySelector('.view.on')) $('#v-dashboard').classList.add('on');
 }
 
@@ -555,7 +559,9 @@ async function readFiles(list){
   if (demo) { raw = raw.filter(o=>o.file!=='exemplo'); demo=false }
   await prog('Montando relatórios...', `${nf(raw.length)} OS lidas`, 0.95);
   try { cut = null; rebuild(); saveState(); } finally { progEnd(); }
-  toast(dups.length ? `${dups.length} arquivo(s) já estavam carregados e foram ignorados. Total: ${nf(data.length)} OS.` : `Pronto: ${nf(data.length)} OS carregadas.`);
+  const nErr = Object.values(flog).filter(x=>x.st==='erro').length;
+  if (location.hash !== '#arquivos') location.hash = 'arquivos'; else route();
+  toast((dups.length ? `${dups.length} arquivo(s) repetido(s) ignorado(s). ` : '') + `Pronto: ${nf(data.length)} OS.` + (nErr ? ` ${nErr} arquivo(s) com erro: veja a aba Arquivos.` : ''));
 }
 $('#files').onchange = e => { readFiles([...e.target.files]); e.target.value=''; };
 document.addEventListener('dragover', e => e.preventDefault());
