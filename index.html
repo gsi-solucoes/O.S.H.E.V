@@ -73,6 +73,13 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 .note{font-size:13px;color:var(--muted);margin-top:8px}
 .warn{color:var(--warn)}
 .ic{font-size:20px;font-weight:700;width:28px}.f-ok .ic{color:#1a8f4c}.f-vazio .ic{color:var(--warn)}.f-erro .ic{color:var(--accent)}
+#prog{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:grid;place-items:center;z-index:20;padding:16px}
+#prog[hidden]{display:none}
+.pin{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;width:min(420px,100%);display:grid;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+#progSub{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.pbar{height:10px;background:var(--soft);border-radius:99px;overflow:hidden}
+.pbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s}
+@media(prefers-reduced-motion:reduce){.pbar i{transition:none}}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--band);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none}
 #toast.on{opacity:1}
 @media(prefers-reduced-motion:reduce){#toast{transition:none}}
@@ -125,6 +132,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </section>
 </main>
 <div id="toast"></div>
+<div id="prog" hidden role="status" aria-live="polite"><div class="pin"><div style="display:flex;justify-content:space-between;gap:12px"><b id="progTxt">Carregando...</b><b id="progPct" style="color:var(--accent);font-variant-numeric:tabular-nums">0%</b></div><span id="progSub"></span><div class="pbar"><i id="progBar"></i></div></div></div>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>/* ===== Núcleo: leitura dos CSVs do MV (R_ORDEM_SERVICO) e cálculos ===== */
@@ -506,21 +514,27 @@ function route(){
 }
 
 let empties = new Set(), flog = {};
+const tick = () => new Promise(r => setTimeout(r, 30));
+async function prog(txt, sub, frac){ $('#prog').hidden = false; $('#progTxt').textContent = txt; $('#progSub').textContent = sub || ''; $('#progBar').style.width = Math.round((frac||0)*100) + '%'; $('#progPct').textContent = Math.round((frac||0)*100) + '%'; await tick(); }
+function progEnd(){ $('#prog').hidden = true; }
 async function expandZips(list){
   const out = [];
   for (const f of list) {
     if (/\.zip$/i.test(f.name)) {
       if (!window.JSZip) { flog[f.name] = {name:f.name,size:f.size,n:0,filas:'',st:'erro',msg:'sem internet para abrir o .zip'}; continue }
-      try { const z = await JSZip.loadAsync(f); for (const e of Object.values(z.files)) { if (e.dir || !/\.(csv|txt)$/i.test(e.name)) continue; const buf = await e.async('uint8array'); const nm = e.name.split('/').pop(); out.push({name:nm, size:buf.length, arrayBuffer:async()=>buf}) } }
+      try { await prog('Abrindo .zip...', `${f.name} · ${nf(f.size/1024)} KB`, 0.05); const z = await JSZip.loadAsync(f); for (const e of Object.values(z.files)) { if (e.dir || !/\.(csv|txt)$/i.test(e.name)) continue; const buf = await e.async('uint8array'); const nm = e.name.split('/').pop(); out.push({name:nm, size:buf.length, arrayBuffer:async()=>buf}) } }
       catch(e){ flog[f.name] = {name:f.name,size:f.size,n:0,filas:'',st:'erro',msg:'não consegui abrir o .zip'} }
     } else out.push(f);
   }
   return out;
 }
 async function readFiles(list){
+  if (!list.length) return;
+  await prog('Preparando arquivos...', `${list.length} selecionado(s)`, 0.02);
   list = await expandZips(list);
-  toast(`Lendo ${list.length} arquivo(s)...`);
+  let k = 0;
   for (const f of list) {
+    k++; await prog(`Lendo arquivo ${k} de ${list.length}`, `${f.name} · ${nf(f.size/1024)} KB`, k/(list.length+1));
     try { const txt = Core.decode(await f.arrayBuffer()); const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os);
       if(!os.length) empties.add(f.name); else empties.delete(f.name);
       const looksMV = /Ordem de Servi/i.test(txt.slice(0,3000));
@@ -528,7 +542,9 @@ async function readFiles(list){
     catch(e){ flog[f.name] = {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'não foi possível ler o arquivo'} }
   }
   if (demo) { raw = raw.filter(o=>o.file!=='exemplo'); demo=false }
-  cut = null; rebuild();
+  await prog('Montando relatórios...', `${nf(raw.length)} OS lidas`, 0.95);
+  try { cut = null; rebuild(); } finally { progEnd(); }
+  toast(`Pronto: ${nf(data.length)} OS carregadas.`);
 }
 $('#files').onchange = e => { readFiles([...e.target.files]); e.target.value=''; };
 document.addEventListener('dragover', e => e.preventDefault());

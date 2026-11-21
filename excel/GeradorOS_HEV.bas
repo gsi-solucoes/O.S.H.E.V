@@ -84,13 +84,18 @@ Public Sub ImportarCSVs()
     Set caminhos = New Collection
     For i = 1 To fd.SelectedItems.Count
         If LCase$(Right$(fd.SelectedItems(i), 4)) = ".zip" Then
+            Application.StatusBar = "Abrindo .zip: " & NomeArquivo(CStr(fd.SelectedItems(i))) & "..."
+            DoEvents
             ExtrairZip CStr(fd.SelectedItems(i)), caminhos
         Else
             caminhos.Add fd.SelectedItems(i)
         End If
     Next i
+    Dim kArq As Long
     For Each cam In caminhos
-        Application.StatusBar = "Lendo " & NomeArquivo(CStr(cam)) & "..."
+        kArq = kArq + 1
+        Application.StatusBar = "Carregando " & Format(kArq / (caminhos.Count + 1), "0%") & " - lendo arquivo " & kArq & " de " & caminhos.Count & ": " & NomeArquivo(CStr(cam)) & " (" & Format(FileLen(CStr(cam)) / 1024, "0") & " KB)..."
+        DoEvents
         txt = "": nLidas = 0: msg = ""
         On Error Resume Next
         txt = LerTexto(CStr(cam))
@@ -110,7 +115,8 @@ Public Sub ImportarCSVs()
         nArq = nArq + 1
     Next cam
 
-    Application.StatusBar = "Montando relatórios..."
+    Application.StatusBar = "Carregando 95% - montando relatórios (" & recs.Count & " OS)..."
+    DoEvents
     Montar recs, nArq, nVazios
 
     Application.Calculation = xlCalculationAutomatic
