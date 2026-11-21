@@ -63,6 +63,12 @@ textarea{min-height:120px}
 .bar .t{height:16px;background:var(--soft);border-radius:4px;overflow:hidden}
 .bar .t i{display:block;height:100%;background:var(--blue);border-radius:4px}
 .bar.acc .t i{background:var(--accent)}
+.bar.open .n{font-weight:700}
+.drill{display:grid;gap:8px;margin:2px 0 10px;padding:10px;border-left:3px solid var(--accent);background:var(--soft);border-radius:0 8px 8px 0;font-size:14px}
+.dr{display:grid;gap:2px;padding-bottom:8px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.dr:last-of-type{border-bottom:0}
+.dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.drmore{justify-self:start}
 .bar .v{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
 .scroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -472,11 +478,26 @@ function drawFilters(){
 function updSum(){const n=Object.values(F).filter(Boolean).length;$('#fsum').textContent=n?`Filtros (${n} ativo${n>1?'s':''})`:'Filtros'}
 function setF(k,v){F[k]=F[k]===v?'':v; shown=50; drawFilters(); render(); toast(F[k]?`Filtro: ${v}`:'Filtro removido')}
 
+let SETS = [];
 function bars(list, key, opt={}){
-  const rows = Core.count(list, key).slice(0, opt.top || 12), mx = Math.max(1, ...rows.map(r=>r[1]));
-  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}" data-k="${opt.f||''}" data-v="${esc(n)}"><span class="n" title="${esc(n)}">${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
+  const rows = Core.count(list, key).slice(0, opt.top || 12), mx = Math.max(1, ...rows.map(r=>r[1])), sid = SETS.push({list, key}) - 1;
+  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}" data-s="${sid}" data-v="${esc(n)}" aria-expanded="false"><span class="n" title="${esc(n)}">${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
 }
-function wireBars(root){root.querySelectorAll('.bar[data-k]').forEach(b => {if(b.dataset.k) b.onclick = () => setF(b.dataset.k, b.dataset.v)})}
+function drillHTML(items, lim){
+  const it = items.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
+  return `<div class="drill">${it.slice(0,lim).map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.especialidade)} · ${esc(o.setor)}${o.localidade?' · '+esc(o.localidade):''}${o.exec.length?' · '+esc(o.tecnico):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`).join('')}${it.length>lim?`<button class="drmore" data-lim="${lim+30}">Mostrar mais ${Math.min(30,it.length-lim)} de ${it.length}</button>`:''}</div>`;
+}
+function wireBars(root){
+  root.querySelectorAll('.bar[data-s]').forEach(b => b.onclick = () => {
+    const nx = b.nextElementSibling;
+    if (nx && nx.classList.contains('drill')) { nx.remove(); b.setAttribute('aria-expanded','false'); b.classList.remove('open'); return; }
+    const S = SETS[+b.dataset.s]; if (!S) return;
+    const kf = typeof S.key === 'function' ? S.key : (o => o[S.key]);
+    const items = S.list.filter(o => String(kf(o)) === b.dataset.v);
+    const show = lim => { const old = b.nextElementSibling; if (old && old.classList.contains('drill')) old.remove(); b.insertAdjacentHTML('afterend', drillHTML(items, lim)); const m = b.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
+    show(30); b.setAttribute('aria-expanded','true'); b.classList.add('open');
+  });
+}
 
 function osTable(list){
   const rows = list.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
@@ -494,7 +515,8 @@ function pendCard(L){
   const P = L.filter(o=>o.pendente), g = {};
   P.forEach(o => { const r = g[o.pendente] = g[o.pendente] || {n:0, d:[]}; r.n++; if (o.parado!=null) r.d.push(o.parado); });
   const rows = Object.entries(g).sort((a,b)=>b[1].n-a[1].n), mx = Math.max(1,...rows.map(r=>r[1].n));
-  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc" data-k="pendente" data-v="${esc(k)}"><span class="n">${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque para filtrar.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
+  const sid = SETS.push({list:P, key:'pendente'}) - 1;
+  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc" data-s="${sid}" data-v="${esc(k)}" aria-expanded="false"><span class="n">${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para ver as OS; toque de novo para fechar.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
 }
 function blStats(list, c){
   const bl = Core.backlogAt(list, c), terc = Core.terceirosAt(list, c);
@@ -505,6 +527,7 @@ function monthEnds(n){const out=[];for(let i=n-1;i>=0;i--)out.push(new Date(cut.
 
 function render(){
   if (!data.length) return;
+  SETS = [];
   setCut();
   updSum();
   const L = filtered(), V = $('#v-dashboard');
@@ -531,7 +554,7 @@ function render(){
     <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
     <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
   </div>
-  <p class="note">Toque numa barra para filtrar por ela.</p>
+  <p class="note">Toque numa barra para ver as OS dela; toque de novo para fechar. Para filtrar a página toda, use Filtros.</p>
   <div class="card">${osTable(L)}</div>`;
   wireBars(V);
   $('#cpList').onclick = () => copy(tsv(L));
@@ -566,6 +589,7 @@ function renderBacklog(L){
     <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
+  wireBars(V);
   $('#bIni').onchange = e => { bIni = e.target.value; render(); };
   $('#bFim').onchange = e => { bFim = e.target.value; render(); };
   $('#bLimpa').onclick = () => { bIni = ''; bFim = ''; render(); };
