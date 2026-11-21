@@ -430,7 +430,7 @@ function rebuild(){
   const files = [...new Set(raw.map(o=>o.file))];
   const bad = data.filter(o=>!o.ok).length;
   const nprov = data.filter(o=>o.provisorio).length;
-  $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s) · ${nf(data.length-bad)} entraram${nprov?` (${nprov} com 1 h provisória)`:''} · ${nf(bad)} fora por erro${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
+  $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s): ${nf(data.length-bad-nprov)} normais${nprov?` + ${nprov} com horário ajustado (corrigir no MV)`:''}${bad?` · ${nf(bad)} fora por erro`:''}${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
   $('#emptyState').hidden = !!data.length; $('#app').hidden = !data.length;
   drawFiles();
   drawFilters(); render();
@@ -510,7 +510,7 @@ function render(){
   const hasPrev = !!bFim && L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
   const bad = data.filter(o=>!o.ok), prov = data.filter(o=>o.provisorio);
   V.innerHTML = `
-  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length)}</b> entraram nos cálculos · <a href="#inconsistencias" class="${bad.length?'warn':''}"><b>${nf(bad.length)}</b> ficaram fora por erro de data/hora</a>${prov.length?` · <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> entraram com 1 h provisória</a>`:''} <span class="muted">(corrigir no MV; veja Para arrumar)</span></div>
+  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
   <div class="kpis">
     <div class="kpi hot"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
     <div class="kpi"><span>Total de OS</span><b>${nf(L.length)}</b><span><b>${nf(done)} realizadas (${nf(base?done/base*100:0)}%)</b>: ${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>

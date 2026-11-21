@@ -844,7 +844,7 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     ws.Range("A1").Value = "Gerador de OS - HEV"
     ws.Range("A1").Font.Size = 22: ws.Range("A1").Font.Bold = True: ws.Range("A1").Font.Color = RGB(11, 31, 75)
     ws.Range("A2").Value = "Relatório importado: " & nTot & " OS em " & nArq & " arquivo(s) · " & nOk & _
-        " entraram nos cálculos" & IIf(nProv > 0, " (" & nProv & " com 1 h provisória)", "") & " · " & nErr & " ficaram fora por erro de data/hora · corrigir no MV: aba 'Para arrumar'" & _
+        " entraram nos cálculos: " & (nOk - nProv) & " normais" & IIf(nProv > 0, " + " & nProv & " com horário ajustado (contadas com 1 h; corrigir no MV)", "") & IIf(nErr > 0, " · " & nErr & " fora por erro de data", "") & " · veja a aba 'Para arrumar'" & _
         IIf(nVazios > 0, " · " & nVazios & " arquivo(s) sem OS (fila vazia)", "")
     ws.Range("A2").Font.Color = RGB(91, 102, 131)
     BotaoImportar ws
