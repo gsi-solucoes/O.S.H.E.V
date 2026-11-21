@@ -5,3 +5,13 @@ Página web que lê os CSVs do relatório **R_ORDEM_SERVICO** do MV (um por fila
 - Os arquivos são lidos **somente no navegador**; nada é enviado para servidor.
 - As configurações (nomes genéricos, de-para de técnicos, limite de horas) ficam salvas no navegador de cada aparelho.
 - Site: https://gsi-solucoes.github.io/O.S.H.E.V/
+
+## Versão Excel (computador do hospital)
+
+Arquivo: `excel/GeradorOS_HEV.bas` (Excel 2016 ou mais novo).
+
+1. Abra uma pasta de trabalho nova no Excel e aperte **Alt + F11**.
+2. **Arquivo → Importar arquivo** → escolha `GeradorOS_HEV.bas` e feche o editor.
+3. Salve como **Pasta de Trabalho Habilitada para Macro (.xlsm)**.
+4. **Alt + F8** → **Instalar** → Executar.
+5. Na aba Dashboard, clique em **Importar CSVs do MV** e selecione todos os CSVs (ou um .zip com todos).
