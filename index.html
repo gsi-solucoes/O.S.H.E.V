@@ -817,7 +817,7 @@ function abaExcel(wb, nome, linhas){
     const zebra = (r - ini) % 2 === 0;
     L.forEach((v,i) => {
       const c = ws.getCell(r, i+1);
-      if (v && v.D != null) { c.value = v.D/24; c.numFmt = '[<0.0416666666666667][mm]" min";[h]" h "mm" min"'; }
+      if (v && v.D != null) { c.value = v.D/24; c.numFmt = '[<0.0416666666666667][m]" min";[h]" h "mm" min"'; }
       else if (typeof v === 'string' && /^\d+(,\d+)?%$/.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; }
       else if (typeof v === 'string' && FILAS[v]) c.value = FILAS[v];
       else c.value = v === '' ? null : v;
