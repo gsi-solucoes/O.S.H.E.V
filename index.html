@@ -69,6 +69,11 @@ textarea{min-height:120px}
 .dr:last-of-type{border-bottom:0}
 .dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .drmore{justify-self:start}
+tr.eq{cursor:pointer}
+tr.eq.open td{font-weight:700}
+.drtr td{padding:0 0 8px}
+.drtr td::before{content:none!important}
+@media(max-width:600px){.stack tr.drtr{display:block;border-bottom:0;padding:0}.stack tr.drtr td{display:block;padding:0}}
 .bar .v{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
 .scroll{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:14px}
@@ -624,11 +629,18 @@ function renderTempos(L){
     + groupTable(L,'especialidade','Por especialidade') + groupTable(L,'tipo','Por tipo de OS') + groupTable(L,'criticidade','Por criticidade');
 }
 function renderEquipe(L){
-  const g = {}; L.forEach(o => o.exec.forEach((x,i) => {const n=o.tecnicos[i]; const r=g[n]=g[n]||{os:new Set(),h:0,esp:{}}; r.os.add(o.os); if(x.ini&&x.fim&&x.fim>=x.ini) r.h+=(x.fim-x.ini)/36e5; r.esp[o.especialidade]=(r.esp[o.especialidade]||0)+1}));
+  const g = {}; L.forEach(o => o.exec.forEach((x,i) => {const n=o.tecnicos[i]; const r=g[n]=g[n]||{os:new Set(),h:0,esp:{}}; r.os.add(o.os); let hh = 0; if(x.ini&&x.fim&&x.fim>=x.ini){ hh=(x.fim-x.ini)/36e5; if(hh>(cfg.maxExec||12)) hh=1; } else if(x.ini&&!x.fim&&o.fila==='concluída') hh=1; r.h+=hh; r.esp[o.especialidade]=(r.esp[o.especialidade]||0)+1}));
   const rows = Object.entries(g).sort((a,b)=>b[1].h-a[1].h);
-  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Horas = soma de fim − início das execuções lançadas. "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
+  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Toque no técnico para ver as OS dele; toque de novo para fechar. Horas = soma de fim − início das execuções lançadas (horário ajustado conta 1 h). "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
   <div class="card"><div class="row"><span></span><button id="cpEq">Copiar para o Excel</button></div><div class="scroll"><table class="stack"><thead><tr><th>Técnico</th><th class="num">OS</th><th class="num">Horas</th><th class="num">Média por OS</th><th>Especialidade principal</th></tr></thead><tbody>
-  ${rows.map(([n,r])=>`<tr><td><b>${esc(n)}</b></td><td class="num">${nf(r.os.size)}</td><td class="num">${nf(r.h,1)}</td><td class="num">${fh(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
+  ${rows.map(([n,r])=>`<tr class="eq" data-t="${esc(n)}" tabindex="0" role="button" aria-expanded="false"><td><b>${esc(n)}</b> <span class="muted">▸ ver OS</span></td><td class="num">${nf(r.os.size)}</td><td class="num">${nf(r.h,1)}</td><td class="num">${fh(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
+  document.querySelectorAll('#v-equipe tr.eq').forEach(tr => { const tog = () => {
+    const nx = tr.nextElementSibling;
+    if (nx && nx.classList.contains('drtr')) { nx.remove(); tr.setAttribute('aria-expanded','false'); tr.classList.remove('open'); return; }
+    const items = L.filter(o => o.tecnicos.includes(tr.dataset.t));
+    const show = lim => { const old = tr.nextElementSibling; if (old && old.classList.contains('drtr')) old.remove(); tr.insertAdjacentHTML('afterend', `<tr class="drtr"><td colspan="5" data-l="">${drillHTML(items, lim)}</td></tr>`); const m = tr.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
+    show(30); tr.setAttribute('aria-expanded','true'); tr.classList.add('open');
+  }; tr.onclick = tog; tr.onkeydown = e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); tog(); } }; });
   $('#cpEq').onclick = () => copy(['Técnico\tOS\tHoras'].concat(rows.map(([n,r])=>`${n}\t${r.os.size}\t${nf(r.h,1)}`)).join('\n'));
 }
 function renderSetores(L){
