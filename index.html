@@ -486,7 +486,8 @@ var Core = (function () {
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const nf = (x, d=0) => x == null || isNaN(x) ? '–' : x.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
-const fh = h => h == null ? '–' : h < 48 ? nf(h,1) + ' h' : nf(h/24,1) + ' dias';
+const hm = h => { if (h == null || isNaN(h)) return '–'; const m = Math.round(h*60); if (m < 60) return m + ' min'; const H = Math.floor(m/60), M = m%60; return nf(H) + ' h' + (M ? ' ' + String(M).padStart(2,'0') + ' min' : ''); };
+const fh = h => h == null ? '–' : h < 48 ? hm(h) : nf(h/24,1) + ' dias';
 const fd = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
 const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
@@ -553,7 +554,7 @@ function bars(list, key, opt={}){
 }
 function miniDash(items){
   const grp = (t, f, top=8) => { const c = Core.count(items.filter(o => f(o)), f).slice(0, top); return c.length ? `<div class="mg"><span class="mt">${t}</span><div class="chips">${c.map(([k,n])=>`<span class="chip">${esc(k)}<b>${nf(n)}</b></span>`).join('')}</div></div>` : ''; };
-  return `<div class="mini"><div class="mh"><b>${nf(items.length)} OS</b>${items.some(o=>o.horas)?` · ${nf(items.reduce((s,o)=>s+o.horas,0),1)} h lançadas`:''}</div>
+  return `<div class="mini"><div class="mh"><b>${nf(items.length)} OS</b>${items.some(o=>o.horas)?` · ${hm(items.reduce((s,o)=>s+o.horas,0))} lançadas`:''}</div>
     ${grp('Especialidade', o => o.especialidade)}${grp('Setor', o => o.setor)}${grp('Técnico', o => o.exec.length ? o.tecnico : '')}${grp('Fila', o => o.fila)}${grp('Pendente de', o => o.pendente)}</div>`;
 }
 function drillHTML(items, lim){
@@ -596,8 +597,8 @@ function osTable(list){
   </tbody></table></div>${rows.length>shown?`<p><button id="more">Mostrar mais ${Math.min(100,rows.length-shown)}</button></p>`:''}`;
 }
 function tsv(list){
-  const h=['OS','Descrição','Observações','Pendente de','Encaminhado em','Parado (dias)','Fila','Tipo','Especialidade','Criticidade','Solicitante','Setor','Localidade','Pedido','Término','Serviço','Técnico','Início atend.','Fim atend.','Espera (h)','Execução (h)','Total (h)','Inconsistência'];
-  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.obs||'',o.pendente||'',o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'',o.parado??'',o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),nf(o.espera,1),nf(o.horas,1),nf(o.total,1),o.arrumar.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
+  const h=['OS','Descrição','Observações','Pendente de','Encaminhado em','Parado (dias)','Fila','Tipo','Especialidade','Criticidade','Solicitante','Setor','Localidade','Pedido','Término','Serviço','Técnico','Início atend.','Fim atend.','Espera','Execução','Pedido → término','Inconsistência'];
+  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.obs||'',o.pendente||'',o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'',o.parado??'',o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),o.espera==null?'':hm(o.espera),hm(o.horas),o.total==null?'':hm(o.total),o.arrumar.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
 }
 
 function pendCard(L){
@@ -634,7 +635,7 @@ function render(){
     <div class="kpi"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pc">${nf(base?done/base*100:0)}%</div></div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
     <div class="kpi"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
     <div class="kpi"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
-    <div class="kpi"><span>Homem-hora lançado</span><b>${nf(hh)} h</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
+    <div class="kpi"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Pendências por responsável</h3>${pendCard(L)}</div>
@@ -659,7 +660,7 @@ function renderBacklog(L){
   const filas = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
   const rowsF = filas.map(([f,l]) => {const s=B.bl.filter(o=>o.fila===f);return `<tr><td>${l}</td>${bands.map(b=>`<td class="num">${nf(s.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(s.length)}</b></td></tr>`}).join('');
   const dep = B.bl.filter(o=>!o.backlog);
-  const hist = monthEnds(6).map(d => [d, blStats(L,d).bl.length]), mx = Math.max(1,...hist.map(h=>h[1]));
+  const hist = monthEnds(6).map(d => { const l = blStats(L,d).bl; return [d, l.length, SETS.push({list:l, key:()=>'m'}) - 1]; }), mx = Math.max(1,...hist.map(h=>h[1]));
   V.innerHTML = `
   <h2>Backlog ${blLabel()}</h2>
   <div class="filters" style="margin-bottom:16px"><label>Data início<input type="date" id="bIni" value="${bIni}"></label><label>Data fim<input type="date" id="bFim" value="${bFim}"></label><label>&nbsp;<button class="prim" id="bBusca">Buscar backlog</button></label><label>&nbsp;<button id="bLimpa">Sem datas (tudo)</button></label></div>
@@ -675,7 +676,7 @@ function renderBacklog(L){
   <tr><td><b>Total</b></td>${bands.map(b=>`<td class="num"><b>${nf(B.bl.filter(o=>age(o)===b).length)}</b></td>`).join('')}<td class="num"><b>${nf(B.bl.length)}</b></td></tr></tbody></table></div></div>
   <div class="grid2">
     <div class="card"><h3>Backlog por especialidade</h3>${bars(B.bl,'especialidade',{acc:1})}</div>
-    <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v])=>`<div class="bar acc"><span class="n">${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></div>`).join('')}</div><p class="note">Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
+    <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v,sid])=>`<button class="bar acc" data-s="${sid}" data-k="" data-v="m" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('')}</div><p class="note">Toque no mês para ver as OS que estavam pendentes no fim dele. Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
     <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
@@ -706,7 +707,7 @@ function renderEquipe(L){
   const rows = Object.entries(g).sort((a,b)=>b[1].h-a[1].h);
   $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Toque no técnico (▸) para ver as OS dele; toque de novo para fechar. Horas = soma de fim − início das execuções lançadas (horário ajustado conta 1 h). "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
   <div class="card"><div class="row"><span></span><button id="cpEq">Copiar para o Excel</button></div><div class="scroll"><table class="stack"><thead><tr><th>Técnico</th><th class="num">OS</th><th class="num">Horas</th><th class="num">Média por OS</th><th>Especialidade principal</th></tr></thead><tbody>
-  ${rows.map(([n,r])=>`<tr class="eq" data-t="${esc(n)}" tabindex="0" role="button" aria-expanded="false"><td><span class="chev" aria-hidden="true">▸</span><b>${esc(n)}</b></td><td class="num">${nf(r.os.size)}</td><td class="num">${nf(r.h,1)}</td><td class="num">${fh(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
+  ${rows.map(([n,r])=>`<tr class="eq" data-t="${esc(n)}" tabindex="0" role="button" aria-expanded="false"><td><span class="chev" aria-hidden="true">▸</span><b>${esc(n)}</b></td><td class="num">${nf(r.os.size)}</td><td class="num">${hm(r.h)}</td><td class="num">${hm(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
   document.querySelectorAll('#v-equipe tr.eq').forEach(tr => { const tog = () => {
     const nx = tr.nextElementSibling;
     if (nx && nx.classList.contains('drtr')) { nx.remove(); tr.setAttribute('aria-expanded','false'); tr.classList.remove('open'); return; }
@@ -714,7 +715,7 @@ function renderEquipe(L){
     const show = lim => { const old = tr.nextElementSibling; if (old && old.classList.contains('drtr')) old.remove(); tr.insertAdjacentHTML('afterend', `<tr class="drtr"><td colspan="5" data-l="">${drillHTML(items, lim)}</td></tr>`); const m = tr.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
     show(30); tr.setAttribute('aria-expanded','true'); tr.classList.add('open');
   }; tr.onclick = tog; tr.onkeydown = e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); tog(); } }; });
-  $('#cpEq').onclick = () => copy(['Técnico\tOS\tHoras'].concat(rows.map(([n,r])=>`${n}\t${r.os.size}\t${nf(r.h,1)}`)).join('\n'));
+  $('#cpEq').onclick = () => copy(['Técnico\tOS\tHoras'].concat(rows.map(([n,r])=>`${n}\t${r.os.size}\t${hm(r.h)}`)).join('\n'));
 }
 function renderSetores(L){
   const V = $('#v-setores');
@@ -789,6 +790,7 @@ function relPeriodo(){
 }
 const dt = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toTimeString().slice(0,5) : '';
 const r1 = x => x == null || isNaN(x) ? '' : Math.round(x*10)/10;
+const D = x => x == null || isNaN(x) ? '' : {D:x}; // duração em horas → vira h/min no Excel
 function tabela(t, cab, linhas){ return [{T:'sec', v:t}, {T:'head', v:cab}, ...(linhas.length ? linhas : [['Nenhuma OS', ...Array(cab.length-1).fill('')]]), {T:'blank'}]; }
 const FILAS = {'aberta':'Aberta','não atendida':'Não atendida','agendar':'Agendar','aguardando material':'Aguardando material','conserto externo':'Conserto externo','concluída':'Concluída','cancelada':'Cancelada'};
 const LONGAS = /^(Descrição|Observação|Para arrumar|Problema|Motivo|O que fazer)$/;
@@ -815,15 +817,16 @@ function abaExcel(wb, nome, linhas){
     const zebra = (r - ini) % 2 === 0;
     L.forEach((v,i) => {
       const c = ws.getCell(r, i+1);
-      if (typeof v === 'string' && /^\d+(,\d+)?%$/.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; }
+      if (v && v.D != null) { c.value = v.D/24; c.numFmt = '[<0.0416666666666667][mm]" min";[h]" h "mm" min"'; }
+      else if (typeof v === 'string' && /^\d+(,\d+)?%$/.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; }
       else if (typeof v === 'string' && FILAS[v]) c.value = FILAS[v];
       else c.value = v === '' ? null : v;
-      if (typeof c.value === 'number' && !Number.isInteger(c.value) && !String(c.numFmt||'').includes('%')) c.numFmt = '0.0';
+      if (typeof c.value === 'number' && !Number.isInteger(c.value) && !(v && v.D != null) && !String(c.numFmt||'').includes('%')) c.numFmt = '0.0';
       c.border = {top:borda,bottom:borda,left:borda,right:borda};
       c.alignment = {vertical:'top', wrapText: longa[i] || i === 0};
       if (zebra) c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF5F7FA'}};
       if (i === 0 && /total/i.test(String(v))) c.font = {bold:true};
-      larg[i] = Math.max(larg[i], Math.min(longa[i] ? 50 : 34, String(c.value ?? '').length + 2));
+      larg[i] = Math.max(larg[i], v && v.D != null ? 14 : Math.min(longa[i] ? 50 : 34, String(c.value ?? '').length + 2));
     });
   });
   fecha();
@@ -839,13 +842,13 @@ async function baixa(wb, nome){
 function cnt(list, f){ return Core.count(list, f); }
 function relBlocos(k, L, Lall, P){
   const fimP = P.fim || hoje(), E = new Date(fimP.getFullYear(), fimP.getMonth(), fimP.getDate(), 23, 59, 59);
-  const linhaOS = o => [+o.os, dt(o.pedido), o.fila, o.tipo, o.especialidade, o.setor, o.localidade||'', o.desc, o.obs||'', o.pendente||'', o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'', o.parado??'', o.exec.length?o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', '):'', dt(o.inicio), dt(o.fim), dt(o.termino), r1(o.espera), r1(o.horas), r1(o.total), o.arrumar.join('; ')];
-  const cabOS = ['OS','Pedido','Fila','Tipo','Especialidade','Setor','Localidade','Descrição','Observação','Pendente de','Encaminhado em','Parado (dias)','Técnico','Início atend.','Fim atend.','Término','Espera (h)','Execução (h)','Total (h)','Para arrumar'];
+  const linhaOS = o => [+o.os, dt(o.pedido), o.fila, o.tipo, o.especialidade, o.setor, o.localidade||'', o.desc, o.obs||'', o.pendente||'', o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'', o.parado??'', o.exec.length?o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', '):'', dt(o.inicio), dt(o.fim), dt(o.termino), D(o.espera), D(o.horas), D(o.total), o.arrumar.join('; ')];
+  const cabOS = ['OS','Pedido','Fila','Tipo','Especialidade','Setor','Localidade','Descrição','Observação','Pendente de','Encaminhado em','Parado (dias)','Técnico','Início atend.','Fim atend.','Término','Espera','Execução','Pedido → término','Para arrumar'];
   if (k === 'ind') {
     const nC = L.filter(o=>o.fila==='concluída').length, nT = L.filter(o=>o.terceiros).length, nX = L.filter(o=>o.fila==='cancelada').length, done = nC+nT+nX;
     const esp = L.map(o=>o.espera).filter(x=>x!=null);
     return [['Indicadores do período: '+P.rot], [],
-      ...tabela('Resumo', ['Indicador','Valor'], [['Total de OS', L.length], ['Realizadas (concluídas + material/externo + canceladas)', done], ['% realizado', L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',') + '%' : '-'], ['Concluídas', nC], ['Aguardando material / conserto externo', nT], ['Canceladas', nX], ['Pendentes nossas (aberta + não atendida + agendar)', L.filter(o=>o.backlog).length], ['Espera até 1º atendimento - mediana (h)', r1(Core.median(esp))], ['Espera até 1º atendimento - média (h)', r1(Core.mean(esp))], ['Homem-hora lançado (h)', r1(L.reduce((s,o)=>s+o.horas,0))], ['OS com horário ajustado (1 h provisória)', L.filter(o=>o.provisorio).length]]),
+      ...tabela('Resumo', ['Indicador','Valor'], [['Total de OS', L.length], ['Realizadas (concluídas + material/externo + canceladas)', done], ['% realizado', L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',') + '%' : '-'], ['Concluídas', nC], ['Aguardando material / conserto externo', nT], ['Canceladas', nX], ['Pendentes nossas (aberta + não atendida + agendar)', L.filter(o=>o.backlog).length], ['Espera até 1º atendimento - mediana', D(Core.median(esp))], ['Espera até 1º atendimento - média', D(Core.mean(esp))], ['Homem-hora lançado', D(L.reduce((s,o)=>s+o.horas,0))], ['OS com horário ajustado (1 h provisória)', L.filter(o=>o.provisorio).length]]),
       ...tabela('Por fila', ['Fila','OS'], cnt(L,'fila')),
       ...tabela('Por especialidade', ['Especialidade','OS'], cnt(L,'especialidade')),
       ...tabela('Por tipo', ['Tipo','OS'], cnt(L,'tipo'))];
@@ -869,11 +872,11 @@ function relBlocos(k, L, Lall, P){
   }
   if (k === 'hh') {
     const g = {}; L.forEach(o => o.exec.forEach((x,i) => { const n = o.tecnicos[i], r = g[n] = g[n] || {os:new Set(), h:0}; r.os.add(o.os); let hh = 0; if (x.ini&&x.fim&&x.fim>=x.ini){ hh=(x.fim-x.ini)/36e5; if (hh>(cfg.maxExec||12)) hh=1; } else if (x.ini&&!x.fim&&o.fila==='concluída') hh=1; r.h += hh; }));
-    return [['Homem-hora por técnico: '+P.rot], [], ...tabela('Técnicos', ['Técnico','OS','Horas','Média por OS (h)'], Object.entries(g).sort((a,b)=>b[1].h-a[1].h).map(([n,r])=>[n, r.os.size, r1(r.h), r1(r.h/r.os.size)]))];
+    return [['Homem-hora por técnico: '+P.rot], [], ...tabela('Técnicos', ['Técnico','OS','Horas','Média por OS'], Object.entries(g).sort((a,b)=>b[1].h-a[1].h).map(([n,r])=>[n, r.os.size, D(r.h), D(r.h/r.os.size)]))];
   }
   if (k === 'tp') {
-    const grp = key => { const g = {}; L.forEach(o => (g[o[key]] = g[o[key]] || []).push(o)); return Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a]) => { const e = a.map(o=>o.espera).filter(x=>x!=null), x = a.filter(o=>o.horas>0).map(o=>o.horas), t = a.map(o=>o.total).filter(v=>v!=null); return [k2, a.length, r1(Core.median(e)), r1(Core.mean(e)), r1(Core.mean(x)), r1(Core.mean(t))]; }); };
-    const cab = ['','OS','Espera mediana (h)','Espera média (h)','Execução média (h)','Pedido → término médio (h)'];
+    const grp = key => { const g = {}; L.forEach(o => (g[o[key]] = g[o[key]] || []).push(o)); return Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a]) => { const e = a.map(o=>o.espera).filter(x=>x!=null), x = a.filter(o=>o.horas>0).map(o=>o.horas), t = a.map(o=>o.total).filter(v=>v!=null); return [k2, a.length, D(Core.median(e)), D(Core.mean(e)), D(Core.mean(x)), D(Core.mean(t))]; }); };
+    const cab = ['','OS','Espera mediana','Espera média','Execução média','Pedido → término médio'];
     return [['Tempos de atendimento: '+P.rot], [], ...tabela('Por especialidade', cab, grp('especialidade')), ...tabela('Por tipo', cab, grp('tipo'))];
   }
   if (k === 'pend') {
