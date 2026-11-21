@@ -657,7 +657,7 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
                     horas = horas + (x("fim") - x("ini")) * 24
                     If (x("fim") - x("ini")) * 24 > gMaxExec Then iss = iss & "; Execução de " & Round((x("fim") - x("ini")) * 24, 0) & " h (acima de " & gMaxExec & " h)"
                 End If
-            ElseIf Not IsEmpty(x("ini")) Then
+            ElseIf Not IsEmpty(x("ini")) And r("fila") = "concluída" Then
                 iss = iss & "; Execução sem hora de fim"
             End If
             If Not IsEmpty(x("ini")) Then
@@ -670,14 +670,27 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
         Else
             If ped > agora Then iss = iss & "; Data futura no pedido"
             If Not IsEmpty(ini) Then
-                If ini < ped Then iss = iss & "; Atendimento antes da abertura" Else esp = (ini - ped) * 24
+                ' o MV valida pelo DIA: hora anterior no mesmo dia não é erro (espera = 0)
+                If Int(ini) < Int(ped) Then
+                    iss = iss & "; Atendimento antes da abertura"
+                ElseIf ini < ped Then
+                    esp = 0
+                Else
+                    esp = (ini - ped) * 24
+                End If
             End If
             If Not IsEmpty(ter) Then
-                If ter < ped Then iss = iss & "; Término antes da abertura" Else tot = (ter - ped) * 24
+                If Int(ter) < Int(ped) Then
+                    iss = iss & "; Término antes da abertura"
+                ElseIf ter < ped Then
+                    tot = 0
+                Else
+                    tot = (ter - ped) * 24
+                End If
             End If
         End If
         If Not IsEmpty(ter) And Not IsEmpty(ini) Then
-            If ter < ini Then iss = iss & "; Término antes do início do atendimento"
+            If Int(ter) < Int(ini) Then iss = iss & "; Término antes do início do atendimento"
         End If
         f = r("fila")
         If f = "concluída" And r("exec").Count = 0 Then iss = iss & "; Concluída sem execução lançada"

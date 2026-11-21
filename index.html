@@ -280,17 +280,19 @@ var Core = (function () {
       o.exec.forEach(function (x) { if (x.ini && x.fim && x.fim >= x.ini) o.horas += (x.fim - x.ini) / H; });
       o.total = (o.termino && o.pedido) ? (o.termino - o.pedido) / H : null;
       if (!o.pedido) o.issues.push('Sem data do pedido');
-      if (o.espera !== null && o.espera < 0) { o.issues.push('Atendimento antes da abertura'); o.espera = null; }
-      if (o.total !== null && o.total < 0) { o.issues.push('Término antes da abertura'); o.total = null; }
+      // o MV valida pelo DIA: hora anterior no mesmo dia não é erro (espera fica 0)
+      var dia = function (d) { return d ? new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() : null; };
+      if (o.espera !== null && o.espera < 0) { if (dia(o.inicio) < dia(o.pedido)) { o.issues.push('Atendimento antes da abertura'); o.espera = null; } else o.espera = 0; }
+      if (o.total !== null && o.total < 0) { if (dia(o.termino) < dia(o.pedido)) { o.issues.push('Término antes da abertura'); o.total = null; } else o.total = 0; }
       var maxH = cfg.maxExec || 12, agora = cfg.agora || new Date();
       o.exec.forEach(function (x) {
         if (x.ini && x.fim && x.fim < x.ini) o.issues.push('Fim da execução antes do início');
         if (x.ini && x.fim && (x.fim - x.ini) / H > maxH) o.issues.push('Execução de ' + Math.round((x.fim - x.ini) / H) + ' h (acima de ' + maxH + ' h)');
-        if (x.ini && !x.fim) o.issues.push('Execução sem hora de fim');
+        if (x.ini && !x.fim && o.fila === 'concluída') o.issues.push('Execução sem hora de fim');
         if ((x.ini && x.ini > agora) || (x.fim && x.fim > agora)) o.issues.push('Execução com data futura');
       });
       if ((o.pedido && o.pedido > agora) || (o.termino && o.termino > agora)) o.issues.push('Data futura no pedido ou término');
-      if (o.termino && o.inicio && o.termino < o.inicio) o.issues.push('Término antes do início do atendimento');
+      if (o.termino && o.inicio && dia(o.termino) < dia(o.inicio)) o.issues.push('Término antes do início do atendimento');
       if (o.fila === 'concluída' && !o.exec.length) o.issues.push('Concluída sem execução lançada');
       if (o.especialidade === 'Sem especialidade' && o.fila !== 'aberta') o.issues.push('Sem especialidade');
       // provável erro de dia: execução fora do período da OS, mas cabe trocando 1 dia
