@@ -660,11 +660,15 @@ function renderBacklog(L){
   const filas = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
   const rowsF = filas.map(([f,l]) => {const s=B.bl.filter(o=>o.fila===f);return `<tr><td>${l}</td>${bands.map(b=>`<td class="num">${nf(s.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(s.length)}</b></td></tr>`}).join('');
   const dep = B.bl.filter(o=>!o.backlog);
+  const ord = B.bl.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido), velha = ord[0], nova = ord[ord.length-1];
+  const diasV = velha ? Math.floor((Math.min(Date.now(), cut.getTime()+864e5) - velha.pedido)/864e5) : 0;
+  const faixa = velha ? `Pendentes de ${velha.pedido.toLocaleDateString('pt-BR')} até ${nova.pedido.toLocaleDateString('pt-BR')}` : '';
   const hist = monthEnds(6).map(d => { const l = blStats(L,d).bl; return [d, l.length, SETS.push({list:l, key:()=>'m'}) - 1]; }), mx = Math.max(1,...hist.map(h=>h[1]));
   V.innerHTML = `
   <h2>Backlog ${blLabel()}</h2>
   <div class="filters" style="margin-bottom:16px"><label>Data início<input type="date" id="bIni" value="${bIni}"></label><label>Data fim<input type="date" id="bFim" value="${bFim}"></label><label>&nbsp;<button class="prim" id="bBusca">Buscar backlog</button></label><label>&nbsp;<button id="bLimpa">Sem datas (tudo)</button></label></div>
   <p class="note" style="margin-top:-8px;margin-bottom:16px">Sem datas: tudo o que foi carregado, pendente hoje. Com datas: OS abertas no período que estavam pendentes na data fim.</p>
+  ${velha?`<div class="card" style="margin-bottom:16px"><h3>${faixa}</h3><p>Mais antiga: <b>OS ${velha.os}</b> de ${fd(velha.pedido)} (${nf(diasV)} dias) · ${esc(velha.especialidade)} · ${esc(velha.setor)}<br>Mais nova: <b>OS ${nova.os}</b> de ${fd(nova.pedido)} · ${esc(nova.especialidade)} · ${esc(nova.setor)}</p></div>`:''}
   <div class="kpis">
     <div class="kpi hot"><span>Backlog total</span><b>${nf(B.bl.length)}</b><span>aberta + não atendida + agendar</span></div>
     <div class="kpi"><span>Aguardando triagem</span><b>${nf(B.aberta)}</b><span>abertas</span></div>
@@ -688,7 +692,7 @@ function renderBacklog(L){
     toast(`Backlog ${blLabel()}`);
   };
   $('#bLimpa').onclick = () => { bIni = ''; bFim = ''; render(); toast('Backlog atual (todos os arquivos)'); };
-  const txt = `Backlog da manutenção ${blLabel()}\nBacklog total: ${B.bl.length}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
+  const txt = `Backlog da manutenção ${blLabel()}\nBacklog total: ${B.bl.length}${velha?`\n${faixa} (mais antiga: OS ${velha.os}, ${diasV} dias; mais nova: OS ${nova.os})`:''}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
   $('#cpBl').onclick = () => copy(txt, 'Resumo copiado.');
   $('#cpBlList').onclick = () => copy(tsv(B.bl));
 }
@@ -859,7 +863,9 @@ function relBlocos(k, L, Lall, P){
     const dep = bl.filter(o=>!o.backlog), rows = fl.map(([f,l]) => { const s = bl.filter(o=>o.fila===f); return [l, ...bands.map(b=>s.filter(o=>age(o)===b).length), s.length]; });
     if (dep.length) rows.push(['Pendentes no corte, resolvidas depois', ...bands.map(b=>dep.filter(o=>age(o)===b).length), dep.length]);
     rows.push(['Backlog total', ...bands.map(b=>bl.filter(o=>age(o)===b).length), bl.length]);
+    const ob = bl.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido), v0 = ob[0], v1 = ob[ob.length-1];
     return [['Backlog até '+fimP.toLocaleDateString('pt-BR')+' (desde o começo)'], [],
+      ...(v0 ? tabela('Período das OS pendentes', ['','OS','Pedido','Dias','Especialidade','Setor'], [['Mais antiga', +v0.os, dt(v0.pedido), Math.floor(Math.max(0,(E-v0.pedido)/864e5)), v0.especialidade, v0.setor], ['Mais nova', +v1.os, dt(v1.pedido), Math.floor(Math.max(0,(E-v1.pedido)/864e5)), v1.especialidade, v1.setor]]) : []),
       ...tabela('Por fila e idade', ['Fila',...bands,'Total'], rows),
       ...tabela('Por especialidade', ['Especialidade','OS'], cnt(bl,'especialidade')),
       ...tabela('Aguardando terceiros (fora do backlog)', ['Fila','OS'], cnt(terc,'fila')),
