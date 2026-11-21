@@ -630,7 +630,7 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
     Dim key As Variant, r As Object, e As Object, x As Object, iss As String
     Dim ped As Variant, ter As Variant, ini As Variant, fim As Variant
     Dim esp As Variant, horas As Double, tot As Variant, agora As Date, maxPed As Date
-    Dim f As String, tec As String, i As Long
+    Dim f As String, tec As String, i As Long, avs As String, nProv As Long
     Dim cEsp As Object, cTipo As Object, cSetor As Object, cTec As Object, cCrit As Object
     Set cEsp = CreateObject("Scripting.Dictionary"): Set cTipo = CreateObject("Scripting.Dictionary")
     Set cSetor = CreateObject("Scripting.Dictionary"): Set cTec = CreateObject("Scripting.Dictionary")
@@ -643,7 +643,7 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
 
     For Each key In recs.Keys
         Set r = recs(key)
-        iss = ""
+        iss = "": avs = ""
         ped = ParaData(Campo(r, "pedido", "")): ter = ParaData(Campo(r, "termino", ""))
         ini = Empty: fim = Empty: tec = "": horas = 0
         If r("exec").Count > 0 Then
@@ -655,11 +655,17 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
                 If x("fim") < x("ini") Then
                     iss = iss & "; Fim da execução antes do início"
                 Else
-                    horas = horas + (x("fim") - x("ini")) * 24
-                    If (x("fim") - x("ini")) * 24 > gMaxExec Then iss = iss & "; Execução de " & Round((x("fim") - x("ini")) * 24, 0) & " h (acima de " & gMaxExec & " h)"
+                    If (x("fim") - x("ini")) * 24 > gMaxExec Then
+                        ' entra no cálculo com 1 h provisória até ser corrigida no MV
+                        avs = avs & "; Execução de " & Round((x("fim") - x("ini")) * 24, 0) & " h (acima de " & gMaxExec & " h): usado 1 h provisória no cálculo"
+                        horas = horas + 1
+                    Else
+                        horas = horas + (x("fim") - x("ini")) * 24
+                    End If
                 End If
             ElseIf Not IsEmpty(x("ini")) And r("fila") = "concluída" Then
-                iss = iss & "; Execução sem hora de fim"
+                avs = avs & "; Execução sem hora de fim: usado 1 h provisória no cálculo"
+                horas = horas + 1
             End If
             If Not IsEmpty(x("ini")) Then
                 If x("ini") > agora Then iss = iss & "; Execução com data futura"
@@ -734,6 +740,13 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
             Next sh
         End If
 
+        If iss = "" And avs <> "" Then
+            ' provisória: entra nos cálculos E aparece em Para arrumar
+            nProv = nProv + 1
+            nErr = nErr + 1
+            errA(nErr, 1) = Mid$(avs, 3)
+            For i = 1 To 25: errA(nErr, i + 1) = linha(i): Next i
+        End If
         If iss = "" Then
             nOk = nOk + 1
             For i = 1 To 25: okA(nOk, i) = linha(i): Next i
@@ -744,7 +757,7 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
             End If
         Else
             nErr = nErr + 1
-            errA(nErr, 1) = Mid$(iss, 3)
+            errA(nErr, 1) = Mid$(iss & avs, 3) & " (fora dos relatórios)"
             For i = 1 To 25: errA(nErr, i + 1) = linha(i): Next i
         End If
     Next key
@@ -763,7 +776,7 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
     wsB.Range("B3").Value = dIni: wsB.Range("B4").Value = dFim
     ThisWorkbook.Names.Add Name:="DataIni", RefersTo:="='" & SH_BL & "'!$B$3"
     ThisWorkbook.Names.Add Name:="DataCorte", RefersTo:="=IF('" & SH_BL & "'!$B$4="""",TODAY(),'" & SH_BL & "'!$B$4)"
-    MontarDashboard okA, nOk, recs.Count, nErr, nArq, nVazios, errA, cEsp, cTipo, cSetor
+    MontarDashboard okA, nOk, recs.Count, nErr - nProv, nArq, nVazios, errA, cEsp, cTipo, cSetor, nProv
     MontarErros errA, nErr
     MontarBacklog cEsp, cPend
     MontarEquipe cTec
@@ -821,7 +834,7 @@ Private Function OrdenarPorValor(d As Object, maxItens As Long) As Variant
 End Function
 
 Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As Long, nArq As Long, nVazios As Long, _
-        errA() As Variant, cEsp As Object, cTipo As Object, cSetor As Object)
+        errA() As Variant, cEsp As Object, cTipo As Object, cSetor As Object, nProv As Long)
     Dim ws As Worksheet, wc As Worksheet, lo As ListObject, hdr As Variant, i As Long, tRow As Long
     Set ws = ThisWorkbook.Worksheets.Add(Before:=ThisWorkbook.Worksheets(1)): ws.Name = SH_DASH
     Set wc = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count)): wc.Name = SH_CALC
@@ -831,7 +844,7 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     ws.Range("A1").Value = "Gerador de OS - HEV"
     ws.Range("A1").Font.Size = 22: ws.Range("A1").Font.Bold = True: ws.Range("A1").Font.Color = RGB(11, 31, 75)
     ws.Range("A2").Value = "Relatório importado: " & nTot & " OS em " & nArq & " arquivo(s) · " & nOk & _
-        " entraram nos cálculos · " & nErr & " ficaram fora por erro de data/hora (aba 'Para arrumar')" & _
+        " entraram nos cálculos" & IIf(nProv > 0, " (" & nProv & " com 1 h provisória)", "") & " · " & nErr & " ficaram fora por erro de data/hora · corrigir no MV: aba 'Para arrumar'" & _
         IIf(nVazios > 0, " · " & nVazios & " arquivo(s) sem OS (fila vazia)", "")
     ws.Range("A2").Font.Color = RGB(91, 102, 131)
     BotaoImportar ws
@@ -959,7 +972,7 @@ Private Sub MontarErros(errA() As Variant, nErr As Long)
     Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(SH_DASH)): ws.Name = SH_ERR
     ws.Range("A1").Value = "Para arrumar no MV (" & nErr & " OS)"
     ws.Range("A1").Font.Size = 16: ws.Range("A1").Font.Bold = True
-    ws.Range("A2").Value = "Estas OS ficam fora de todos os relatórios até a data/hora ser corrigida no MV e o relatório ser importado de novo. Limite de execução: " & gMaxExec & " h (aba Config)."
+    ws.Range("A2").Value = "Nada é alterado no MV por aqui: corrija lá e importe de novo. Execução acima de " & gMaxExec & " h (aba Config) ou sem hora de fim entra nos cálculos com 1 h provisória até ser corrigida; os demais erros ficam fora dos relatórios."
     hdr = Cabecalhos()
     ws.Range("A4").Value = "Problema"
     For i = 0 To NCOL - 2: ws.Cells(4, i + 2).Value = hdr(i): Next i

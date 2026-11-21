@@ -276,8 +276,9 @@ var Core = (function () {
       o.servico = e ? e.servico : '';
       o.inicio = e && e.ini; o.fim = e && e.fim;
       o.espera = (o.inicio && o.pedido) ? (o.inicio - o.pedido) / H : null;
-      o.horas = 0;
-      o.exec.forEach(function (x) { if (x.ini && x.fim && x.fim >= x.ini) o.horas += (x.fim - x.ini) / H; });
+      o.horas = 0; o.avisos = [];
+      var maxH0 = cfg.maxExec || 12;
+      o.exec.forEach(function (x) { if (x.ini && x.fim && x.fim >= x.ini) o.horas += Math.min((x.fim - x.ini) / H, (x.fim - x.ini) / H > maxH0 ? 1 : Infinity); });
       o.total = (o.termino && o.pedido) ? (o.termino - o.pedido) / H : null;
       if (!o.pedido) o.issues.push('Sem data do pedido');
       // o MV valida pelo DIA: hora anterior no mesmo dia não é erro (espera fica 0)
@@ -287,8 +288,8 @@ var Core = (function () {
       var maxH = cfg.maxExec || 12, agora = cfg.agora || new Date();
       o.exec.forEach(function (x) {
         if (x.ini && x.fim && x.fim < x.ini) o.issues.push('Fim da execução antes do início');
-        if (x.ini && x.fim && (x.fim - x.ini) / H > maxH) o.issues.push('Execução de ' + Math.round((x.fim - x.ini) / H) + ' h (acima de ' + maxH + ' h)');
-        if (x.ini && !x.fim && o.fila === 'concluída') o.issues.push('Execução sem hora de fim');
+        if (x.ini && x.fim && (x.fim - x.ini) / H > maxH) o.avisos.push('Execução de ' + Math.round((x.fim - x.ini) / H) + ' h (acima de ' + maxH + ' h): usado 1 h provisória no cálculo');
+        if (x.ini && !x.fim && o.fila === 'concluída') { o.avisos.push('Execução sem hora de fim: usado 1 h provisória no cálculo'); o.horas += 1; }
         if ((x.ini && x.ini > agora) || (x.fim && x.fim > agora)) o.issues.push('Execução com data futura');
       });
       if ((o.pedido && o.pedido > agora) || (o.termino && o.termino > agora)) o.issues.push('Data futura no pedido ou término');
@@ -309,6 +310,8 @@ var Core = (function () {
       o.encaminhado = o.pendente ? c.em : null;
       o.parado = o.encaminhado ? Math.max(0, Math.floor((agora - o.encaminhado) / 864e5)) : null;
       o.ok = o.issues.length === 0;
+      o.arrumar = o.issues.concat(o.avisos);
+      o.provisorio = o.ok && o.avisos.length > 0;
       o.backlog = PEND.indexOf(o.fila) >= 0;
       o.terceiros = TERC.indexOf(o.fila) >= 0;
     });
@@ -426,7 +429,8 @@ function rebuild(){
   setCut();
   const files = [...new Set(raw.map(o=>o.file))];
   const bad = data.filter(o=>!o.ok).length;
-  $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s) · ${nf(data.length-bad)} entraram · ${nf(bad)} fora por erro${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
+  const nprov = data.filter(o=>o.provisorio).length;
+  $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s) · ${nf(data.length-bad)} entraram${nprov?` (${nprov} com 1 h provisória)`:''} · ${nf(bad)} fora por erro${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
   $('#emptyState').hidden = !!data.length; $('#app').hidden = !data.length;
   drawFiles();
   drawFilters(); render();
@@ -477,7 +481,7 @@ function osTable(list){
 }
 function tsv(list){
   const h=['OS','Descrição','Observações','Pendente de','Encaminhado em','Parado (dias)','Fila','Tipo','Especialidade','Criticidade','Solicitante','Setor','Localidade','Pedido','Término','Serviço','Técnico','Início atend.','Fim atend.','Espera (h)','Execução (h)','Total (h)','Inconsistência'];
-  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.obs||'',o.pendente||'',o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'',o.parado??'',o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),nf(o.espera,1),nf(o.horas,1),nf(o.total,1),o.issues.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
+  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.obs||'',o.pendente||'',o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'',o.parado??'',o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),nf(o.espera,1),nf(o.horas,1),nf(o.total,1),o.arrumar.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
 }
 
 function pendCard(L){
@@ -503,12 +507,12 @@ function render(){
   const esp = L.map(o=>o.espera).filter(x=>x!=null), hh = L.reduce((s,o)=>s+o.horas,0);
   const B = blStats(blBase(L), cut), prev = blStats(blBase(L), new Date(cut.getFullYear(), cut.getMonth(), 0));
   const diff = B.bl.length - prev.bl.length, pm0 = new Date(cut.getFullYear(), cut.getMonth()-1, 1), pm1 = new Date(cut.getFullYear(), cut.getMonth(), 1);
-  const hasPrev = L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
-  const bad = data.filter(o=>!o.ok);
+  const hasPrev = !!bFim && L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
+  const bad = data.filter(o=>!o.ok), prov = data.filter(o=>o.provisorio);
   V.innerHTML = `
-  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length)}</b> entraram nos cálculos · <a href="#inconsistencias" class="${bad.length?'warn':''}"><b>${nf(bad.length)}</b> ficaram fora por erro de data/hora</a>${bad.length?` <span class="muted">(${Core.count(bad,o=>o.issues[0].split(':')[0].replace(/\d+/g,'X')).map(([k,n])=>`${n} ${k.toLowerCase()}`).join(', ')})</span>`:''}</div>
+  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length)}</b> entraram nos cálculos · <a href="#inconsistencias" class="${bad.length?'warn':''}"><b>${nf(bad.length)}</b> ficaram fora por erro de data/hora</a>${prov.length?` · <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> entraram com 1 h provisória</a>`:''} <span class="muted">(corrigir no MV; veja Para arrumar)</span></div>
   <div class="kpis">
-    <div class="kpi hot"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?'importe o mês anterior para comparar':diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
+    <div class="kpi hot"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
     <div class="kpi"><span>Total de OS</span><b>${nf(L.length)}</b><span><b>${nf(done)} realizadas (${nf(base?done/base*100:0)}%)</b>: ${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
     <div class="kpi"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
     <div class="kpi"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
@@ -591,10 +595,10 @@ function renderSetores(L){
   wireBars(V);
 }
 function renderInc(){
-  const I = data.filter(o=>!o.ok);
-  $('#v-inconsistencias').innerHTML = `<h2>Para arrumar no MV (${nf(I.length)})</h2><p class="muted">Estas OS ficam fora de todos os relatórios e do dashboard até a data/hora ser corrigida no MV e o relatório ser importado de novo. Limite de execução: ${cfg.maxExec} h (muda em Config).</p><p><button id="cpInc">Copiar lista para o Excel</button></p>
+  const I = data.filter(o=>o.arrumar.length);
+  $('#v-inconsistencias').innerHTML = `<h2>Para arrumar no MV (${nf(I.length)})</h2><p class="muted">Nada é alterado no MV por aqui: corrija lá e importe o relatório de novo. Execução acima de ${cfg.maxExec} h (muda em Config) ou sem hora de fim <b>entra nos cálculos com 1 h provisória</b> até ser corrigida. Os demais erros ficam fora dos relatórios.</p><p><button id="cpInc">Copiar lista para o Excel</button></p>
   <div class="card"><div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Problema</th><th>Pedido</th><th>Início atend.</th><th>Fim atend.</th><th>Término</th><th>Técnico</th><th>Fila</th><th>Descrição</th></tr></thead><tbody>
-  ${I.map(o=>`<tr><td><b>${o.os}</b></td><td class="warn">${esc(o.issues.join('; '))}</td><td>${fd(o.pedido)}</td><td>${fd(o.inicio)}</td><td>${fd(o.fim)}</td><td>${fd(o.termino)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td>${o.fila}</td><td>${esc(o.desc)}</td></tr>`).join('') || '<tr><td colspan="9">Nenhuma inconsistência.</td></tr>'}</tbody></table></div></div>`;
+  ${I.map(o=>`<tr><td><b>${o.os}</b></td><td class="warn">${esc(o.arrumar.join('; '))}${o.provisorio?'':' (fora dos relatórios)'}</td><td>${fd(o.pedido)}</td><td>${fd(o.inicio)}</td><td>${fd(o.fim)}</td><td>${fd(o.termino)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td>${o.fila}</td><td>${esc(o.desc)}</td></tr>`).join('') || '<tr><td colspan="9">Nenhuma inconsistência.</td></tr>'}</tbody></table></div></div>`;
   const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
 }
 
