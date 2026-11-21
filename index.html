@@ -607,7 +607,7 @@ function renderBacklog(L){
   const hist = monthEnds(6).map(d => [d, blStats(L,d).bl.length]), mx = Math.max(1,...hist.map(h=>h[1]));
   V.innerHTML = `
   <h2>Backlog ${blLabel()}</h2>
-  <div class="filters" style="margin-bottom:16px"><label>Data início<input type="date" id="bIni" value="${bIni}"></label><label>Data fim<input type="date" id="bFim" value="${bFim}"></label><label>&nbsp;<button id="bLimpa">Sem datas (tudo)</button></label></div>
+  <div class="filters" style="margin-bottom:16px"><label>Data início<input type="date" id="bIni" value="${bIni}"></label><label>Data fim<input type="date" id="bFim" value="${bFim}"></label><label>&nbsp;<button class="prim" id="bBusca">Buscar backlog</button></label><label>&nbsp;<button id="bLimpa">Sem datas (tudo)</button></label></div>
   <p class="note" style="margin-top:-8px;margin-bottom:16px">Sem datas: tudo o que foi carregado, pendente hoje. Com datas: OS abertas no período que estavam pendentes na data fim.</p>
   <div class="kpis">
     <div class="kpi hot"><span>Backlog total</span><b>${nf(B.bl.length)}</b><span>aberta + não atendida + agendar</span></div>
@@ -625,9 +625,13 @@ function renderBacklog(L){
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
   wireBars(V);
-  $('#bIni').onchange = e => { bIni = e.target.value; render(); };
-  $('#bFim').onchange = e => { bFim = e.target.value; render(); };
-  $('#bLimpa').onclick = () => { bIni = ''; bFim = ''; render(); };
+  $('#bBusca').onclick = () => {
+    const i = $('#bIni').value, f = $('#bFim').value;
+    if (i && f && i > f) { toast('A data início está depois da data fim.'); return; }
+    bIni = i; bFim = f; render(); $('#v-backlog').scrollIntoView({block:'start'});
+    toast(`Backlog ${blLabel()}`);
+  };
+  $('#bLimpa').onclick = () => { bIni = ''; bFim = ''; render(); toast('Backlog atual (todos os arquivos)'); };
   const txt = `Backlog da manutenção ${blLabel()}\nBacklog total: ${B.bl.length}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
   $('#cpBl').onclick = () => copy(txt, 'Resumo copiado.');
   $('#cpBlList').onclick = () => copy(tsv(B.bl));
