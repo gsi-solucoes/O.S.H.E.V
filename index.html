@@ -478,17 +478,33 @@ function drawFilters(){
 function updSum(){const n=Object.values(F).filter(Boolean).length;$('#fsum').textContent=n?`Filtros (${n} ativo${n>1?'s':''})`:'Filtros'}
 function setF(k,v){F[k]=F[k]===v?'':v; shown=50; drawFilters(); render(); toast(F[k]?`Filtro: ${v}`:'Filtro removido')}
 
-let SETS = [];
+let SETS = [], openDr = null;
 function bars(list, key, opt={}){
   const rows = Core.count(list, key).slice(0, opt.top || 12), mx = Math.max(1, ...rows.map(r=>r[1])), sid = SETS.push({list, key}) - 1;
-  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}" data-s="${sid}" data-v="${esc(n)}" aria-expanded="false"><span class="n" title="${esc(n)}">${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
+  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}" data-s="${sid}" data-k="${opt.f||''}" data-v="${esc(n)}" aria-expanded="false"><span class="n" title="${esc(n)}">${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
 }
 function drillHTML(items, lim){
   const it = items.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
   return `<div class="drill">${it.slice(0,lim).map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.especialidade)} · ${esc(o.setor)}${o.localidade?' · '+esc(o.localidade):''}${o.exec.length?' · '+esc(o.tecnico):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`).join('')}${it.length>lim?`<button class="drmore" data-lim="${lim+30}">Mostrar mais ${Math.min(30,it.length-lim)} de ${it.length}</button>`:''}</div>`;
 }
+function openDrill(b){
+  const S = SETS[+b.dataset.s]; if (!S) return;
+  const kf = typeof S.key === 'function' ? S.key : (o => o[S.key]);
+  const items = S.list.filter(o => String(kf(o)) === b.dataset.v);
+  const show = lim => { const old = b.nextElementSibling; if (old && old.classList.contains('drill')) old.remove(); b.insertAdjacentHTML('afterend', drillHTML(items, lim)); const m = b.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
+  show(30); b.setAttribute('aria-expanded','true'); b.classList.add('open');
+}
 function wireBars(root){
   root.querySelectorAll('.bar[data-s]').forEach(b => b.onclick = () => {
+    const k = b.dataset.k, v = b.dataset.v;
+    if (k) {
+      // filtra a página toda E abre a lista dessas OS; tocar de novo desfaz
+      if (F[k] === v) { F[k] = ''; openDr = null; } else { F[k] = v; openDr = {k, v}; }
+      shown = 50; drawFilters(); render();
+      if (openDr) { const nb = [...document.querySelectorAll('.view.on .bar[data-k]')].find(x => x.dataset.k === openDr.k && x.dataset.v === openDr.v); if (nb) { openDrill(nb); nb.scrollIntoView({block:'center'}); } }
+      toast(F[k] ? `Filtro: ${v} (toque de novo para tirar)` : 'Filtro removido');
+      return;
+    }
     const nx = b.nextElementSibling;
     if (nx && nx.classList.contains('drill')) { nx.remove(); b.setAttribute('aria-expanded','false'); b.classList.remove('open'); return; }
     const S = SETS[+b.dataset.s]; if (!S) return;
@@ -516,7 +532,7 @@ function pendCard(L){
   P.forEach(o => { const r = g[o.pendente] = g[o.pendente] || {n:0, d:[]}; r.n++; if (o.parado!=null) r.d.push(o.parado); });
   const rows = Object.entries(g).sort((a,b)=>b[1].n-a[1].n), mx = Math.max(1,...rows.map(r=>r[1].n));
   const sid = SETS.push({list:P, key:'pendente'}) - 1;
-  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc" data-s="${sid}" data-v="${esc(k)}" aria-expanded="false"><span class="n">${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para ver as OS; toque de novo para fechar.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
+  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc" data-s="${sid}" data-k="pendente" data-v="${esc(k)}" aria-expanded="false"><span class="n">${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para filtrar e ver as OS; toque de novo para desfazer.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
 }
 function blStats(list, c){
   const bl = Core.backlogAt(list, c), terc = Core.terceirosAt(list, c);
@@ -554,7 +570,7 @@ function render(){
     <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
     <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
   </div>
-  <p class="note">Toque numa barra para ver as OS dela; toque de novo para fechar. Para filtrar a página toda, use Filtros.</p>
+  <p class="note">Toque numa barra para filtrar a página e ver as OS dela; toque de novo para desfazer.</p>
   <div class="card">${osTable(L)}</div>`;
   wireBars(V);
   $('#cpList').onclick = () => copy(tsv(L));
