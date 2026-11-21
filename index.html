@@ -92,7 +92,6 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   <p>Escolha os CSVs do relatório R_ORDEM_SERVICO do MV (um por fila, todos de uma vez). Os arquivos são lidos só no seu aparelho.</p>
   <div class="cmd">
     <label class="btn prim pick">Escolher CSVs do MV<input type="file" id="files" multiple accept=".csv,.zip,application/zip,application/x-zip-compressed,text/csv,text/comma-separated-values,text/plain,application/vnd.ms-excel,application/octet-stream"></label>
-    <button class="ghost" id="demo">Dados de exemplo</button>
     <button class="ghost" id="clear">Limpar</button>
     <span class="status" id="status">Nenhum arquivo carregado.</span>
   </div>
@@ -109,7 +108,6 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
       <li>Toque em <b>Escolher CSVs do MV</b> e selecione todos de uma vez (ou um único .zip com todos dentro). Pode adicionar mais arquivos depois (ex.: o backlog).</li>
       <li>Para o backlog completo, puxe as filas pendentes sem filtro de mês.</li>
     </ol>
-    <p class="muted">Quer só ver como fica? Toque em <b>Dados de exemplo</b>.</p>
   </section>
   <div id="app" hidden>
     <details class="fbox" id="fbox"><summary id="fsum">Filtros</summary><div class="filters" id="filters"></div></details>
@@ -550,23 +548,6 @@ $('#files').onchange = e => { readFiles([...e.target.files]); e.target.value='';
 document.addEventListener('dragover', e => e.preventDefault());
 document.addEventListener('drop', e => { e.preventDefault(); readFiles([...e.dataTransfer.files]); });
 $('#clear').onclick = () => { raw=[]; empties=new Set(); flog={}; demo=false; cut=null; rebuild(); };
-
-$('#demo').onclick = () => {
-  let s = 7; const r = () => (s = s*16807 % 2147483647) / 2147483647, pick = a => a[Math.floor(r()*a.length)];
-  const esp = ['HIDRAULICA','HIDRAULICA','CIVIL','ELETRICA','MARCENARIA','CABISTA','PINTURA'], tipos=['CORRETIVA','CORRETIVA','CORRETIVA','PREVENTIVA','VISITA MULTI','PROATIVA'];
-  const set = ['UTI ADULTO','PRONTO SOCORRO ADULTO','U.I. 2º ANDAR','U.I. 5º ANDAR','CENTRO CIRURGICO','CME 3º ANDAR','HOTELARIA','FARMACIA CENTRAL','LABORATORIO'];
-  const tec = ['TÉCNICO A','TÉCNICO B','TÉCNICO C','TÉCNICO D','TÉCNICO E','WALTER ANDRÉ (EXEMPLO)'];
-  const filas = [['concluída',70],['não atendida',10],['aguardando material',7],['conserto externo',3],['agendar',4],['aberta',3],['cancelada',1]];
-  const pf = () => {let x=r()*98,a=0;for(const [f,w] of filas){a+=w;if(x<a)return f}return 'concluída'};
-  const base = new Date(); base.setDate(1); base.setHours(0,0,0,0);
-  raw = Array.from({length:420}, (_,i) => {
-    const ped = new Date(base.getTime() - r()*75*864e5), f = pf(), ini = new Date(ped.getTime() + (r()<.6? r()*20 : r()*200)*36e5), fim = new Date(ini.getTime() + (.2+r()*3)*36e5);
-    const ex = f==='aberta' || f==='agendar' ? [] : [{servico:'SERV MANUT '+pick(esp), func: pick(tec), ini, fim}];
-    return {os:String(300000+i), desc:'Exemplo de solicitação '+(i+1), exec:ex, file:'exemplo', fila:f, tipo:pick(tipos), especialidade: f==='aberta'?'Sem especialidade':pick(esp), setor:pick(set), localidade:'', solicitante:'S'+Math.floor(r()*40), pedido:ped, termino: f==='concluída'?new Date(fim.getTime()+r()*48*36e5):null, criticidade:'Não informada'};
-  });
-  cfg.genericos = cfg.genericos.includes('WALTER ANDR') ? cfg.genericos : cfg.genericos.concat('WALTER ANDR');
-  demo = true; cut = null; rebuild();
-};
 
 $('#cfgGen').value = cfg.genericos.join('\n');
 $('#cfgMax').value = cfg.maxExec;
