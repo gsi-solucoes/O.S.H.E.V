@@ -493,17 +493,18 @@ function render(){
   if (!data.length) return;
   updSum();
   const L = filtered(), V = $('#v-dashboard');
-  const done = L.filter(o=>o.fila==='concluída').length;
+  const nConc = L.filter(o=>o.fila==='concluída').length, nTer = L.filter(o=>o.terceiros).length, nCanc = L.filter(o=>o.fila==='cancelada').length;
+  const done = nConc + nTer, base = L.length - nCanc, pend = L.filter(o=>o.backlog).length;
   const esp = L.map(o=>o.espera).filter(x=>x!=null), hh = L.reduce((s,o)=>s+o.horas,0);
   const B = blStats(L, cut), prev = blStats(L, new Date(cut.getFullYear(), cut.getMonth(), 0));
   const diff = B.bl.length - prev.bl.length, pm0 = new Date(cut.getFullYear(), cut.getMonth()-1, 1), pm1 = new Date(cut.getFullYear(), cut.getMonth(), 1);
   const hasPrev = L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
   const bad = data.filter(o=>!o.ok);
   V.innerHTML = `
-  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length)}</b> entraram nos cálculos · <a href="#inconsistencias" class="${bad.length?'warn':''}"><b>${nf(bad.length)}</b> ficaram fora por erro de data/hora</a>${bad.length?` <span class="muted">(${Core.count(bad,o=>o.issues[0].replace(/\d+ h/,'X h')).map(([k,n])=>`${n} ${k.toLowerCase()}`).join(', ')})</span>`:''}</div>
+  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length)}</b> entraram nos cálculos · <a href="#inconsistencias" class="${bad.length?'warn':''}"><b>${nf(bad.length)}</b> ficaram fora por erro de data/hora</a>${bad.length?` <span class="muted">(${Core.count(bad,o=>o.issues[0].split(':')[0].replace(/\d+/g,'X')).map(([k,n])=>`${n} ${k.toLowerCase()}`).join(', ')})</span>`:''}</div>
   <div class="kpis">
     <div class="kpi hot"><span>Backlog em ${cut.toLocaleDateString('pt-BR')}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?'importe o mês anterior para comparar':diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
-    <div class="kpi"><span>Total de OS</span><b>${nf(L.length)}</b><span>${nf(done)} concluídas (${nf(L.length?done/L.length*100:0)}%)</span></div>
+    <div class="kpi"><span>Total de OS</span><b>${nf(L.length)}</b><span><b>${nf(done)} realizadas (${nf(base?done/base*100:0)}%)</b>: ${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo · ${nf(pend)} pendentes nossas${nCanc?` · ${nf(nCanc)} canceladas (fora do %)`:''}</span></div>
     <div class="kpi"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
     <div class="kpi"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
     <div class="kpi"><span>Homem-hora lançado</span><b>${nf(hh)} h</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>

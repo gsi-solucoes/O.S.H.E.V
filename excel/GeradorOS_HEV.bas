@@ -861,7 +861,8 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     E = "(DataCorte+0.99999)"
     Kpi ws, "A4", "Backlog na data de corte", "=" & FormBacklog(""), "aberta + não atendida + agendar"
     Kpi ws, "C4", "Total de OS", "=SUBTOTAL(103,tbOS[OS])", ""
-    ws.Range("C6").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""concluída"")&"" concluídas"""
+    ' realizadas = concluídas + aguardando material + conserto externo (a nossa parte está feita); canceladas fora do %
+    ws.Range("C6").Formula = "=(COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""concluída"")+COUNTIFS(tbOS[Visivel],1,tbOS[Terceiros],""S""))&"" realizadas (""&TEXT(IFERROR((COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""concluída"")+COUNTIFS(tbOS[Visivel],1,tbOS[Terceiros],""S""))/(SUBTOTAL(103,tbOS[OS])-COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""cancelada"")),0),""0%"")&"") · ""&COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"")&"" pendentes nossas"""
     Kpi ws, "E4", "Aguardando terceiros", "=COUNTIFS(tbOS[Visivel],1,tbOS[Terceiros],""S"",tbOS[Pedido],""<=""&" & E & ")", "material e externo, fora do backlog"
     Kpi ws, "G4", "Espera mediana até 1º atend. (h)", "", ""
     ws.Range("G5").FormulaArray = "=IFERROR(MEDIAN(IF((tbOS[Visivel]=1)*(tbOS[Espera_h]<>""""),tbOS[Espera_h])),""-"")"
