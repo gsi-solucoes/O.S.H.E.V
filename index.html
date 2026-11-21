@@ -46,6 +46,12 @@ textarea{min-height:120px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
 .kpi b{display:block;font:700 clamp(26px,4vw,34px)/1.1 "Red Hat Display",sans-serif;white-space:nowrap}
 .kpi span{font-size:14px;color:var(--muted)}
+.frac{display:flex;align-items:center;gap:14px;margin:4px 0 6px}
+.fr{display:grid;justify-items:center}
+.fr em{font:700 clamp(22px,3.4vw,28px)/1.1 "Red Hat Display",sans-serif;font-style:normal;font-variant-numeric:tabular-nums}
+.fr i{display:block;width:100%;height:2px;background:currentColor;margin:3px 0;opacity:.7}
+.pc{font:700 clamp(30px,5vw,40px)/1 "Red Hat Display",sans-serif;color:var(--accent);white-space:nowrap}
+.pc small{display:block;font:500 13px "Red Hat Text",sans-serif;color:var(--muted)}
 .kpi.hot{background:var(--band);color:#fff;border-color:var(--band)}
 .kpi.hot span{color:#c9d3ee}
 .kpi.hot b{color:#ff5c96}
@@ -513,7 +519,7 @@ function render(){
   <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
   <div class="kpis">
     <div class="kpi hot"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
-    <div class="kpi"><span>Total de OS</span><b>${nf(L.length)}</b><span><b>${nf(done)} realizadas (${nf(base?done/base*100:0)}%)</b>: ${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
+    <div class="kpi"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pc">${nf(base?done/base*100:0)}%</div></div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
     <div class="kpi"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
     <div class="kpi"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
     <div class="kpi"><span>Homem-hora lançado</span><b>${nf(hh)} h</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>

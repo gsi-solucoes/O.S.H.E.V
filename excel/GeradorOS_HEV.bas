@@ -878,8 +878,6 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     E = "(DataCorte+0.99999)"
     Kpi ws, "A4", "Backlog (datas na aba Backlog)", "=" & FormBacklog(""), "aberta + não atendida + agendar"
     Kpi ws, "C4", "Total de OS", "=SUBTOTAL(103,tbOS[OS])", ""
-    ' realizadas = concluídas + aguardando material + conserto externo + canceladas (passaram pela equipe)
-    ws.Range("C6").Formula = "=(SUBTOTAL(103,tbOS[OS])-COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S""))&"" realizadas (""&TEXT(IFERROR((SUBTOTAL(103,tbOS[OS])-COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S""))/SUBTOTAL(103,tbOS[OS]),0),""0%"")&"") · ""&COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"")&"" pendentes nossas"""
     Kpi ws, "E4", "Aguardando terceiros", "=COUNTIFS(tbOS[Visivel],1,tbOS[Terceiros],""S"",tbOS[Pedido],""<=""&" & E & INI & ")", "material e externo, fora do backlog"
     Kpi ws, "G4", "Espera mediana até 1º atend. (h)", "", ""
     ws.Range("G5").FormulaArray = "=IFERROR(MEDIAN(IF((tbOS[Visivel]=1)*(tbOS[Espera_h]<>""""),tbOS[Espera_h])),""-"")"
@@ -891,6 +889,14 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     ws.Range("A5").Font.Color = RGB(224, 17, 95)
     ws.Range("G5,I5").NumberFormat = "0.0"
     ws.Range("A6:J6").Font.Color = RGB(91, 102, 131): ws.Range("A6:J6").Font.Size = 9
+    ' Total de OS em forma de fração: total em cima, realizadas embaixo, % ao lado
+    ws.Range("C6").Formula = "=SUBTOTAL(103,tbOS[OS])-COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"")"
+    ws.Range("C6").Font.Size = 24: ws.Range("C6").Font.Bold = True: ws.Range("C6").Font.Color = RGB(11, 22, 48)
+    ws.Range("C5").Borders(xlEdgeBottom).Weight = xlMedium
+    ws.Range("D5").Formula = "=IFERROR(C6/C5,0)": ws.Range("D5").NumberFormat = "0%"
+    ws.Range("D5").Font.Size = 28: ws.Range("D5").Font.Bold = True: ws.Range("D5").Font.Color = RGB(224, 17, 95)
+    ws.Range("C7").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""concluída"")&"" concluídas + ""&COUNTIFS(tbOS[Visivel],1,tbOS[Terceiros],""S"")&"" material/externo + ""&COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""cancelada"")&"" canceladas · ""&COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"")&"" pendentes"""
+    ws.Range("C7").Font.Size = 9: ws.Range("C7").Font.Color = RGB(91, 102, 131)
 
     ' dados dos gráficos (aba Calc)
     Dim filas As Variant, r As Long, k As Variant, arr As Variant
