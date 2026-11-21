@@ -72,6 +72,11 @@ textarea{min-height:120px}
 .dr:last-of-type{border-bottom:0}
 .dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .drmore{justify-self:start}
+.rq{margin-bottom:14px}
+.ck{display:grid;gap:8px}
+.ckl{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.ckl input[type=checkbox],.ckl input[type=radio]{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.ckl select,.ckl input[type=date]{width:auto;min-height:38px;display:inline-block;margin:4px 0}
 .mini{display:grid;gap:8px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:4px}
 .mg{display:grid;gap:4px}
 .mt{font-size:12px;color:var(--muted);font-weight:600}
@@ -123,7 +128,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </div>
 </header>
 <nav class="tabs" id="tabs">
-  <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
+  <a href="#dashboard">Dashboard</a><a href="#relatorios">Relatórios</a><a href="#backlog">Backlog</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
 </nav>
 <main class="band">
   <section id="emptyState" class="empty">
@@ -137,6 +142,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   <div id="app" hidden>
     <details class="fbox" id="fbox"><summary id="fsum">Filtros</summary><div class="filters" id="filters"></div></details>
     <section class="view" id="v-dashboard"></section>
+    <section class="view" id="v-relatorios"></section>
     <section class="view" id="v-backlog"></section>
     <section class="view" id="v-tempos"></section>
     <section class="view" id="v-equipe"></section>
@@ -164,6 +170,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 <div id="prog" hidden role="status" aria-live="polite"><div class="pin"><div style="display:flex;justify-content:space-between;gap:12px"><b id="progTxt">Carregando...</b><b id="progPct" style="color:var(--accent);font-variant-numeric:tabular-nums">0%</b></div><span id="progSub"></span><div class="pbar"><i id="progBar"></i></div></div></div>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>/* ===== Núcleo: leitura dos CSVs do MV (R_ORDEM_SERVICO) e cálculos ===== */
 var Core = (function () {
   function decode(buf) {
@@ -450,7 +457,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 function copy(text,msg){navigator.clipboard.writeText(text).then(()=>toast(msg||'Copiado. Cole no Excel.'),()=>toast('Não foi possível copiar neste aparelho.'))}
 
 function rebuild(){
-  data = Core.enrich(Core.merge(raw), cfg);
+  data = Core.enrich(Core.merge(raw), cfg); relStale = true;
   const dates = data.map(o => o.pedido).filter(Boolean);
   setCut();
   const files = [...new Set(raw.map(o=>o.file))];
@@ -483,7 +490,7 @@ function drawFilters(){
   $('#filters').innerHTML = FL.map(([k,l]) => `<label>${l}<select id="f-${k}"><option value="">Todas</option>${opts(k)}</select></label>`).join('')
     + `<label>Pedido de<input type="date" id="f-de" value="${F.de}"></label><label>Pedido até<input type="date" id="f-ate" value="${F.ate}"></label>`
     + `<label>Buscar<input type="search" id="f-q" value="${esc(F.q)}" placeholder="Nº, descrição, local"></label>`
-    + `<label>&nbsp;<button id="f-reset">Limpar filtros</button></label>`;
+    + `<label>&nbsp;<button id="f-reset">Limpar filtros</button></label><label>&nbsp;<a class="btn prim" href="#relatorios" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">Gerar relatório em Excel</a></label>`;
   FL.forEach(([k]) => $('#f-'+k).onchange = e => {F[k]=e.target.value; shown=50; render()});
   $('#f-de').onchange = e => {F.de=e.target.value; render()}; $('#f-ate').onchange = e => {F.ate=e.target.value; render()};
   $('#f-q').oninput = e => {F.q=e.target.value; shown=50; render()};
@@ -492,7 +499,7 @@ function drawFilters(){
 function updSum(){const n=Object.values(F).filter(Boolean).length;$('#fsum').textContent=n?`Filtros (${n} ativo${n>1?'s':''})`:'Filtros'}
 function setF(k,v){F[k]=F[k]===v?'':v; shown=50; drawFilters(); render(); toast(F[k]?`Filtro: ${v}`:'Filtro removido')}
 
-let SETS = [], openDr = null;
+let SETS = [], openDr = null, relStale = true;
 function bars(list, key, opt={}){
   const rows = Core.count(list, key).slice(0, opt.top || 12), mx = Math.max(1, ...rows.map(r=>r[1])), sid = SETS.push({list, key}) - 1;
   return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}${opt.f&&F[opt.f]===n?' open':''}" data-s="${sid}" data-k="${opt.f||''}" data-v="${esc(n)}" aria-expanded="false"><span class="n" title="${esc(n)}"><span class="chev" aria-hidden="true">▸</span>${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
@@ -594,6 +601,7 @@ function render(){
   wireBars(V);
   $('#cpList').onclick = () => copy(tsv(L));
   const m = $('#more'); if (m) m.onclick = () => {shown+=100; render()};
+  if (!$('#v-relatorios').childElementCount || relStale) { drawRel(); relStale = false; }
   renderBacklog(L); renderTempos(L); renderEquipe(L); renderSetores(L); renderInc();
 }
 
@@ -678,11 +686,133 @@ function renderInc(){
   const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
 }
 
+// ===================== GERADOR DE RELATÓRIOS (Excel) =====================
+const REL = [
+  ['ind','Indicadores do período','Total, realizadas e %, por fila, especialidade e tipo (OS abertas no período)'],
+  ['bl','Backlog','Tudo que estava pendente até o fim do período, desde o começo: por fila, idade, especialidade e a lista'],
+  ['set','Setores','OS por setor e localidade, realizadas e pendentes'],
+  ['hh','Homem-hora por técnico','OS, horas e média por técnico'],
+  ['tp','Tempos de atendimento','Espera até o 1º atendimento, execução e pedido → término, por especialidade e tipo'],
+  ['pend','Pendências por responsável','Com quem as OS pendentes estão paradas (campo Observação) e a lista'],
+  ['lista','Lista de OS','Todas as OS do período com todos os campos'],
+  ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV']
+];
+const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function relMeses(){ const m = {}; data.forEach(o => { if (o.pedido) m[o.pedido.getFullYear()*100+o.pedido.getMonth()] = 1; }); return Object.keys(m).map(Number).sort((a,b)=>b-a); }
+function drawRel(){
+  const V = $('#v-relatorios'), sel = (k,l) => `<label>${l}<select id="r-${k}"><option value="">Todas</option>${Core.count(data.filter(o=>o.ok && (k!=='pendente'||o.pendente)), o=>k==='tecnico'?o.tecnico:o[k]).map(([v,n])=>`<option value="${esc(v)}">${esc(v)} (${n})</option>`).join('')}</select></label>`;
+  V.innerHTML = `<h2>Gerar relatório em Excel</h2>
+  <div class="card rq"><h3>1. Quais relatórios?</h3><div class="ck">${REL.map(([k,t,d])=>`<label class="ckl"><input type="checkbox" value="${k}" ${k==='ind'||k==='bl'?'checked':''}><span><b>${t}</b><br><span class="muted">${d}</span></span></label>`).join('')}</div>
+    <p><button id="r-all">Marcar todos</button> <button id="r-none">Desmarcar</button></p></div>
+  <div class="card rq"><h3>2. Qual período?</h3>
+    <div class="ck"><label class="ckl"><input type="radio" name="r-per" value="tudo" checked><span><b>Tudo</b> o que foi carregado</span></label>
+    <label class="ckl"><input type="radio" name="r-per" value="mes"><span><b>Mês</b> <select id="r-mes">${relMeses().map(v=>`<option value="${v}">${MES[v%100]}/${Math.floor(v/100)}</option>`).join('')}</select></span></label>
+    <label class="ckl"><input type="radio" name="r-per" value="de"><span><b>De</b> <input type="date" id="r-de"> <b>até</b> <input type="date" id="r-ate"></span></label></div>
+    <p class="note">Indicadores e os demais: só o que foi aberto dentro do período. Backlog: tudo que estava pendente até o fim do período, desde o começo.</p></div>
+  <div class="card rq"><h3>3. Filtrar por (opcional)</h3><div class="filters" style="margin:0">${[['especialidade','Especialidade'],['setor','Setor'],['tecnico','Técnico'],['tipo','Tipo'],['criticidade','Criticidade'],['pendente','Pendente de']].map(([k,l])=>sel(k,l)).join('')}</div></div>
+  <div class="card rq"><h3>4. Como gerar?</h3><div class="ck">
+    <label class="ckl"><input type="radio" name="r-fmt" value="abas" checked><span><b>Um arquivo, uma aba por relatório</b></span></label>
+    <label class="ckl"><input type="radio" name="r-fmt" value="uma"><span><b>Um arquivo, tudo numa aba só</b> (um embaixo do outro)</span></label>
+    <label class="ckl"><input type="radio" name="r-fmt" value="sep"><span><b>Arquivos separados</b>, um por relatório</span></label></div></div>
+  <p><button class="prim" id="r-gerar">Gerar Excel</button></p><p class="note" id="r-msg"></p>`;
+  $('#r-all').onclick = () => V.querySelectorAll('.ck input[type=checkbox]').forEach(c => c.checked = true);
+  $('#r-none').onclick = () => V.querySelectorAll('.ck input[type=checkbox]').forEach(c => c.checked = false);
+  ['r-mes','r-de','r-ate'].forEach(id => $('#'+id).addEventListener('focus', () => { V.querySelector(`input[name=r-per][value=${id==='r-mes'?'mes':'de'}]`).checked = true; }));
+  $('#r-gerar').onclick = gerarRel;
+}
+function relPeriodo(){
+  const p = document.querySelector('input[name=r-per]:checked').value;
+  if (p === 'mes') { const v = +$('#r-mes').value; if (!v) return null; const y = Math.floor(v/100), m = v%100; return {ini:new Date(y,m,1), fim:new Date(y,m+1,0), nome:`${MES[m]}-${y}`, rot:`${MES[m]}/${y}`}; }
+  if (p === 'de') { const a = $('#r-de').value, b = $('#r-ate').value; if (!a || !b || a > b) return 'erro'; const D = x => new Date(x+'T00:00'); return {ini:D(a), fim:D(b), nome:`${a}_a_${b}`, rot:`${D(a).toLocaleDateString('pt-BR')} a ${D(b).toLocaleDateString('pt-BR')}`}; }
+  return {ini:null, fim:null, nome:'tudo', rot:'tudo o que foi carregado'};
+}
+const dt = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toTimeString().slice(0,5) : '';
+const r1 = x => x == null || isNaN(x) ? '' : Math.round(x*10)/10;
+function tabela(t, cab, linhas){ return [[t], cab, ...linhas, []]; }
+function cnt(list, f){ return Core.count(list, f); }
+function relBlocos(k, L, Lall, P){
+  const fimP = P.fim || hoje(), E = new Date(fimP.getFullYear(), fimP.getMonth(), fimP.getDate(), 23, 59, 59);
+  const linhaOS = o => [+o.os, dt(o.pedido), o.fila, o.tipo, o.especialidade, o.setor, o.localidade||'', o.desc, o.obs||'', o.pendente||'', o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'', o.parado??'', o.exec.length?o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', '):'', dt(o.inicio), dt(o.fim), dt(o.termino), r1(o.espera), r1(o.horas), r1(o.total), o.arrumar.join('; ')];
+  const cabOS = ['OS','Pedido','Fila','Tipo','Especialidade','Setor','Localidade','Descrição','Observação','Pendente de','Encaminhado em','Parado (dias)','Técnico','Início atend.','Fim atend.','Término','Espera (h)','Execução (h)','Total (h)','Para arrumar'];
+  if (k === 'ind') {
+    const nC = L.filter(o=>o.fila==='concluída').length, nT = L.filter(o=>o.terceiros).length, nX = L.filter(o=>o.fila==='cancelada').length, done = nC+nT+nX;
+    const esp = L.map(o=>o.espera).filter(x=>x!=null);
+    return [['Indicadores do período: '+P.rot], [],
+      ...tabela('Resumo', ['Indicador','Valor'], [['Total de OS', L.length], ['Realizadas (concluídas + material/externo + canceladas)', done], ['% realizado', L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',') + '%' : '-'], ['Concluídas', nC], ['Aguardando material / conserto externo', nT], ['Canceladas', nX], ['Pendentes nossas (aberta + não atendida + agendar)', L.filter(o=>o.backlog).length], ['Espera até 1º atendimento - mediana (h)', r1(Core.median(esp))], ['Espera até 1º atendimento - média (h)', r1(Core.mean(esp))], ['Homem-hora lançado (h)', r1(L.reduce((s,o)=>s+o.horas,0))], ['OS com horário ajustado (1 h provisória)', L.filter(o=>o.provisorio).length]]),
+      ...tabela('Por fila', ['Fila','OS'], cnt(L,'fila')),
+      ...tabela('Por especialidade', ['Especialidade','OS'], cnt(L,'especialidade')),
+      ...tabela('Por tipo', ['Tipo','OS'], cnt(L,'tipo'))];
+  }
+  if (k === 'bl') {
+    const bl = Core.backlogAt(Lall, fimP), terc = Core.terceirosAt(Lall, fimP), bands = ['0–7 dias','8–15 dias','16–30 dias','Mais de 30 dias'];
+    const age = o => Core.ageBand(Math.max(0,(E - o.pedido)/864e5)), fl = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
+    const dep = bl.filter(o=>!o.backlog), rows = fl.map(([f,l]) => { const s = bl.filter(o=>o.fila===f); return [l, ...bands.map(b=>s.filter(o=>age(o)===b).length), s.length]; });
+    if (dep.length) rows.push(['Pendentes no corte, resolvidas depois', ...bands.map(b=>dep.filter(o=>age(o)===b).length), dep.length]);
+    rows.push(['Backlog total', ...bands.map(b=>bl.filter(o=>age(o)===b).length), bl.length]);
+    return [['Backlog até '+fimP.toLocaleDateString('pt-BR')+' (desde o começo)'], [],
+      ...tabela('Por fila e idade', ['Fila',...bands,'Total'], rows),
+      ...tabela('Por especialidade', ['Especialidade','OS'], cnt(bl,'especialidade')),
+      ...tabela('Aguardando terceiros (fora do backlog)', ['Fila','OS'], cnt(terc,'fila')),
+      ...tabela('Lista do backlog', [...cabOS,'Idade (dias)'], bl.slice().sort((a,b)=>a.pedido-b.pedido).map(o=>[...linhaOS(o), Math.floor(Math.max(0,(E-o.pedido)/864e5))]))];
+  }
+  if (k === 'set') {
+    const g = {}; L.forEach(o => { const r = g[o.setor] = g[o.setor] || [0,0,0]; r[0]++; if (!o.backlog) r[1]++; else r[2]++; });
+    return [['Setores: '+P.rot], [], ...tabela('Por setor', ['Setor','OS','Realizadas','Pendentes nossas'], Object.entries(g).sort((a,b)=>b[1][0]-a[1][0]).map(([s,r])=>[s,...r])),
+      ...tabela('Por localidade', ['Localidade','OS'], cnt(L.filter(o=>o.localidade),'localidade'))];
+  }
+  if (k === 'hh') {
+    const g = {}; L.forEach(o => o.exec.forEach((x,i) => { const n = o.tecnicos[i], r = g[n] = g[n] || {os:new Set(), h:0}; r.os.add(o.os); let hh = 0; if (x.ini&&x.fim&&x.fim>=x.ini){ hh=(x.fim-x.ini)/36e5; if (hh>(cfg.maxExec||12)) hh=1; } else if (x.ini&&!x.fim&&o.fila==='concluída') hh=1; r.h += hh; }));
+    return [['Homem-hora por técnico: '+P.rot], [], ...tabela('Técnicos', ['Técnico','OS','Horas','Média por OS (h)'], Object.entries(g).sort((a,b)=>b[1].h-a[1].h).map(([n,r])=>[n, r.os.size, r1(r.h), r1(r.h/r.os.size)]))];
+  }
+  if (k === 'tp') {
+    const grp = key => { const g = {}; L.forEach(o => (g[o[key]] = g[o[key]] || []).push(o)); return Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a]) => { const e = a.map(o=>o.espera).filter(x=>x!=null), x = a.filter(o=>o.horas>0).map(o=>o.horas), t = a.map(o=>o.total).filter(v=>v!=null); return [k2, a.length, r1(Core.median(e)), r1(Core.mean(e)), r1(Core.mean(x)), r1(Core.mean(t))]; }); };
+    const cab = ['','OS','Espera mediana (h)','Espera média (h)','Execução média (h)','Pedido → término médio (h)'];
+    return [['Tempos de atendimento: '+P.rot], [], ...tabela('Por especialidade', cab, grp('especialidade')), ...tabela('Por tipo', cab, grp('tipo'))];
+  }
+  if (k === 'pend') {
+    const Pn = L.filter(o=>o.pendente), g = {}; Pn.forEach(o => { const r = g[o.pendente] = g[o.pendente] || []; r.push(o); });
+    return [['Pendências por responsável: '+P.rot], [], ...tabela('Resumo', ['Pendente de','OS','Mediana de dias parada'], Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a])=>[k2, a.length, r1(Core.median(a.map(o=>o.parado).filter(x=>x!=null)))])),
+      ...tabela('Lista', cabOS, Pn.sort((a,b)=>(a.pendente||'').localeCompare(b.pendente||'') || (b.parado||0)-(a.parado||0)).map(linhaOS))];
+  }
+  if (k === 'lista') return [['Lista de OS: '+P.rot], [], ...tabela('OS', cabOS, L.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(linhaOS))];
+  if (k === 'arr') { const I = P.todos.filter(o=>o.arrumar.length && (!P.ini || (o.pedido && o.pedido>=P.ini && o.pedido<=E))); return [['Para arrumar no MV: '+P.rot], [], ...tabela('OS', ['Problema',...cabOS], I.map(o=>[o.arrumar.join('; '), ...linhaOS(o)]))]; }
+  return [];
+}
+function wsDe(aoa){ const ws = XLSX.utils.aoa_to_sheet(aoa); const w = []; aoa.forEach(r => r.forEach((c,i) => { const l = String(c??'').length; w[i] = Math.min(60, Math.max(w[i]||8, l+2)); })); ws['!cols'] = w.map(x=>({wch:x})); return ws; }
+async function gerarRel(){
+  const msg = $('#r-msg');
+  if (!window.XLSX) { msg.textContent = 'Sem internet para carregar o gerador de Excel. Tente de novo com internet.'; return; }
+  const ks = [...document.querySelectorAll('#v-relatorios .ck input[type=checkbox]:checked')].map(c=>c.value);
+  if (!ks.length) { msg.textContent = 'Marque pelo menos um relatório.'; return; }
+  const P = relPeriodo(); if (!P || P === 'erro') { msg.textContent = 'Confira o período: escolha o mês, ou a data início e a data fim (início antes do fim).'; return; }
+  const fil = ['especialidade','setor','tecnico','tipo','criticidade','pendente'].map(k=>[k,$('#r-'+k).value]).filter(x=>x[1]);
+  const todos = data.filter(o => fil.every(([k,v]) => k==='tecnico' ? o.tecnicos.includes(v) : o[k]===v)), base = todos.filter(o => o.ok); P.todos = todos;
+  const E = P.fim ? new Date(P.fim.getFullYear(), P.fim.getMonth(), P.fim.getDate(), 23, 59, 59) : null;
+  const L = P.ini ? base.filter(o => o.pedido && o.pedido >= P.ini && o.pedido <= E) : base;
+  const filTxt = fil.length ? fil.map(([k,v])=>`${k}: ${v}`).join(' · ') : 'sem filtros';
+  const fmt = document.querySelector('input[name=r-fmt]:checked').value, nomeRel = k => REL.find(r=>r[0]===k)[1];
+  const blocos = ks.map(k => [k, [...relBlocos(k, L, base, P), ['Filtros: '+filTxt], ['Gerado em '+new Date().toLocaleString('pt-BR')+' · Gerador de OS HEV']]]);
+  const arq = s => `OS_HEV_${s}_${P.nome}.xlsx`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w.\-]+/g,'_');
+  try {
+    if (fmt === 'sep') {
+      for (const [k,aoa] of blocos) { const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, wsDe(aoa), nomeRel(k).slice(0,31)); XLSX.writeFile(wb, arq(nomeRel(k))); await new Promise(r=>setTimeout(r,900)); }
+      msg.textContent = `${blocos.length} arquivo(s) gerado(s). Se o navegador perguntar, permita baixar vários arquivos.`;
+    } else {
+      const wb = XLSX.utils.book_new();
+      if (fmt === 'uma') XLSX.utils.book_append_sheet(wb, wsDe(blocos.flatMap(([k,a]) => [...a, [], []])), 'Relatório');
+      else blocos.forEach(([k,a]) => XLSX.utils.book_append_sheet(wb, wsDe(a), nomeRel(k).slice(0,31)));
+      XLSX.writeFile(wb, arq(ks.length===1 ? nomeRel(ks[0]) : 'Relatorios'));
+      msg.textContent = `Arquivo gerado com ${blocos.length} relatório(s) · período: ${P.rot} · ${filTxt}.`;
+    }
+    toast('Excel gerado. Veja nos downloads.');
+  } catch(e) { msg.textContent = 'Não foi possível baixar aqui. Abra pelo site https://gsi-solucoes.github.io/O.S.H.E.V/ no navegador.'; }
+}
+
 function route(){
   const h = (location.hash||'#dashboard').slice(1);
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id==='v-'+h));
   document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.hash==='#'+h));
-  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos') ? 'none' : '';
+  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos'||h==='relatorios') ? 'none' : '';
   $('#app').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
   $('#emptyState').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
   if (!document.querySelector('.view.on')) $('#v-dashboard').classList.add('on');
