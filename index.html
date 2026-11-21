@@ -408,7 +408,11 @@ const fd = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('
 const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 
-let raw = [], data = [], cut = null, shown = 50, demo = false;
+let raw = [], data = [], cut = null, shown = 50, demo = false, bIni = '', bFim = '';
+const hoje = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+function setCut(){ cut = bFim ? new Date(bFim+'T00:00') : hoje(); }
+function blBase(L){ const i = bIni ? new Date(bIni+'T00:00') : null; return i ? L.filter(o=>o.pedido && o.pedido>=i) : L; }
+function blLabel(){ const f = d => new Date(d+'T00:00').toLocaleDateString('pt-BR'); return bIni && bFim ? `de ${f(bIni)} a ${f(bFim)}` : bFim ? `até ${f(bFim)}` : bIni ? `desde ${f(bIni)} (pendente hoje)` : 'atual (todos os arquivos carregados)'; }
 let cfg = Object.assign({genericos:['WALTER ANDR'], depara:{}, maxExec:12}, store.get('gos_cfg', {}));
 const F = {fila:'', especialidade:'', tecnico:'', tipo:'', setor:'', criticidade:'', de:'', ate:'', q:''};
 const FL = [['fila','Fila'],['pendente','Pendente de'],['especialidade','Especialidade'],['tecnico','Técnico'],['tipo','Tipo'],['setor','Setor'],['criticidade','Criticidade']];
@@ -419,7 +423,7 @@ function copy(text,msg){navigator.clipboard.writeText(text).then(()=>toast(msg||
 function rebuild(){
   data = Core.enrich(Core.merge(raw), cfg);
   const dates = data.map(o => o.pedido).filter(Boolean);
-  if (!cut && dates.length) { const mx = new Date(Math.max(...dates)); cut = new Date(mx.getFullYear(), mx.getMonth()+1, 0); }
+  setCut();
   const files = [...new Set(raw.map(o=>o.file))];
   const bad = data.filter(o=>!o.ok).length;
   $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s) · ${nf(data.length-bad)} entraram · ${nf(bad)} fora por erro${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
@@ -491,19 +495,20 @@ function monthEnds(n){const out=[];for(let i=n-1;i>=0;i--)out.push(new Date(cut.
 
 function render(){
   if (!data.length) return;
+  setCut();
   updSum();
   const L = filtered(), V = $('#v-dashboard');
   const nConc = L.filter(o=>o.fila==='concluída').length, nTer = L.filter(o=>o.terceiros).length, nCanc = L.filter(o=>o.fila==='cancelada').length;
   const done = nConc + nTer + nCanc, base = L.length, pend = L.filter(o=>o.backlog).length;
   const esp = L.map(o=>o.espera).filter(x=>x!=null), hh = L.reduce((s,o)=>s+o.horas,0);
-  const B = blStats(L, cut), prev = blStats(L, new Date(cut.getFullYear(), cut.getMonth(), 0));
+  const B = blStats(blBase(L), cut), prev = blStats(blBase(L), new Date(cut.getFullYear(), cut.getMonth(), 0));
   const diff = B.bl.length - prev.bl.length, pm0 = new Date(cut.getFullYear(), cut.getMonth()-1, 1), pm1 = new Date(cut.getFullYear(), cut.getMonth(), 1);
   const hasPrev = L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
   const bad = data.filter(o=>!o.ok);
   V.innerHTML = `
   <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length)}</b> entraram nos cálculos · <a href="#inconsistencias" class="${bad.length?'warn':''}"><b>${nf(bad.length)}</b> ficaram fora por erro de data/hora</a>${bad.length?` <span class="muted">(${Core.count(bad,o=>o.issues[0].split(':')[0].replace(/\d+/g,'X')).map(([k,n])=>`${n} ${k.toLowerCase()}`).join(', ')})</span>`:''}</div>
   <div class="kpis">
-    <div class="kpi hot"><span>Backlog em ${cut.toLocaleDateString('pt-BR')}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?'importe o mês anterior para comparar':diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
+    <div class="kpi hot"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?'importe o mês anterior para comparar':diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
     <div class="kpi"><span>Total de OS</span><b>${nf(L.length)}</b><span><b>${nf(done)} realizadas (${nf(base?done/base*100:0)}%)</b>: ${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
     <div class="kpi"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
     <div class="kpi"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
@@ -525,7 +530,7 @@ function render(){
 }
 
 function renderBacklog(L){
-  const B = blStats(L, cut), V = $('#v-backlog');
+  const B = blStats(blBase(L), cut), V = $('#v-backlog');
   const bands = ['0–7 dias','8–15 dias','16–30 dias','Mais de 30 dias'];
   const age = o => Core.ageBand(Math.max(0,(cut.getTime()+864e5-1 - o.pedido)/864e5));
   const filas = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
@@ -533,7 +538,9 @@ function renderBacklog(L){
   const dep = B.bl.filter(o=>!o.backlog);
   const hist = monthEnds(6).map(d => [d, blStats(L,d).bl.length]), mx = Math.max(1,...hist.map(h=>h[1]));
   V.innerHTML = `
-  <div class="row"><h2>Backlog mensal</h2><label class="muted">Data de corte <input type="date" id="cut" value="${iso(cut)}"></label></div>
+  <h2>Backlog ${blLabel()}</h2>
+  <div class="filters" style="margin-bottom:16px"><label>Data início<input type="date" id="bIni" value="${bIni}"></label><label>Data fim<input type="date" id="bFim" value="${bFim}"></label><label>&nbsp;<button id="bLimpa">Sem datas (tudo)</button></label></div>
+  <p class="note" style="margin-top:-8px;margin-bottom:16px">Sem datas: tudo o que foi carregado, pendente hoje. Com datas: OS abertas no período que estavam pendentes na data fim.</p>
   <div class="kpis">
     <div class="kpi hot"><span>Backlog total</span><b>${nf(B.bl.length)}</b><span>aberta + não atendida + agendar</span></div>
     <div class="kpi"><span>Aguardando triagem</span><b>${nf(B.aberta)}</b><span>abertas</span></div>
@@ -549,8 +556,10 @@ function renderBacklog(L){
     <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
-  $('#cut').onchange = e => {if(e.target.value){cut=new Date(e.target.value+'T00:00');render()}};
-  const txt = `Backlog da manutenção em ${cut.toLocaleDateString('pt-BR')}\nBacklog total: ${B.bl.length}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
+  $('#bIni').onchange = e => { bIni = e.target.value; render(); };
+  $('#bFim').onchange = e => { bFim = e.target.value; render(); };
+  $('#bLimpa').onclick = () => { bIni = ''; bFim = ''; render(); };
+  const txt = `Backlog da manutenção ${blLabel()}\nBacklog total: ${B.bl.length}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
   $('#cpBl').onclick = () => copy(txt, 'Resumo copiado.');
   $('#cpBlList').onclick = () => copy(tsv(B.bl));
 }

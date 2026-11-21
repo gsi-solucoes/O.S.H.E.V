@@ -18,6 +18,7 @@ Private Const SH_CALC As String = "Calc"
 Private Const SH_HIST As String = "Histórico"
 Private Const SH_ARQ As String = "Arquivos"
 Private Const NCOL As Long = 26
+Private Const INI As String = ",tbOS[Pedido],"">=""&N(DataIni)"
 
 Private gLabels As Object
 Private gDePara As Object
@@ -748,21 +749,23 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
         End If
     Next key
 
-    Dim corte As Date
-    If maxPed > 0 Then corte = DateSerial(Year(maxPed), Month(maxPed) + 1, 0) Else corte = Date
+    Dim dIni As Variant, dFim As Variant
+    dIni = Empty: dFim = Empty
     If Existe(SH_BL) Then
-        If IsDate(ThisWorkbook.Worksheets(SH_BL).Range("B3").Value) Then corte = ThisWorkbook.Worksheets(SH_BL).Range("B3").Value
+        If IsDate(ThisWorkbook.Worksheets(SH_BL).Range("B3").Value) Then dIni = ThisWorkbook.Worksheets(SH_BL).Range("B3").Value
+        If IsDate(ThisWorkbook.Worksheets(SH_BL).Range("B4").Value) Then dFim = ThisWorkbook.Worksheets(SH_BL).Range("B4").Value
     End If
 
     LimparAntigos
     Dim wsB As Worksheet
     Set wsB = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count))
     wsB.Name = SH_BL
-    wsB.Range("B3").Value = corte
-    ThisWorkbook.Names.Add Name:="DataCorte", RefersTo:="='" & SH_BL & "'!$B$3"
+    wsB.Range("B3").Value = dIni: wsB.Range("B4").Value = dFim
+    ThisWorkbook.Names.Add Name:="DataIni", RefersTo:="='" & SH_BL & "'!$B$3"
+    ThisWorkbook.Names.Add Name:="DataCorte", RefersTo:="=IF('" & SH_BL & "'!$B$4="""",TODAY(),'" & SH_BL & "'!$B$4)"
     MontarDashboard okA, nOk, recs.Count, nErr, nArq, nVazios, errA, cEsp, cTipo, cSetor
     MontarErros errA, nErr
-    MontarBacklog corte, cEsp, cPend
+    MontarBacklog cEsp, cPend
     MontarEquipe cTec
     MontarTempos cEsp, cTipo, cCrit
     MontarArquivos
@@ -789,6 +792,7 @@ Private Sub LimparAntigos()
         ThisWorkbook.Worksheets(nm).Delete
     Next nm
     ThisWorkbook.Names("DataCorte").Delete
+    ThisWorkbook.Names("DataIni").Delete
     Application.DisplayAlerts = True
     On Error GoTo 0
 End Sub
@@ -859,11 +863,11 @@ Private Sub MontarDashboard(okA() As Variant, nOk As Long, nTot As Long, nErr As
     ' indicadores (respeitam os filtros: usam a coluna Visivel)
     Dim E As String
     E = "(DataCorte+0.99999)"
-    Kpi ws, "A4", "Backlog na data de corte", "=" & FormBacklog(""), "aberta + não atendida + agendar"
+    Kpi ws, "A4", "Backlog (datas na aba Backlog)", "=" & FormBacklog(""), "aberta + não atendida + agendar"
     Kpi ws, "C4", "Total de OS", "=SUBTOTAL(103,tbOS[OS])", ""
     ' realizadas = concluídas + aguardando material + conserto externo + canceladas (passaram pela equipe)
     ws.Range("C6").Formula = "=(SUBTOTAL(103,tbOS[OS])-COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S""))&"" realizadas (""&TEXT(IFERROR((SUBTOTAL(103,tbOS[OS])-COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S""))/SUBTOTAL(103,tbOS[OS]),0),""0%"")&"") · ""&COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"")&"" pendentes nossas"""
-    Kpi ws, "E4", "Aguardando terceiros", "=COUNTIFS(tbOS[Visivel],1,tbOS[Terceiros],""S"",tbOS[Pedido],""<=""&" & E & ")", "material e externo, fora do backlog"
+    Kpi ws, "E4", "Aguardando terceiros", "=COUNTIFS(tbOS[Visivel],1,tbOS[Terceiros],""S"",tbOS[Pedido],""<=""&" & E & INI & ")", "material e externo, fora do backlog"
     Kpi ws, "G4", "Espera mediana até 1º atend. (h)", "", ""
     ws.Range("G5").FormulaArray = "=IFERROR(MEDIAN(IF((tbOS[Visivel]=1)*(tbOS[Espera_h]<>""""),tbOS[Espera_h])),""-"")"
     ws.Range("G6").Formula = "=""média ""&IFERROR(ROUND(AVERAGEIFS(tbOS[Espera_h],tbOS[Visivel],1),1),""-"")&"" h"""
@@ -945,9 +949,9 @@ End Sub
 Private Function FormBacklog(extra As String) As String
     Dim E As String
     E = "(DataCorte+0.99999)"
-    FormBacklog = "COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"",tbOS[Pedido],""<=""&" & E & extra & ")" & _
-        "+COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""concluída"",tbOS[Pedido],""<=""&" & E & ",tbOS[Término],"">""&" & E & extra & ")" & _
-        "+COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""cancelada"",tbOS[Pedido],""<=""&" & E & ",tbOS[Término],"">""&" & E & extra & ")"
+    FormBacklog = "COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"",tbOS[Pedido],""<=""&" & E & INI & extra & ")" & _
+        "+COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""concluída"",tbOS[Pedido],""<=""&" & E & INI & ",tbOS[Término],"">""&" & E & extra & ")" & _
+        "+COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""cancelada"",tbOS[Pedido],""<=""&" & E & INI & ",tbOS[Término],"">""&" & E & extra & ")"
 End Function
 
 Private Sub MontarErros(errA() As Variant, nErr As Long)
@@ -967,16 +971,18 @@ Private Sub MontarErros(errA() As Variant, nErr As Long)
     If nErr > 0 Then ws.Range("A4").Resize(nErr + 1, NCOL).AutoFilter
 End Sub
 
-Private Sub MontarBacklog(corte As Date, cEsp As Object, cPend As Object)
+Private Sub MontarBacklog(cEsp As Object, cPend As Object)
     Dim ws As Worksheet, E As String, filas As Variant, rot As Variant, faixas As Variant, i As Long, j As Long, r As Long
     Dim esp As Variant, base As String
     Set ws = ThisWorkbook.Worksheets(SH_BL)
     ws.Move After:=ThisWorkbook.Worksheets(SH_DASH)
     ws.Range("A1").Value = "Backlog mensal": ws.Range("A1").Font.Size = 18: ws.Range("A1").Font.Bold = True
-    ws.Range("A3").Value = "Data de corte": ws.Range("A3").Font.Bold = True
-    ws.Range("B3").Value = corte: ws.Range("B3").NumberFormat = "dd/mm/yyyy"
-    ws.Range("B3").Interior.Color = RGB(255, 242, 204)
-    ws.Range("C3").Value = "<- mude a data para ver o backlog de outro mês (os filtros do Dashboard também valem aqui)"
+    ws.Range("A3").Value = "Data início": ws.Range("A4").Value = "Data fim"
+    ws.Range("A3:A4").Font.Bold = True
+    ws.Range("B3:B4").NumberFormat = "dd/mm/yyyy"
+    ws.Range("B3:B4").Interior.Color = RGB(255, 242, 204)
+    ws.Range("C3").Value = "<- deixe as duas vazias para pegar TUDO o que foi carregado (pendente hoje)."
+    ws.Range("C4").Value = "<- com datas: OS abertas no período que estavam pendentes na data fim. Os filtros do Dashboard também valem aqui."
     E = "(DataCorte+0.99999)"
 
     ws.Range("A5:F5").Value = Array("Fila", "0–7 dias", "8–15 dias", "16–30 dias", "Mais de 30 dias", "Total")
@@ -989,13 +995,13 @@ Private Sub MontarBacklog(corte As Date, cEsp As Object, cPend As Object)
     For i = 0 To 2
         ws.Cells(6 + i, 1).Value = rot(i)
         For j = 0 To 3
-            ws.Cells(6 + i, 2 + j).Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""" & filas(i) & """,tbOS[Pedido],""<=""&" & E & faixas(j) & ")"
+            ws.Cells(6 + i, 2 + j).Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""" & filas(i) & """,tbOS[Pedido],""<=""&" & E & INI & faixas(j) & ")"
         Next j
         ws.Cells(6 + i, 6).Formula = "=SUM(B" & (6 + i) & ":E" & (6 + i) & ")"
     Next i
     ws.Cells(9, 1).Value = "Pendentes no corte, resolvidas depois"
     For j = 0 To 3
-        base = "COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""{F}"",tbOS[Pedido],""<=""&" & E & ",tbOS[Término],"">""&" & E & faixas(j) & ")"
+        base = "COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""{F}"",tbOS[Pedido],""<=""&" & E & INI & ",tbOS[Término],"">""&" & E & faixas(j) & ")"
         ws.Cells(9, 2 + j).Formula = "=" & Replace(base, "{F}", "concluída") & "+" & Replace(base, "{F}", "cancelada")
     Next j
     ws.Cells(9, 6).Formula = "=SUM(B9:E9)"
@@ -1006,9 +1012,9 @@ Private Sub MontarBacklog(corte As Date, cEsp As Object, cPend As Object)
 
     ws.Range("A12").Value = "Aguardando terceiros (fora do backlog)": ws.Range("A12").Font.Bold = True
     ws.Range("A13").Value = "Aguardando material"
-    ws.Range("B13").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""aguardando material"",tbOS[Pedido],""<=""&" & E & ")"
+    ws.Range("B13").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""aguardando material"",tbOS[Pedido],""<=""&" & E & INI & ")"
     ws.Range("A14").Value = "Conserto externo"
-    ws.Range("B14").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""conserto externo"",tbOS[Pedido],""<=""&" & E & ")"
+    ws.Range("B14").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""conserto externo"",tbOS[Pedido],""<=""&" & E & INI & ")"
 
     ws.Range("A16:B16").Value = Array("Backlog por especialidade", "OS"): ws.Range("A16:B16").Font.Bold = True
     r = 17
@@ -1032,7 +1038,7 @@ Private Sub MontarBacklog(corte As Date, cEsp As Object, cPend As Object)
 
     ' resumo pronto para copiar e mandar ao gerente
     ws.Range("H5").Value = "Resumo para o gerente (selecione H6:H13 e copie)": ws.Range("H5").Font.Bold = True
-    ws.Range("H6").Formula = "=""Backlog da manutenção em ""&TEXT(DAY(DataCorte),""00"")&""/""&TEXT(MONTH(DataCorte),""00"")&""/""&YEAR(DataCorte)"
+    ws.Range("H6").Formula = "=""Backlog da manutenção ""&IF(AND(B3="""",B4=""""),""atual (todos os arquivos carregados)"",IF(B3="""","""",""de ""&TEXT(DAY(B3),""00"")&""/""&TEXT(MONTH(B3),""00"")&""/""&YEAR(B3)&"" "")&""até ""&TEXT(DAY(DataCorte),""00"")&""/""&TEXT(MONTH(DataCorte),""00"")&""/""&YEAR(DataCorte))"
     ws.Range("H7").Formula = "=""Backlog total: ""&F10"
     ws.Range("H8").Formula = "=""- Aguardando triagem (aberta): ""&F6"
     ws.Range("H9").Formula = "=""- Triadas, aguardando execução (não atendida): ""&F7"
@@ -1179,14 +1185,16 @@ Public Sub RegistrarBacklog()
     GarantirHistorico
     Set wb = ThisWorkbook.Worksheets(SH_BL): Set wh = ThisWorkbook.Worksheets(SH_HIST)
     r = 4
+    Dim dc As Date
+    dc = Application.Evaluate("DataCorte")
     Do While wh.Cells(r, 1).Value <> ""
-        If wh.Cells(r, 1).Value = wb.Range("B3").Value Then Exit Do
+        If wh.Cells(r, 1).Value = dc Then Exit Do
         r = r + 1
     Loop
-    wh.Cells(r, 1).Resize(1, 9).Value = Array(wb.Range("B3").Value, wb.Range("F10").Value, wb.Range("F6").Value, _
+    wh.Cells(r, 1).Resize(1, 9).Value = Array(dc, wb.Range("F10").Value, wb.Range("F6").Value, _
         wb.Range("F7").Value, wb.Range("F8").Value, wb.Range("F9").Value, wb.Range("B13").Value, wb.Range("B14").Value, Now)
     wh.Cells(r, 1).NumberFormat = "dd/mm/yyyy": wh.Cells(r, 9).NumberFormat = "dd/mm/yyyy hh:mm"
-    MsgBox "Backlog de " & Format(wb.Range("B3").Value, "dd/mm/yyyy") & " registrado na aba Histórico.", vbInformation
+    MsgBox "Backlog de " & Format(dc, "dd/mm/yyyy") & " registrado na aba Histórico.", vbInformation
 End Sub
 
 '------------------------------------------------------------ utilidades
