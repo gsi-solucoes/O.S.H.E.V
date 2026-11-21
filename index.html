@@ -104,6 +104,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 .view{display:none}.view.on{display:block}
 .note{font-size:13px;color:var(--muted);margin-top:8px}
 .warn{color:var(--warn)}
+.ok{color:#127a3a}
 .ic{font-size:20px;font-weight:700;width:28px}.f-ok .ic{color:#1a8f4c}.f-vazio .ic{color:var(--warn)}.f-erro .ic{color:var(--accent)}
 #prog{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:grid;place-items:center;z-index:20;padding:16px}
 #prog[hidden]{display:none}
@@ -172,7 +173,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 <div id="prog" hidden role="status" aria-live="polite"><div class="pin"><div style="display:flex;justify-content:space-between;gap:12px"><b id="progTxt">Carregando...</b><b id="progPct" style="color:var(--accent);font-variant-numeric:tabular-nums">0%</b></div><span id="progSub"></span><div class="pbar"><i id="progBar"></i></div></div></div>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script>/* ===== Núcleo: leitura dos CSVs do MV (R_ORDEM_SERVICO) e cálculos ===== */
 var Core = (function () {
   function decode(buf) {
@@ -456,11 +457,18 @@ var Core = (function () {
       if (s >= 0.7 || (s >= 0.55 && loc)) une(a.os, b.os, 'Descrição parecida');
     }
     var g = {}; list.forEach(function (o) { var r = raiz(o.os); (g[r] = g[r] || []).push(o); });
-    var grupos = Object.keys(g).map(function (k) { return g[k]; }).filter(function (a) { return a.length > 1 && a.some(ativa); });
+    // fechadas/canceladas não impactam: só ficam as que ainda estão em aberto
+    var grupos = Object.keys(g).map(function (k) { return g[k].filter(ativa); }).filter(function (a) { return a.length > 1; });
     var peso = function (o) { return o.terceiros ? 0 : /Comprador|Externo|Material/.test(o.pendente || '') ? 1 : ativa(o) ? 2 : 3; };
     grupos.forEach(function (a, n) {
       a.sort(function (x, y) { return peso(x) - peso(y) || (x.pedido || 0) - (y.pedido || 0); });
-      a.forEach(function (o) { o.repGrupo = n + 1; o.repPrincipal = a[0].os; });
+      var p0 = a[0], anda = peso(p0) <= 1;
+      a.andamento = anda;
+      a.forEach(function (o, i) {
+        o.repGrupo = n + 1; o.repPrincipal = p0.os;
+        o.repAcao = i === 0 ? (anda ? 'Manter: já em andamento' : 'Manter: tratar esta (mais antiga)')
+          : anda ? 'Fechar: informar que já está sendo tratada na OS ' + p0.os : 'Fechar: juntar na OS ' + p0.os;
+      });
       a.mesmoSolic = a.every(function (o) { return o.solicitante && o.solicitante === a[0].solicitante; });
       a.mesmaLoc = a.every(function (o) { return o.localidade && o.localidade === a[0].localidade; });
       a.link = a.some(function (o) { return o.repDe; });
@@ -728,12 +736,14 @@ function renderInc(){
 // ===================== POSSÍVEIS REPETIDAS =====================
 function renderRep(){
   const G = Core.repetidas(data);
-  const card = o => `<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span>${o.os===o.repPrincipal?`<span class="tag pri">${o.terceiros||/Comprador|Externo|Material/.test(o.pendente||'')?'já em andamento':'mais antiga'}</span>`:''}</div><div>${esc(o.desc)}</div><div class="muted">${esc(o.localidade||'')}${o.solicitante?' · Solicitante: '+esc(o.solicitante):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`;
-  $('#v-repetidas').innerHTML = `<h2>Possíveis OS repetidas (${G.length} grupos · ${G.reduce((s,a)=>s+a.length,0)} OS)</h2>
-  <p class="muted">Mesmo setor e descrição parecida, com pelo menos uma ainda pendente, ou observação "serviço será realizado na O.S nº…". A primeira de cada grupo é a que já está andando (terceiros, compra ou material). É só um aviso para você conferir: nada é alterado.</p>
+  const card = o => `<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div class="${o.os===o.repPrincipal?'ok':'warn'}"><b>${esc(o.repAcao)}</b></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.localidade||'')}${o.solicitante?' · Solicitante: '+esc(o.solicitante):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`;
+  const fechar = G.reduce((s,a)=>s+a.length-1,0), fAnd = G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0);
+  $('#v-repetidas').innerHTML = `<h2>OS repetidas em aberto</h2>
+  <div class="kpis"><div class="kpi"><b>${fechar}</b><span>OS repetidas para tratar (fechar)</span></div><div class="kpi"><b>${fAnd}</b><span>Já tratadas em outra OS (compra, material ou externo)</span></div><div class="kpi"><b>${fechar-fAnd}</b><span>Ainda sem tratativa: juntar numa OS só</span></div><div class="kpi"><b>${G.length}</b><span>Grupos</span></div></div>
+  <p class="muted">Só OS em aberto (fechadas e canceladas não entram), do mesmo setor e com descrição parecida. A primeira de cada grupo é a que fica; as outras devem ser fechadas no MV informando a OS que já está tratando. Confira antes: é só um aviso, nada é alterado aqui.</p>
   <p><button id="cpRep">Copiar lista para o Excel</button></p>
   ${G.map((a,i)=>`<div class="card rq"><h3>${i+1}. ${esc(a[0].setor)}</h3><p>${a.link?'<span class="tag">observação cita outra OS</span> ':''}${a.mesmaLoc?'<span class="tag">mesma localidade</span> ':''}${a.mesmoSolic?'<span class="tag">mesmo solicitante</span> ':''}<span class="tag">${a.length} OS</span></p><div class="drill" style="margin:0">${a.map(card).join('')}</div></div>`).join('') || '<div class="card">Nenhuma OS repetida encontrada.</div>'}`;
-  const b = $('#cpRep'); if (b) b.onclick = () => copy(['Grupo\tOS\tFila\tPendente de\tPedido\tSetor\tLocalidade\tSolicitante\tDescrição\tObservação', ...G.flatMap((a,i)=>a.map(o=>[i+1,o.os,o.fila,o.pendente||'',fd(o.pedido),o.setor,o.localidade||'',o.solicitante||'',o.desc,o.obs||''].map(x=>String(x).replace(/[\t\n\r]+/g,' ')).join('\t')))].join('\n'));
+  const b = $('#cpRep'); if (b) b.onclick = () => copy(['Grupo\tO que fazer\tOS\tFila\tPendente de\tPedido\tSetor\tLocalidade\tSolicitante\tDescrição\tObservação', ...G.flatMap((a,i)=>a.map(o=>[i+1,o.repAcao,o.os,o.fila,o.pendente||'',fd(o.pedido),o.setor,o.localidade||'',o.solicitante||'',o.desc,o.obs||''].map(x=>String(x).replace(/[\t\n\r]+/g,' ')).join('\t')))].join('\n'));
 }
 
 // ===================== GERADOR DE RELATÓRIOS (Excel) =====================
@@ -746,7 +756,7 @@ const REL = [
   ['pend','Pendências por responsável','Com quem as OS pendentes estão paradas (campo Observação) e a lista'],
   ['lista','Lista de OS','Todas as OS do período com todos os campos'],
   ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV'],
-  ['rep','Possíveis OS repetidas','Mesmo setor e descrição parecida, com uma já em compra, material ou externo']
+  ['rep','OS repetidas em aberto','Quais OS fechar porque já estão sendo tratadas em outra']
 ];
 const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 function relMeses(){ const m = {}; data.forEach(o => { if (o.pedido) m[o.pedido.getFullYear()*100+o.pedido.getMonth()] = 1; }); return Object.keys(m).map(Number).sort((a,b)=>b-a); }
@@ -779,7 +789,53 @@ function relPeriodo(){
 }
 const dt = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toTimeString().slice(0,5) : '';
 const r1 = x => x == null || isNaN(x) ? '' : Math.round(x*10)/10;
-function tabela(t, cab, linhas){ return [[t], cab, ...linhas, []]; }
+function tabela(t, cab, linhas){ return [{T:'sec', v:t}, {T:'head', v:cab}, ...(linhas.length ? linhas : [['Nenhuma OS', ...Array(cab.length-1).fill('')]]), {T:'blank'}]; }
+const FILAS = {'aberta':'Aberta','não atendida':'Não atendida','agendar':'Agendar','aguardando material':'Aguardando material','conserto externo':'Conserto externo','concluída':'Concluída','cancelada':'Cancelada'};
+const LONGAS = /^(Descrição|Observação|Para arrumar|Problema|Motivo|O que fazer)$/;
+// monta uma aba bonita (ExcelJS) a partir das linhas do relatório
+function abaExcel(wb, nome, linhas){
+  const ws = wb.addWorksheet(nome.slice(0,31), {views:[{showGridLines:false}]});
+  const cor = 'FF0F2A4A', acc = 'FFD6336C', borda = {style:'thin', color:{argb:'FFD0D5DD'}};
+  let maxC = 2; linhas.forEach(r => { if (r && r.T==='head') maxC = Math.max(maxC, r.v.length); else if (Array.isArray(r)) maxC = Math.max(maxC, r.length); });
+  const larg = Array(maxC).fill(10), longa = Array(maxC).fill(false);
+  let cab = null, r = 0, maiorTab = null, ini = 0, primeiro = true;
+  const fecha = () => { if (cab && (!maiorTab || r - ini > maiorTab[2] - maiorTab[0])) maiorTab = [ini, cab.length, r]; };
+  linhas.forEach(L => {
+    if (L && L.T === 'blank') { fecha(); cab = null; r++; return; }
+    if (L && L.T === 'sec') { fecha(); cab = null; r++; const c = ws.getCell(r, 1); c.value = L.v; c.font = {bold:true, size:12, color:{argb:cor}}; ws.getRow(r).height = 20; return; }
+    if (L && L.T === 'head') { r++; cab = L.v; ini = r; L.v.forEach((h,i) => { const c = ws.getCell(r, i+1); c.value = h; c.font = {bold:true, color:{argb:'FFFFFFFF'}}; c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:acc}}; c.alignment = {vertical:'middle', wrapText:true}; c.border = {top:borda,bottom:borda,left:borda,right:borda}; larg[i] = Math.max(larg[i], Math.min(28, String(h).length + 2)); if (LONGAS.test(h)) longa[i] = true; }); return; }
+    if (!Array.isArray(L)) return;
+    r++;
+    if (!cab) { // título ou informação
+      const c = ws.getCell(r, 1); c.value = L[0] ?? '';
+      if (primeiro && L.length) { c.font = {bold:true, size:15, color:{argb:'FFFFFFFF'}}; c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:cor}}; ws.mergeCells(r, 1, r, Math.max(maxC, 6)); ws.getRow(r).height = 26; c.alignment = {vertical:'middle'}; primeiro = false; }
+      else if (L.length) { c.font = {italic:true, color:{argb:'FF667085'}}; }
+      return;
+    }
+    const zebra = (r - ini) % 2 === 0;
+    L.forEach((v,i) => {
+      const c = ws.getCell(r, i+1);
+      if (typeof v === 'string' && /^\d+(,\d+)?%$/.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; }
+      else if (typeof v === 'string' && FILAS[v]) c.value = FILAS[v];
+      else c.value = v === '' ? null : v;
+      if (typeof c.value === 'number' && !Number.isInteger(c.value) && !String(c.numFmt||'').includes('%')) c.numFmt = '0.0';
+      c.border = {top:borda,bottom:borda,left:borda,right:borda};
+      c.alignment = {vertical:'top', wrapText: longa[i] || i === 0};
+      if (zebra) c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF5F7FA'}};
+      if (i === 0 && /total/i.test(String(v))) c.font = {bold:true};
+      larg[i] = Math.max(larg[i], Math.min(longa[i] ? 50 : 34, String(c.value ?? '').length + 2));
+    });
+  });
+  fecha();
+  larg.forEach((w,i) => ws.getColumn(i+1).width = longa[i] ? Math.max(w, 40) : w);
+  if (maiorTab && maiorTab[2] - maiorTab[0] > 15) ws.autoFilter = {from:{row:maiorTab[0], column:1}, to:{row:maiorTab[2], column:maiorTab[1]}};
+  return ws;
+}
+async function baixa(wb, nome){
+  const buf = await wb.xlsx.writeBuffer();
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})); a.download = nome;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+}
 function cnt(list, f){ return Core.count(list, f); }
 function relBlocos(k, L, Lall, P){
   const fimP = P.fim || hoje(), E = new Date(fimP.getFullYear(), fimP.getMonth(), fimP.getDate(), 23, 59, 59);
@@ -827,13 +883,12 @@ function relBlocos(k, L, Lall, P){
   }
   if (k === 'lista') return [['Lista de OS: '+P.rot], [], ...tabela('OS', cabOS, L.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(linhaOS))];
   if (k === 'arr') { const I = P.todos.filter(o=>o.arrumar.length && (!P.ini || (o.pedido && o.pedido>=P.ini && o.pedido<=E))); return [['Para arrumar no MV: '+P.rot], [], ...tabela('OS', ['Problema',...cabOS], I.map(o=>[o.arrumar.join('; '), ...linhaOS(o)]))]; }
-  if (k === 'rep') { const G = Core.repetidas(P.todos); return [['Possíveis OS repetidas (situação atual)'], [], ...tabela('Grupos', ['Grupo','Motivo',...cabOS,'Solicitante'], G.flatMap((a,i)=>a.map(o=>[i+1, [a.link?'observação cita outra OS':'', a.mesmaLoc?'mesma localidade':'', a.mesmoSolic?'mesmo solicitante':''].filter(Boolean).join(', ') || 'descrição parecida', ...linhaOS(o), o.solicitante||''])))]; }
+  if (k === 'rep') { const G = Core.repetidas(P.todos); return [['OS repetidas em aberto (situação atual)'], [], ...tabela('Resumo', ['Indicador','OS'], [['OS repetidas para tratar (fechar)', G.reduce((s,a)=>s+a.length-1,0)], ['Já tratadas em outra OS (compra, material ou externo)', G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Ainda sem tratativa (juntar numa OS só)', G.filter(a=>!a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Grupos', G.length]]), ...tabela('Grupos', ['Grupo','O que fazer','Motivo',...cabOS,'Solicitante'], G.flatMap((a,i)=>a.map(o=>[i+1, o.repAcao, [a.link?'observação cita outra OS':'', a.mesmaLoc?'mesma localidade':'', a.mesmoSolic?'mesmo solicitante':''].filter(Boolean).join(', ') || 'descrição parecida', ...linhaOS(o), o.solicitante||''])))]; }
   return [];
 }
-function wsDe(aoa){ const ws = XLSX.utils.aoa_to_sheet(aoa); const w = []; aoa.forEach(r => r.forEach((c,i) => { const l = String(c??'').length; w[i] = Math.min(60, Math.max(w[i]||8, l+2)); })); ws['!cols'] = w.map(x=>({wch:x})); return ws; }
 async function gerarRel(){
   const msg = $('#r-msg');
-  if (!window.XLSX) { msg.textContent = 'Sem internet para carregar o gerador de Excel. Tente de novo com internet.'; return; }
+  if (!window.ExcelJS) { msg.textContent = 'Sem internet para carregar o gerador de Excel. Tente de novo com internet.'; return; }
   const ks = [...document.querySelectorAll('#v-relatorios .ck input[type=checkbox]:checked')].map(c=>c.value);
   if (!ks.length) { msg.textContent = 'Marque pelo menos um relatório.'; return; }
   const P = relPeriodo(); if (!P || P === 'erro') { msg.textContent = 'Confira o período: escolha o mês, ou a data início e a data fim (início antes do fim).'; return; }
@@ -843,21 +898,23 @@ async function gerarRel(){
   const L = P.ini ? base.filter(o => o.pedido && o.pedido >= P.ini && o.pedido <= E) : base;
   const filTxt = fil.length ? fil.map(([k,v])=>`${k}: ${v}`).join(' · ') : 'sem filtros';
   const fmt = document.querySelector('input[name=r-fmt]:checked').value, nomeRel = k => REL.find(r=>r[0]===k)[1];
-  const blocos = ks.map(k => [k, [...relBlocos(k, L, base, P), ['Filtros: '+filTxt], ['Gerado em '+new Date().toLocaleString('pt-BR')+' · Gerador de OS HEV']]]);
+  const info = `Período: ${P.rot} · Filtros: ${filTxt} · Gerado em ${new Date().toLocaleString('pt-BR')}`;
+  const blocos = ks.map(k => { const b = relBlocos(k, L, base, P); b.splice(1, 0, [info]); return [k, b]; });
   const arq = s => `OS_HEV_${s}_${P.nome}.xlsx`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w.\-]+/g,'_');
   try {
+    msg.textContent = 'Gerando…';
     if (fmt === 'sep') {
-      for (const [k,aoa] of blocos) { const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, wsDe(aoa), nomeRel(k).slice(0,31)); XLSX.writeFile(wb, arq(nomeRel(k))); await new Promise(r=>setTimeout(r,900)); }
+      for (const [k,aoa] of blocos) { const wb = new ExcelJS.Workbook(); abaExcel(wb, nomeRel(k), aoa); await baixa(wb, arq(nomeRel(k))); await new Promise(r=>setTimeout(r,900)); }
       msg.textContent = `${blocos.length} arquivo(s) gerado(s). Se o navegador perguntar, permita baixar vários arquivos.`;
     } else {
-      const wb = XLSX.utils.book_new();
-      if (fmt === 'uma') XLSX.utils.book_append_sheet(wb, wsDe(blocos.flatMap(([k,a]) => [...a, [], []])), 'Relatório');
-      else blocos.forEach(([k,a]) => XLSX.utils.book_append_sheet(wb, wsDe(a), nomeRel(k).slice(0,31)));
-      XLSX.writeFile(wb, arq(ks.length===1 ? nomeRel(ks[0]) : 'Relatorios'));
+      const wb = new ExcelJS.Workbook();
+      if (fmt === 'uma') abaExcel(wb, 'Relatório', blocos.flatMap(([k,a],n) => n ? [{T:'blank'}, ...a.map((x,i)=> i===0 && Array.isArray(x) ? {T:'sec', v:'■ '+x[0]} : x)] : a));
+      else blocos.forEach(([k,a]) => abaExcel(wb, nomeRel(k), a));
+      await baixa(wb, arq(ks.length===1 ? nomeRel(ks[0]) : 'Relatorios'));
       msg.textContent = `Arquivo gerado com ${blocos.length} relatório(s) · período: ${P.rot} · ${filTxt}.`;
     }
     toast('Excel gerado. Veja nos downloads.');
-  } catch(e) { msg.textContent = 'Não foi possível baixar aqui. Abra pelo site https://gsi-solucoes.github.io/O.S.H.E.V/ no navegador.'; }
+  } catch(e) { console.error(e); msg.textContent = 'Não foi possível baixar aqui. Abra pelo site https://gsi-solucoes.github.io/O.S.H.E.V/ no navegador.'; }
 }
 
 function route(){
