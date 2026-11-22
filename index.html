@@ -51,6 +51,7 @@ textarea{min-height:120px}
 .fr em{font:700 clamp(22px,3.4vw,28px)/1.1 "Red Hat Display",sans-serif;font-style:normal;font-variant-numeric:tabular-nums}
 .fr i{display:block;width:100%;height:2px;background:currentColor;margin:3px 0;opacity:.7}
 .pc{font:700 clamp(30px,5vw,40px)/1 "Red Hat Display",sans-serif;color:var(--accent);white-space:nowrap}
+.pc.good,.good{color:light-dark(#127a3a,#3ddc84)!important}
 .pc small{display:block;font:500 13px "Red Hat Text",sans-serif;color:var(--muted)}
 .kpi.hot{background:var(--band);color:#fff;border-color:var(--band)}
 .kpi.hot span{color:#c9d3ee}
@@ -73,6 +74,17 @@ textarea{min-height:120px}
 .dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .drmore{justify-self:start}
 .rq{margin-bottom:14px}
+.win{position:fixed;inset:0;z-index:60;background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+@media(min-width:701px){.win{inset:auto;border-radius:14px;resize:both;min-width:360px;min-height:260px}.win.max{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0}}
+.wh{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;background:var(--band);color:#fff;user-select:none;touch-action:none}
+@media(min-width:701px){.wh{cursor:move}}
+.wt{flex:1;display:flex;flex-direction:column;min-width:0;line-height:1.25}.wt span{font-size:13px;opacity:.75}.wt b{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wh button{min-width:44px;min-height:40px;font-size:18px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;cursor:pointer}.wh .wcp{font-size:14px}.wh .wx:hover{background:var(--accent)}
+.wb{overflow:auto;padding:14px;flex:1}.wb .drill{margin:0}
+.wk{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}.wk .kpi b{font-size:24px}
+#dock{position:fixed;left:8px;bottom:8px;z-index:9999;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)}
+.dk{background:var(--band);color:#fff;border:0;border-radius:999px;padding:8px 14px;font:14px "Red Hat Text",sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer}
+.kpi[data-s]{cursor:pointer}.kpi[data-s]:hover{outline:2px solid var(--accent)}
 .ck{display:grid;gap:8px}
 .ckl{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
 .ckl input[type=checkbox],.ckl input[type=radio]{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
@@ -568,26 +580,7 @@ function openDrill(b){
   const show = lim => { const old = b.nextElementSibling; if (old && old.classList.contains('drill')) old.remove(); b.insertAdjacentHTML('afterend', drillHTML(items, lim)); const m = b.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
   show(30); b.setAttribute('aria-expanded','true'); b.classList.add('open');
 }
-function wireBars(root){
-  root.querySelectorAll('.bar[data-s]').forEach(b => b.onclick = () => {
-    const k = b.dataset.k, v = b.dataset.v;
-    if (k) {
-      // filtra a página toda E abre a lista dessas OS; tocar de novo desfaz
-      if (F[k] === v) { F[k] = ''; openDr = null; } else { F[k] = v; openDr = {k, v}; }
-      shown = 50; drawFilters(); render();
-      if (openDr) { const nb = [...document.querySelectorAll('.view.on .bar[data-k]')].find(x => x.dataset.k === openDr.k && x.dataset.v === openDr.v); if (nb) nb.scrollIntoView({block:'center'}); }
-      toast(F[k] ? `Filtro: ${v} (toque de novo para tirar)` : 'Filtro removido');
-      return;
-    }
-    const nx = b.nextElementSibling;
-    if (nx && nx.classList.contains('drill')) { nx.remove(); b.setAttribute('aria-expanded','false'); b.classList.remove('open'); return; }
-    const S = SETS[+b.dataset.s]; if (!S) return;
-    const kf = typeof S.key === 'function' ? S.key : (o => o[S.key]);
-    const items = S.list.filter(o => String(kf(o)) === b.dataset.v);
-    const show = lim => { const old = b.nextElementSibling; if (old && old.classList.contains('drill')) old.remove(); b.insertAdjacentHTML('afterend', drillHTML(items, lim)); const m = b.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
-    show(30); b.setAttribute('aria-expanded','true'); b.classList.add('open');
-  });
-}
+function wireBars(root){ /* cliques tratados por openWin (janelas) */ }
 
 function osTable(list){
   const rows = list.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
@@ -606,7 +599,7 @@ function pendCard(L){
   P.forEach(o => { const r = g[o.pendente] = g[o.pendente] || {n:0, d:[]}; r.n++; if (o.parado!=null) r.d.push(o.parado); });
   const rows = Object.entries(g).sort((a,b)=>b[1].n-a[1].n), mx = Math.max(1,...rows.map(r=>r[1].n));
   const sid = SETS.push({list:P, key:'pendente'}) - 1;
-  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc${F.pendente===k?' open':''}" data-s="${sid}" data-k="pendente" data-v="${esc(k)}" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para filtrar a página; toque de novo para desfazer.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
+  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc${F.pendente===k?' open':''}" data-s="${sid}" data-k="pendente" data-v="${esc(k)}" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para abrir as OS numa janela.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
 }
 function blStats(list, c){
   const bl = Core.backlogAt(list, c), terc = Core.terceirosAt(list, c);
@@ -631,11 +624,11 @@ function render(){
   V.innerHTML = `
   <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
   <div class="kpis">
-    <div class="kpi hot"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
-    <div class="kpi"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pc">${nf(base?done/base*100:0)}%</div></div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
-    <div class="kpi"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
-    <div class="kpi"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
-    <div class="kpi"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
+    <div class="kpi hot" data-s="${SETS.push({list:B.bl, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Backlog"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
+    <div class="kpi" data-s="${SETS.push({list:L, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Total de OS"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pc${base&&done/base>=.9?' good':''}">${nf(base?done/base*100:0)}%</div></div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
+    <div class="kpi" data-s="${SETS.push({list:B.terc, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Aguardando terceiros"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
+    <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.espera!=null), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com 1º atendimento"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
+    <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.horas>0), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com execução"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
   </div>
   <div class="grid2">
     <div class="card"><h3>Pendências por responsável</h3>${pendCard(L)}</div>
@@ -644,7 +637,7 @@ function render(){
     <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
     <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
   </div>
-  <p class="note">Toque numa barra para filtrar a página (os quadros e a lista de OS lá embaixo mostram só aquele grupo); toque de novo para desfazer.</p>
+  <p class="note">Toque em qualquer número ou barra para abrir numa janela, com o resumo e as OS daquele grupo. Dá para abrir várias, arrastar para o lado e minimizar. Para filtrar a página toda, use Filtros.</p>
   <div class="card">${osTable(L)}</div>`;
   wireBars(V);
   $('#cpList').onclick = () => copy(tsv(L));
@@ -670,17 +663,17 @@ function renderBacklog(L){
   <p class="note" style="margin-top:-8px;margin-bottom:16px">Sem datas: tudo o que foi carregado, pendente hoje. Com datas: OS abertas no período que estavam pendentes na data fim.</p>
   ${velha?`<div class="card" style="margin-bottom:16px"><h3>${faixa}</h3><p>Mais antiga: <b>OS ${velha.os}</b> de ${fd(velha.pedido)} (${nf(diasV)} dias) · ${esc(velha.especialidade)} · ${esc(velha.setor)}<br>Mais nova: <b>OS ${nova.os}</b> de ${fd(nova.pedido)} · ${esc(nova.especialidade)} · ${esc(nova.setor)}</p></div>`:''}
   <div class="kpis">
-    <div class="kpi hot"><span>Backlog total</span><b>${nf(B.bl.length)}</b><span>aberta + não atendida + agendar</span></div>
-    <div class="kpi"><span>Aguardando triagem</span><b>${nf(B.aberta)}</b><span>abertas</span></div>
-    <div class="kpi"><span>Triadas, aguardando execução</span><b>${nf(B.nao)}</b><span>não atendidas</span></div>
-    <div class="kpi"><span>Agendar</span><b>${nf(B.agendar)}</b><span>aguardando data</span></div>
+    <div class="kpi hot" data-s="${SETS.push({list:B.bl, key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Backlog total"><span>Backlog total</span><b>${nf(B.bl.length)}</b><span>aberta + não atendida + agendar</span></div>
+    <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='aberta'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Aguardando triagem"><span>Aguardando triagem</span><b>${nf(B.aberta)}</b><span>abertas</span></div>
+    <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='não atendida'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Não atendidas"><span>Triadas, aguardando execução</span><b>${nf(B.nao)}</b><span>não atendidas</span></div>
+    <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='agendar'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Agendar"><span>Agendar</span><b>${nf(B.agendar)}</b><span>aguardando data</span></div>
   </div>
   <div class="card" style="margin-bottom:16px"><h3>Backlog por fila e idade</h3><div class="scroll"><table><thead><tr><th>Fila</th>${bands.map(b=>`<th class="num">${b}</th>`).join('')}<th class="num">Total</th></tr></thead><tbody>${rowsF}
   ${dep.length?`<tr><td>Pendentes no corte, resolvidas depois</td>${bands.map(b=>`<td class="num">${nf(dep.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(dep.length)}</b></td></tr>`:''}
   <tr><td><b>Total</b></td>${bands.map(b=>`<td class="num"><b>${nf(B.bl.filter(o=>age(o)===b).length)}</b></td>`).join('')}<td class="num"><b>${nf(B.bl.length)}</b></td></tr></tbody></table></div></div>
   <div class="grid2">
     <div class="card"><h3>Backlog por especialidade</h3>${bars(B.bl,'especialidade',{acc:1})}</div>
-    <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v,sid])=>`<button class="bar acc" data-s="${sid}" data-k="" data-v="m" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('')}</div><p class="note">Toque no mês para ver as OS que estavam pendentes no fim dele. Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
+    <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v,sid])=>`<button class="bar acc" data-s="${sid}" data-k="" data-v="m" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('')}</div><p class="note">Toque no mês para abrir numa janela as OS que estavam pendentes no fim dele. Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
     <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
@@ -709,16 +702,10 @@ function renderTempos(L){
 function renderEquipe(L){
   const g = {}; L.forEach(o => o.exec.forEach((x,i) => {const n=o.tecnicos[i]; const r=g[n]=g[n]||{os:new Set(),h:0,esp:{}}; r.os.add(o.os); let hh = 0; if(x.ini&&x.fim&&x.fim>=x.ini){ hh=(x.fim-x.ini)/36e5; if(hh>(cfg.maxExec||12)) hh=1; } else if(x.ini&&!x.fim&&o.fila==='concluída') hh=1; r.h+=hh; r.esp[o.especialidade]=(r.esp[o.especialidade]||0)+1}));
   const rows = Object.entries(g).sort((a,b)=>b[1].h-a[1].h);
-  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Toque no técnico (▸) para ver as OS dele; toque de novo para fechar. Horas = soma de fim − início das execuções lançadas (horário ajustado conta 1 h). "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
+  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Toque no técnico (▸) para abrir as OS dele numa janela. Horas = soma de fim − início das execuções lançadas (horário ajustado conta 1 h). "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
   <div class="card"><div class="row"><span></span><button id="cpEq">Copiar para o Excel</button></div><div class="scroll"><table class="stack"><thead><tr><th>Técnico</th><th class="num">OS</th><th class="num">Horas</th><th class="num">Média por OS</th><th>Especialidade principal</th></tr></thead><tbody>
   ${rows.map(([n,r])=>`<tr class="eq" data-t="${esc(n)}" tabindex="0" role="button" aria-expanded="false"><td><span class="chev" aria-hidden="true">▸</span><b>${esc(n)}</b></td><td class="num">${nf(r.os.size)}</td><td class="num">${hm(r.h)}</td><td class="num">${hm(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
-  document.querySelectorAll('#v-equipe tr.eq').forEach(tr => { const tog = () => {
-    const nx = tr.nextElementSibling;
-    if (nx && nx.classList.contains('drtr')) { nx.remove(); tr.setAttribute('aria-expanded','false'); tr.classList.remove('open'); return; }
-    const items = L.filter(o => o.tecnicos.includes(tr.dataset.t));
-    const show = lim => { const old = tr.nextElementSibling; if (old && old.classList.contains('drtr')) old.remove(); tr.insertAdjacentHTML('afterend', `<tr class="drtr"><td colspan="5" data-l="">${drillHTML(items, lim)}</td></tr>`); const m = tr.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
-    show(30); tr.setAttribute('aria-expanded','true'); tr.classList.add('open');
-  }; tr.onclick = tog; tr.onkeydown = e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); tog(); } }; });
+  document.querySelectorAll('#v-equipe tr.eq').forEach(tr => { const tog = () => openWin('Equipe › Homem-hora por técnico', tr.dataset.t, L.filter(o => o.tecnicos.includes(tr.dataset.t))); tr.onclick = tog; tr.onkeydown = e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); tog(); } }; });
   $('#cpEq').onclick = () => copy(['Técnico\tOS\tHoras'].concat(rows.map(([n,r])=>`${n}\t${r.os.size}\t${hm(r.h)}`)).join('\n'));
 }
 function renderSetores(L){
@@ -737,6 +724,62 @@ function renderInc(){
   ${I.map(o=>`<tr><td><b>${o.os}</b></td><td class="warn">${esc(o.arrumar.join('; '))}${o.provisorio?'':' (fora dos relatórios)'}</td><td>${fd(o.pedido)}</td><td>${fd(o.inicio)}</td><td>${fd(o.fim)}</td><td>${fd(o.termino)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td>${o.fila}</td><td>${esc(o.desc)}</td></tr>`).join('') || '<tr><td colspan="9">Nenhuma inconsistência.</td></tr>'}</tbody></table></div></div>`;
   const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
 }
+
+// ===================== JANELAS (abrem por cima, arrastáveis, várias ao mesmo tempo) =====================
+let WZ = 60, WN = 0;
+function winDash(items){
+  const nC = items.filter(o=>o.fila==='concluída').length, nT = items.filter(o=>o.terceiros).length, nX = items.filter(o=>o.fila==='cancelada').length, done = nC+nT+nX;
+  const esp = items.map(o=>o.espera).filter(x=>x!=null), hh = items.reduce((s,o)=>s+o.horas,0);
+  const k = (t,v,s='') => `<div class="kpi"><span>${t}</span><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
+  return `<div class="kpis wk">${k('OS', nf(items.length))}${k('Realizadas', nf(done), items.length?`<b class="${done/items.length>=.9?'good':''}" style="font-size:16px">${nf(done/items.length*100)}%</b>`:'')}${k('Pendentes nossas', nf(items.filter(o=>o.backlog).length), 'aberta + não atendida + agendar')}${k('Aguardando terceiros', nf(nT), 'material e externo')}${k('Espera 1º atendimento', fh(Core.median(esp)), 'mediana')}${k('Homem-hora', hm(hh))}</div>`;
+}
+function openWin(onde, oque, items){
+  const w = document.createElement('div'); w.className = 'win'; const n = WN++ % 6;
+  w.style.zIndex = ++WZ;
+  if (innerWidth > 700) { w.style.left = (2 + n*2) + 'vw'; w.style.top = (5 + n*3) + 'vh'; w.style.width = '92vw'; w.style.height = '86vh'; }
+  w.innerHTML = `<div class="wh"><div class="wt"><span>${esc(onde)}</span><b>${esc(oque)} · ${nf(items.length)} OS</b></div><button class="wcp" title="Copiar lista para o Excel">Copiar</button><button class="wmin" title="Minimizar" aria-label="Minimizar">–</button><button class="wx" title="Fechar" aria-label="Fechar">✕</button></div><div class="wb"></div>`;
+  const body = w.querySelector('.wb');
+  const show = lim => { body.innerHTML = winDash(items) + drillHTML(items, lim); const m = body.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
+  show(50);
+  document.body.appendChild(w);
+  const frente = () => { w.style.zIndex = ++WZ; };
+  w.addEventListener('pointerdown', frente);
+  let chip = null;
+  w.querySelector('.wx').onclick = () => { w.remove(); if (chip) chip.remove(); };
+  w.querySelector('.wcp').onclick = () => copy(tsv(items));
+  w.querySelector('.wmin').onclick = () => {
+    w.style.display = 'none';
+    chip = document.createElement('button'); chip.className = 'dk'; chip.textContent = `${oque} (${items.length})`; chip.title = onde;
+    chip.onclick = () => { w.style.display = ''; frente(); chip.remove(); chip = null; };
+    $('#dock').appendChild(chip);
+  };
+  // arrastar pela barra de cima (no computador)
+  const h = w.querySelector('.wh');
+  h.addEventListener('pointerdown', e => {
+    if (innerWidth <= 700 || e.target.closest('button')) return;
+    const r = w.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
+    h.setPointerCapture(e.pointerId);
+    const mv = ev => { w.style.left = Math.min(innerWidth-80, Math.max(-r.width+120, ev.clientX - dx)) + 'px'; w.style.top = Math.min(innerHeight-50, Math.max(0, ev.clientY - dy)) + 'px'; };
+    const up = () => { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); };
+    h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up);
+  });
+  // dois toques/cliques na barra: maximiza ou volta
+  h.addEventListener('dblclick', e => { if (e.target.closest('button') || innerWidth <= 700) return; const max = w.classList.toggle('max'); });
+  if (WN === 1) toast(innerWidth > 700 ? 'Aberto numa janela. Arraste pela barra de cima; – minimiza; ✕ fecha.' : 'Aberto numa janela. – minimiza; ✕ fecha.');
+}
+function winOnde(el){
+  const tab = (document.querySelector('#tabs a.on') || {}).textContent || '';
+  const c = el.closest('.card'), h = c && c.querySelector('h3');
+  return [tab, h ? h.textContent : ''].filter(Boolean).join(' › ');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-s]'); if (!b || b.closest('.win')) return;
+  const S = SETS[+b.dataset.s]; if (!S) return;
+  const kf = typeof S.key === 'function' ? S.key : (o => o[S.key]);
+  const items = S.list.filter(o => String(kf(o)) === b.dataset.v);
+  const nome = b.dataset.t || ((b.querySelector('.n') || b).textContent.replace('▸','').trim());
+  openWin(b.dataset.w || winOnde(b), nome, items);
+});
 
 // ===================== POSSÍVEIS REPETIDAS =====================
 function renderRep(){
@@ -822,7 +865,7 @@ function abaExcel(wb, nome, linhas){
     L.forEach((v,i) => {
       const c = ws.getCell(r, i+1);
       if (v && v.D != null) { c.value = v.D/24; c.numFmt = '[<0.0416666666666667][m]" min";[h]" h "mm" min"'; }
-      else if (typeof v === 'string' && /^\d+(,\d+)?%$/.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; }
+      else if (typeof v === 'string' && /^\d+(,\d+)?%$/.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; c.font = {bold:true, color:{argb: c.value >= .9 ? 'FF127A3A' : 'FFD6336C'}}; }
       else if (typeof v === 'string' && FILAS[v]) c.value = FILAS[v];
       else c.value = v === '' ? null : v;
       if (typeof c.value === 'number' && !Number.isInteger(c.value) && !(v && v.D != null) && !String(c.numFmt||'').includes('%')) c.numFmt = '0.0';
@@ -1006,5 +1049,6 @@ loadState();
 window.addEventListener('hashchange', () => { route(); const t = $('#tabs'); window.scrollTo({top: t.offsetTop, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'}); }); route(); rebuild();
 }
 </script>
+<div id="dock"></div>
 </body>
 </html>
