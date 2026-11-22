@@ -687,6 +687,7 @@ function render(){
     <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
     <div class="card"><h3>OS por especialidade</h3>${bars(L,'especialidade',{f:'especialidade'})}</div>
     <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
+    ${tempoCard(L)}
     <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
   </div>
   <p class="note">Toque em qualquer número ou barra para abrir numa janela, com o resumo e as OS daquele grupo. Dá para abrir várias, arrastar para o lado e minimizar. Para filtrar a página toda, use Filtros.</p>
@@ -748,8 +749,23 @@ function groupTable(L, key, title){
   const rows = Object.entries(g).map(([k,a]) => {const e=a.map(o=>o.espera).filter(x=>x!=null), x=a.filter(o=>o.horas>0).map(o=>o.horas), t=a.map(o=>o.total).filter(v=>v!=null);return [k,a.length,Core.median(e),Core.mean(e),Core.mean(x),Core.mean(t)]}).sort((a,b)=>b[1]-a[1]);
   return `<div class="card" style="margin-bottom:16px"><h3>${title}</h3><div class="scroll"><table class="stack"><thead><tr><th></th><th class="num">OS</th><th class="num">Espera mediana</th><th class="num">Espera média</th><th class="num">Execução média</th><th class="num">Pedido → término</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r[0])}</b></td><td class="num">${nf(r[1])}</td><td class="num">${fh(r[2])}</td><td class="num">${fh(r[3])}</td><td class="num">${fh(r[4])}</td><td class="num">${fh(r[5])}</td></tr>`).join('')}</tbody></table></div></div>`;
 }
+// faixas do tempo entre abrir a OS e o técnico lançar a hora inicial do 1º atendimento
+const FX = [['Até 1 h',1],['1 a 4 h',4],['4 a 24 h',24],['1 a 3 dias',72],['3 a 7 dias',168],['Mais de 7 dias',Infinity]];
+const faixa = h => (FX.find(([t,lim]) => h <= lim) || FX[FX.length-1])[0];
+function tempoCard(L){
+  const A = L.filter(o=>o.espera!=null), sid = SETS.push({list:A, key:o=>faixa(o.espera)}) - 1, mx = Math.max(1, ...FX.map(([t])=>A.filter(o=>faixa(o.espera)===t).length));
+  const ate24 = A.filter(o=>o.espera<=24).length, sem = L.filter(o=>o.espera==null && (o.backlog));
+  const cor = ['#1f9d55','#58b368','#e6b800','#f07c1b','#e0115f','#8e1b3f'];
+  return `<div class="card"><h3>Tempo até o 1º atendimento</h3><p class="note" style="margin-top:-4px">Da abertura da OS até o técnico lançar a hora inicial no MV. Toque na faixa para abrir as OS.</p>
+    <div class="kpis wk" style="margin-bottom:10px">
+      <div class="kpi"><span>Mediana</span><b>${fh(Core.median(A.map(o=>o.espera)))}</b><span>metade atendida até esse tempo</span></div>
+      <div class="kpi"><span>Atendidas em até 24 h</span><b class="${A.length&&ate24/A.length>=.9?'good':''}">${nf(A.length?ate24/A.length*100:0)}%</b><span>${nf(ate24)} de ${nf(A.length)} OS</span></div>
+      <div class="kpi" data-s="${SETS.push({list:sem, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard › Tempo até o 1º atendimento" data-t="Ainda sem atendimento"><span>Ainda sem atendimento</span><b>${nf(sem.length)}</b><span>no backlog, sem hora inicial</span></div>
+    </div>
+    <div class="bars">${FX.map(([t],i) => { const n = A.filter(o=>faixa(o.espera)===t).length; return `<button class="bar" data-s="${sid}" data-k="" data-v="${t}"><span class="n"><span class="chev">▸</span>${t}</span><span class="t"><i style="width:${n/mx*100}%;background:${cor[i]}"></i></span><span class="v">${nf(n)} <small class="muted">${nf(A.length?n/A.length*100:0)}%</small></span></button>`; }).join('')}</div></div>`;
+}
 function renderTempos(L){
-  $('#v-tempos').innerHTML = `<h2>Tempos de atendimento</h2><p class="muted">Espera = início do 1º atendimento − pedido. Execução = fim − início lançados no MV. OS inconsistentes ficam fora.</p>`
+  $('#v-tempos').innerHTML = `<h2>Tempos de atendimento</h2><div style="margin-bottom:16px">${tempoCard(L)}</div><p class="muted">Espera = início do 1º atendimento − pedido. Execução = fim − início lançados no MV. OS inconsistentes ficam fora.</p>`
     + groupTable(L,'especialidade','Por especialidade') + groupTable(L,'tipo','Por tipo de OS') + groupTable(L,'criticidade','Por criticidade');
 }
 function renderEquipe(L){
@@ -984,7 +1000,7 @@ function abaExcel(wb, nome, linhas){
         const a = ws.getCell(r, C0 + i), b = ws.getCell(r2, C0 + i), fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF1F4FA'}};
         a.value = t; a.font = {size:9, color:{argb:cinza}}; a.alignment = {horizontal:'center', vertical:'bottom', wrapText:true}; a.fill = fill; a.border = {top:{style:'medium', color:{argb:acc}}, left:borda, right:borda};
         const pc = typeof v === 'string' && pctRx.test(v), val = pc ? parseFloat(v.replace(',','.'))/100 : v;
-        b.value = val; if (pc) b.numFmt = '0.0%';
+        if (v && v.D != null) { b.value = v.D/24; b.numFmt = '[<0.0416666666666667][m]" min";[h]" h "mm" min"'; } else { b.value = val; if (pc) b.numFmt = '0.0%'; }
         b.font = {bold:true, size:18, color:{argb: pc ? (val >= .9 ? 'FF127A3A' : acc) : cor}}; b.alignment = {horizontal:'center', vertical:'middle'}; b.fill = fill; b.border = {bottom:borda, left:borda, right:borda};
       });
       ws.getRow(r).height = 28; ws.getRow(r2).height = 34; r = r2; return;
@@ -1102,7 +1118,10 @@ function relBlocos(k, L, Lall, P){
   if (k === 'tp') {
     const grp = key => { const g = {}; L.forEach(o => (g[o[key]] = g[o[key]] || []).push(o)); return Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a]) => { const e = a.map(o=>o.espera).filter(x=>x!=null), x = a.filter(o=>o.horas>0).map(o=>o.horas), t = a.map(o=>o.total).filter(v=>v!=null); return [k2, a.length, D(Core.median(e)), D(Core.mean(e)), D(Core.mean(x)), D(Core.mean(t))]; }); };
     const cab = ['','OS','Espera mediana','Espera média','Execução média','Pedido → término médio'];
-    return [['Tempos de atendimento: '+P.rot], [], ...tabela('Por especialidade', cab, grp('especialidade')), ...tabela('Por tipo', cab, grp('tipo'))];
+    const A = L.filter(o=>o.espera!=null), a24 = A.filter(o=>o.espera<=24).length;
+    return [['Tempos de atendimento: '+P.rot], [], {T:'kpis', v:[['Mediana até o 1º atendimento', D(Core.median(A.map(o=>o.espera)))], ['Atendidas em até 24 h', A.length ? String(Math.round(a24/A.length*1000)/10).replace('.',',')+'%' : '0%'], ['OS com atendimento', A.length]]}, {T:'blank'},
+      ...tabela('Tempo da abertura até a hora inicial do 1º atendimento', ['Faixa','OS','% das OS'], FX.map(([t]) => { const n = A.filter(o=>faixa(o.espera)===t).length; return [t, n, A.length ? String(Math.round(n/A.length*1000)/10).replace('.',',')+'%' : '0%']; })),
+      ...tabela('Por especialidade', cab, grp('especialidade')), ...tabela('Por tipo', cab, grp('tipo'))];
   }
   if (k === 'trat') {
     const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'];
