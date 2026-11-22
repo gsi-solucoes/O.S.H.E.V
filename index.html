@@ -59,7 +59,7 @@ textarea{min-height:120px}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;margin-bottom:18px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
 .bars{display:grid;gap:7px}
-.bar{display:grid;grid-template-columns:minmax(0,9em) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px;cursor:pointer;background:none;border:0;padding:0;min-height:28px;text-align:left;color:var(--ink);font-weight:400}
+.bar{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px;cursor:pointer;background:none;border:0;padding:0;min-height:28px;text-align:left;color:var(--ink);font-weight:400}
 .bar .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar .t{height:16px;background:var(--soft);border-radius:4px;overflow:hidden}
 .bar .t i{display:block;height:100%;background:var(--blue);border-radius:4px}
@@ -87,6 +87,14 @@ textarea{min-height:120px}
 .kmain{grid-template-columns:repeat(2,minmax(0,1fr))}@media(min-width:1000px){.kmain{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:420px){.kmain{grid-template-columns:1fr}}
 .kmain .kpi>b{font-size:clamp(26px,2.6vw,38px);white-space:nowrap}
 .kpi[data-s]{cursor:pointer}
+.esp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,128px),1fr));gap:10px;margin:0 0 18px}
+.et{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--c);transition:transform .12s,box-shadow .12s}
+.et:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
+.et .en{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.et b{font:700 30px/1.1 "Red Hat Display",sans-serif}
+.et .eb{height:6px;border-radius:99px;background:var(--soft);overflow:hidden;margin:4px 0}.et .eb i{display:block;height:100%;background:var(--c)}
+.et .es{font-size:12px;color:var(--muted)}.et .es em{font-style:normal;font-weight:700;color:var(--ink)}.et .es em.good{color:light-dark(#127a3a,#3ddc84)}
+.kmain .kpi,.grid2 .card{transition:box-shadow .15s}.kmain .kpi:hover{box-shadow:0 6px 18px rgba(0,0,0,.10)}
 .kd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}.kdi{cursor:pointer;border-radius:8px;padding:4px 6px}.kdi:hover{outline:2px solid var(--accent)}.kdi b{display:block;font:700 clamp(26px,2.6vw,38px)/1.1 "Red Hat Display",sans-serif}.kdi span{font-size:12px;color:var(--muted)}
 .pcw{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .pcr{display:flex;align-items:center;gap:10px}.meta90{display:flex;align-items:center;gap:5px;line-height:1.05;border-left:2px solid var(--line);padding-left:8px}.meta90 b{font:700 22px "Red Hat Display",sans-serif}.meta90 span{font-size:11px;color:var(--muted)}.meta90.ok b{color:light-dark(#127a3a,#3ddc84)}
@@ -678,15 +686,11 @@ function render(){
     <div class="kpi kdup"><span>Com terceiros (fora do backlog)</span><div class="kd">${[['aguardando material','Aguardando material'],['conserto externo','Conserto externo']].map(([f,t]) => `<div class="kdi" data-s="${SETS.push({list:B.terc.filter(o=>o.fila===f), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="${t}"><b>${nf(B.terc.filter(o=>o.fila===f).length)}</b><span>${t}</span></div>`).join('')}</div></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.espera!=null), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com 1º atendimento"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.horas>0), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com execução"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
-    <div class="kpi hot" data-s="${SETS.push({list:B.bl, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Backlog"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
-    ${tratKpis(L)}
   </div>
-  ${tratCard(L, done)}
+  ${espTiles(L)}
   <div class="grid2">
-    <div class="card"><h3>Pendências nossas por responsável</h3>${pendCard(L)}</div>
     <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
-    <div class="card"><h3>OS por especialidade</h3>${bars(L,'especialidade',{f:'especialidade'})}</div>
-    <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
+    <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo',top:8})}</div>
     ${tempoCard(L)}
     <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
   </div>
@@ -721,13 +725,16 @@ function renderBacklog(L){
     <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='não atendida'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Não atendidas"><span>Triadas, aguardando execução</span><b>${nf(B.nao)}</b><span>não atendidas</span></div>
     <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='agendar'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Agendar"><span>Agendar</span><b>${nf(B.agendar)}</b><span>aguardando data</span></div>
   </div>
+  <h3 style="margin:8px 0">Tratativas do backlog <span class="muted" style="font-weight:400;font-size:13px">(situação atual)</span></h3>
+  <div class="kpis">${tratKpis(L)}</div>
+  ${tratCard(L, L.filter(o=>!o.backlog).length)}
+  <div class="card" style="margin-bottom:16px"><h3>Pendências nossas por responsável</h3>${pendCard(L)}</div>
   <div class="card" style="margin-bottom:16px"><h3>Backlog por fila e idade</h3><div class="scroll"><table><thead><tr><th>Fila</th>${bands.map(b=>`<th class="num">${b}</th>`).join('')}<th class="num">Total</th></tr></thead><tbody>${rowsF}
   ${dep.length?`<tr><td>Pendentes no corte, resolvidas depois</td>${bands.map(b=>`<td class="num">${nf(dep.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(dep.length)}</b></td></tr>`:''}
   <tr><td><b>Total</b></td>${bands.map(b=>`<td class="num"><b>${nf(B.bl.filter(o=>age(o)===b).length)}</b></td>`).join('')}<td class="num"><b>${nf(B.bl.length)}</b></td></tr></tbody></table></div></div>
   <div class="grid2">
     <div class="card"><h3>Backlog por especialidade</h3>${bars(B.bl,'especialidade',{acc:1})}</div>
     <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v,sid])=>`<button class="bar acc" data-s="${sid}" data-k="" data-v="m" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('')}</div><p class="note">Toque no mês para abrir numa janela as OS que estavam pendentes no fim dele. Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
-    <div class="card"><h3>Backlog por tratativa</h3>${bars(B.bl, trat, {acc:1})}<p class="note">Pelas frases padrão do planejamento na Observação. Toque para abrir as OS.</p></div>
     <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
@@ -752,6 +759,11 @@ function groupTable(L, key, title){
 // faixas do tempo entre abrir a OS e o técnico lançar a hora inicial do 1º atendimento
 const FX = [['Até 1 h',1],['1 a 4 h',4],['4 a 24 h',24],['1 a 3 dias',72],['3 a 7 dias',168],['Mais de 7 dias',Infinity]];
 const faixa = h => (FX.find(([t,lim]) => h <= lim) || FX[FX.length-1])[0];
+function espTiles(L){
+  const sid = SETS.push({list:L, key:'especialidade'}) - 1;
+  return `<div class="esp">${Core.count(L,'especialidade').map(([k,n]) => { const c = espCor(k) || '#7f8c8d', a = L.filter(o=>o.especialidade===k), d = a.filter(o=>!o.backlog).length, p = a.filter(o=>o.backlog).length, pc = n ? d/n : 0;
+    return `<button class="et" data-s="${sid}" data-v="${esc(k)}" data-t="${esc(k)}" data-w="Dashboard › Especialidades" style="--c:${c}"><span class="en">${esc(k)}</span><b>${nf(n)}</b><span class="eb"><i style="width:${pc*100}%"></i></span><span class="es"><em class="${pc>=.9?'good':''}">${nf(pc*100)}%</em> realizadas · ${nf(p)} pendentes</span></button>`; }).join('')}</div>`;
+}
 function tempoCard(L){
   const A = L.filter(o=>o.espera!=null), sid = SETS.push({list:A, key:o=>faixa(o.espera)}) - 1, mx = Math.max(1, ...FX.map(([t])=>A.filter(o=>faixa(o.espera)===t).length));
   const ate24 = A.filter(o=>o.espera<=24).length, sem = L.filter(o=>o.espera==null && (o.backlog));
@@ -800,14 +812,14 @@ const trat = o => TRAT[o.pendente] || 'Outro';
 function tratKpis(L){
   const B = L.filter(o=>o.backlog), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'], comL = B.filter(o=>!SEMT.includes(trat(o))), semL = B.filter(o=>SEMT.includes(trat(o))), com = comL.length;
   const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
-  return `<div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard" data-t="Backlog com tratativa"><span>Backlog com tratativa</span><b class="${B.length&&com/B.length>=.9?'good':''}">${nf(B.length?com/B.length*100:0)}%</b><span>${nf(com)} de ${nf(B.length)} OS do backlog</span></div>
-          <div class="kpi" data-s="${SETS.push({list:semL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard" data-t="Backlog sem tratativa"><span>Backlog sem tratativa</span><b>${nf(semL.length)}</b><span>nada escrito ou só recado do solicitante</span></div>
-          <div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard" data-t="Cobrar primeiro (mais antigas com tratativa)"><span>Cobrar primeiro</span><b>${velha?nf(Math.floor((Date.now()-velha.pedido)/864e5))+' dias':'–'}</b><span>${velha?`mais antiga com tratativa: OS ${velha.os} · ${esc(trat(velha))}`:'nenhuma com tratativa'}</span></div>`;
+  return `<div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Backlog com tratativa"><span>Backlog com tratativa</span><b class="${B.length&&com/B.length>=.9?'good':''}">${nf(B.length?com/B.length*100:0)}%</b><span>${nf(com)} de ${nf(B.length)} OS do backlog</span></div>
+          <div class="kpi" data-s="${SETS.push({list:semL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Backlog sem tratativa"><span>Backlog sem tratativa</span><b>${nf(semL.length)}</b><span>nada escrito ou só recado do solicitante</span></div>
+          <div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Cobrar primeiro (mais antigas com tratativa)"><span>Cobrar primeiro</span><b>${velha?nf(Math.floor((Date.now()-velha.pedido)/864e5))+' dias':'–'}</b><span>${velha?`mais antiga com tratativa: OS ${velha.os} · ${esc(trat(velha))}`:'nenhuma com tratativa'}</span></div>`;
 }
 function tratCard(L, done){
   const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), base = L.length || 1;
   const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
-  const kp = (k, sub) => { const sid = SETS.push({list:B.filter(o=>trat(o)===k), key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Dashboard › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nB(k))}</b>${nB(k)?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(nB(k)/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${sub || ({'Supervisão':'aguardando a supervisão','Comprador':'aguardando o comprador','Planejamento':'aguardando o planejamento'})[k] || 'no backlog'}</span></div>`; };
+  const kp = (k, sub) => { const sid = SETS.push({list:B.filter(o=>trat(o)===k), key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Backlog › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nB(k))}</b>${nB(k)?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(nB(k)/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${sub || ({'Supervisão':'aguardando a supervisão','Comprador':'aguardando o comprador','Planejamento':'aguardando o planejamento'})[k] || 'no backlog'}</span></div>`; };
   // escada: quanto sobe o % realizado resolvendo cada grupo do backlog
   const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Aguardando material (na obs.)','Conserto externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
   let acc = done; const steps = [['Hoje', done]];
@@ -815,7 +827,7 @@ function tratCard(L, done){
   const pc = v => v/base*100, bar = ([t,v],i) => `<div class="bar acc" style="cursor:default;grid-template-columns:minmax(0,12.5em) minmax(0,1fr) auto"><span class="n" style="white-space:nowrap">${t}</span><span class="t"><i style="width:${pc(v)}%;${pc(v)>=90?'background:light-dark(#127a3a,#3ddc84)':''}"></i></span><span class="v ${pc(v)>=90?'good':''}">${nf(pc(v),1)}%</span></div>`;
   const com = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))).length; // recado do solicitante (URGENTE, brevidade…) não é tratativa
   return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3><p class="note" style="margin-top:-4px">Só o backlog (aberta, não atendida, agendar). Em aguardando material ou conserto externo a tratativa já foi feita: a OS está com terceiros.</p>
-    <div class="kpis wk" style="margin-bottom:12px">${kp('Feito, falta fechar','observação diz que foi feito')}${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${(() => { const l = B.filter(o=>['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))), r = l.filter(o=>trat(o)!=='Sem tratativa').length, sid = SETS.push({list:l, key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Dashboard › Pendentes por tratativa" data-t="Sem tratativa"><span>Sem tratativa</span><b>${nf(l.length)}</b>${l.length?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(l.length/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${nf(l.length-r)} sem nada escrito · ${nf(r)} só com recado do solicitante</span></div>`; })()}</div>
+    <div class="kpis wk" style="margin-bottom:12px">${kp('Feito, falta fechar','observação diz que foi feito')}${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${(() => { const l = B.filter(o=>['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))), r = l.filter(o=>trat(o)!=='Sem tratativa').length, sid = SETS.push({list:l, key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Backlog › Pendentes por tratativa" data-t="Sem tratativa"><span>Sem tratativa</span><b>${nf(l.length)}</b>${l.length?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(l.length/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${nf(l.length-r)} sem nada escrito · ${nf(r)} só com recado do solicitante</span></div>`; })()}</div>
     </div>`;
 }
 
