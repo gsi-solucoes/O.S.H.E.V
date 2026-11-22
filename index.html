@@ -614,7 +614,7 @@ function miniDash(items, sel){
 }
 function drillHTML(items, lim, asc, sel, all){
   const it = items.slice().sort((a,b)=> asc ? (a.pedido||0)-(b.pedido||0) : (b.pedido||0)-(a.pedido||0));
-  return `<div class="drill">${miniDash(all || items, sel)}${sel ? selBar(sel, items.length) : ''}${it.slice(0,lim).map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.especialidade)} · ${esc(o.setor)}${o.localidade?' · '+esc(o.localidade):''}</div><div>Técnico: <b>${o.exec.length?esc(o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', ')):'ainda sem execução'}</b></div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`).join('')}${it.length>lim?`<button class="drmore" data-lim="${lim+30}">Mostrar mais ${Math.min(30,it.length-lim)} de ${it.length}</button>`:''}</div>`;
+  return `<div class="drill">${miniDash(all || items, sel)}${sel ? selBar(sel, items.length) : ''}${it.slice(0,lim).map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.especialidade)} · ${esc(o.setor)}${o.localidade?' · '+esc(o.localidade):''}</div><div>Técnico: <b>${o.exec.length?esc(o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', ')):'ainda sem execução'}</b></div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.terceiros?`<div class="muted">Com terceiros (${o.fila}): não é pendência nossa</div>`:o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`).join('')}${it.length>lim?`<button class="drmore" data-lim="${lim+30}">Mostrar mais ${Math.min(30,it.length-lim)} de ${it.length}</button>`:''}</div>`;
 }
 function openDrill(b){
   const S = SETS[+b.dataset.s]; if (!S) return;
@@ -638,7 +638,7 @@ function tsv(list){
 }
 
 function pendCard(L){
-  const P = L.filter(o=>o.pendente), g = {};
+  const P = L.filter(o=>o.backlog && o.pendente), g = {}; // só o que é nosso (backlog); terceiros ficam fora
   P.forEach(o => { const r = g[o.pendente] = g[o.pendente] || {n:0, d:[]}; r.n++; if (o.parado!=null) r.d.push(o.parado); });
   const rows = Object.entries(g).sort((a,b)=>b[1].n-a[1].n), mx = Math.max(1,...rows.map(r=>r[1].n));
   const sid = SETS.push({list:P, key:'pendente'}) - 1;
@@ -676,7 +676,7 @@ function render(){
   </div>
   ${tratCard(L, done)}
   <div class="grid2">
-    <div class="card"><h3>Pendências por responsável</h3>${pendCard(L)}</div>
+    <div class="card"><h3>Pendências nossas por responsável</h3>${pendCard(L)}</div>
     <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
     <div class="card"><h3>OS por especialidade</h3>${bars(L,'especialidade',{f:'especialidade'})}</div>
     <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo'})}</div>
@@ -865,7 +865,7 @@ document.addEventListener('click', e => {
 // ===================== POSSÍVEIS REPETIDAS =====================
 function renderRep(){
   const G = Core.repetidas(data);
-  const card = o => `<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div class="${o.os===o.repPrincipal?'ok':'warn'}"><b>${esc(o.repAcao)}</b></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.localidade||'')}${o.solicitante?' · Solicitante: '+esc(o.solicitante):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`;
+  const card = o => `<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div class="${o.os===o.repPrincipal?'ok':'warn'}"><b>${esc(o.repAcao)}</b></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.localidade||'')}${o.solicitante?' · Solicitante: '+esc(o.solicitante):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.terceiros?`<div class="muted">Com terceiros (${o.fila}): não é pendência nossa</div>`:o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`;
   const fechar = G.reduce((s,a)=>s+a.length-1,0), fAnd = G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0);
   $('#v-repetidas').innerHTML = `<h2>OS repetidas em aberto</h2>
   <div class="kpis"><div class="kpi"><b>${fechar}</b><span>OS repetidas para tratar (fechar)</span></div><div class="kpi"><b>${fAnd}</b><span>Já tratadas em outra OS (com tratativa, material ou externo)</span></div><div class="kpi"><b>${fechar-fAnd}</b><span>Ainda sem tratativa: juntar numa OS só</span></div><div class="kpi"><b>${G.length}</b><span>Grupos</span></div></div>
@@ -882,7 +882,7 @@ const REL = [
   ['set','Setores','OS por setor e localidade, realizadas e pendentes'],
   ['hh','Homem-hora por técnico','OS, horas e média por técnico'],
   ['tp','Tempos de atendimento','Espera até o 1º atendimento, execução e pedido → término, por especialidade e tipo'],
-  ['pend','Pendências por responsável','Com quem as OS pendentes estão paradas (campo Observação) e a lista'],
+  ['pend','Pendências nossas por responsável','Com quem as OS do backlog estão paradas (campo Observação) e a lista; material e externo ficam fora'],
   ['trat','Pendentes por tratativa','Tratativas padrão do planejamento, % com tratativa, até onde dá para chegar e a lista para cobrar'],
   ['lista','Lista de OS','Todas as OS do período com todos os campos'],
   ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV'],
@@ -1024,8 +1024,8 @@ function relBlocos(k, L, Lall, P){
       ...tabela('Cobrar primeiro (backlog com tratativa, da mais antiga para a mais nova)', ['Tratativa',...cabOS], comL.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(o=>[trat(o), ...linhaOS(o)]))];
   }
   if (k === 'pend') {
-    const Pn = L.filter(o=>o.pendente), g = {}; Pn.forEach(o => { const r = g[o.pendente] = g[o.pendente] || []; r.push(o); });
-    return [['Pendências por responsável: '+P.rot], [], ...tabela('Resumo', ['Pendente de','OS','Mediana de dias parada'], Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a])=>[k2, a.length, r1(Core.median(a.map(o=>o.parado).filter(x=>x!=null)))])),
+    const Pn = L.filter(o=>o.backlog && o.pendente), g = {}; Pn.forEach(o => { const r = g[o.pendente] = g[o.pendente] || []; r.push(o); });
+    return [['Pendências nossas por responsável: '+P.rot], [], ...tabela('Resumo', ['Pendente de','OS','Mediana de dias parada'], Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a])=>[k2, a.length, r1(Core.median(a.map(o=>o.parado).filter(x=>x!=null)))])),
       ...tabela('Lista', cabOS, Pn.sort((a,b)=>(a.pendente||'').localeCompare(b.pendente||'') || (b.parado||0)-(a.parado||0)).map(linhaOS))];
   }
   if (k === 'lista') return [['Lista de OS: '+P.rot], [], ...tabela('OS', cabOS, L.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(linhaOS))];
