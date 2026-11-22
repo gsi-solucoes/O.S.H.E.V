@@ -691,7 +691,7 @@ function render(){
   <div class="grid2">
     <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
     <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo',top:8})}</div>
-    ${tempoCard(L)}
+    ${tempoCard(L, true)}
     <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
   </div>
   <p class="note">Toque em qualquer número ou barra para abrir numa janela, com o resumo e as OS daquele grupo. Dá para abrir várias, arrastar para o lado e minimizar. Para filtrar a página toda, use Filtros.</p>
@@ -728,14 +728,12 @@ function renderBacklog(L){
   <h3 style="margin:8px 0">Tratativas do backlog <span class="muted" style="font-weight:400;font-size:13px">(situação atual)</span></h3>
   <div class="kpis">${tratKpis(L)}</div>
   ${tratCard(L, L.filter(o=>!o.backlog).length)}
-  <div class="card" style="margin-bottom:16px"><h3>Pendências nossas por responsável</h3>${pendCard(L)}</div>
   <div class="card" style="margin-bottom:16px"><h3>Backlog por fila e idade</h3><div class="scroll"><table><thead><tr><th>Fila</th>${bands.map(b=>`<th class="num">${b}</th>`).join('')}<th class="num">Total</th></tr></thead><tbody>${rowsF}
   ${dep.length?`<tr><td>Pendentes no corte, resolvidas depois</td>${bands.map(b=>`<td class="num">${nf(dep.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(dep.length)}</b></td></tr>`:''}
   <tr><td><b>Total</b></td>${bands.map(b=>`<td class="num"><b>${nf(B.bl.filter(o=>age(o)===b).length)}</b></td>`).join('')}<td class="num"><b>${nf(B.bl.length)}</b></td></tr></tbody></table></div></div>
   <div class="grid2">
     <div class="card"><h3>Backlog por especialidade</h3>${bars(B.bl,'especialidade',{acc:1})}</div>
     <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v,sid])=>`<button class="bar acc" data-s="${sid}" data-k="" data-v="m" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('')}</div><p class="note">Toque no mês para abrir numa janela as OS que estavam pendentes no fim dele. Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
-    <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
   wireBars(V);
@@ -764,13 +762,13 @@ function espTiles(L){
   return `<div class="esp">${Core.count(L,'especialidade').map(([k,n]) => { const c = espCor(k) || '#7f8c8d', a = L.filter(o=>o.especialidade===k), d = a.filter(o=>!o.backlog).length, p = a.filter(o=>o.backlog).length, pc = n ? d/n : 0;
     return `<button class="et" data-s="${sid}" data-v="${esc(k)}" data-t="${esc(k)}" data-w="Dashboard › Especialidades" style="--c:${c}"><span class="en">${esc(k)}</span><b>${nf(n)}</b><span class="eb"><i style="width:${pc*100}%"></i></span><span class="es"><em class="${pc>=.9?'good':''}">${nf(pc*100)}%</em> realizadas · ${nf(p)} pendentes</span></button>`; }).join('')}</div>`;
 }
-function tempoCard(L){
+function tempoCard(L, semMediana){
   const A = L.filter(o=>o.espera!=null), sid = SETS.push({list:A, key:o=>faixa(o.espera)}) - 1, mx = Math.max(1, ...FX.map(([t])=>A.filter(o=>faixa(o.espera)===t).length));
   const ate24 = A.filter(o=>o.espera<=24).length, sem = L.filter(o=>o.espera==null && (o.backlog));
   const cor = ['#1f9d55','#58b368','#e6b800','#f07c1b','#e0115f','#8e1b3f'];
   return `<div class="card"><h3>Tempo até o 1º atendimento</h3><p class="note" style="margin-top:-4px">Da abertura da OS até o técnico lançar a hora inicial no MV. Toque na faixa para abrir as OS.</p>
     <div class="kpis wk" style="margin-bottom:10px">
-      <div class="kpi"><span>Mediana</span><b>${fh(Core.median(A.map(o=>o.espera)))}</b><span>metade atendida até esse tempo</span></div>
+      ${semMediana ? '' : `<div class="kpi"><span>Mediana</span><b>${fh(Core.median(A.map(o=>o.espera)))}</b><span>metade atendida até esse tempo</span></div>`}
       <div class="kpi"><span>Atendidas em até 24 h</span><b class="${A.length&&ate24/A.length>=.9?'good':''}">${nf(A.length?ate24/A.length*100:0)}%</b><span>${nf(ate24)} de ${nf(A.length)} OS</span></div>
       <div class="kpi" data-s="${SETS.push({list:sem, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard › Tempo até o 1º atendimento" data-t="Ainda sem atendimento"><span>Ainda sem atendimento</span><b>${nf(sem.length)}</b><span>no backlog, sem hora inicial</span></div>
     </div>
@@ -813,13 +811,12 @@ function tratKpis(L){
   const B = L.filter(o=>o.backlog), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'], comL = B.filter(o=>!SEMT.includes(trat(o))), semL = B.filter(o=>SEMT.includes(trat(o))), com = comL.length;
   const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
   return `<div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Backlog com tratativa"><span>Backlog com tratativa</span><b class="${B.length&&com/B.length>=.9?'good':''}">${nf(B.length?com/B.length*100:0)}%</b><span>${nf(com)} de ${nf(B.length)} OS do backlog</span></div>
-          <div class="kpi" data-s="${SETS.push({list:semL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Backlog sem tratativa"><span>Backlog sem tratativa</span><b>${nf(semL.length)}</b><span>nada escrito ou só recado do solicitante</span></div>
           <div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Cobrar primeiro (mais antigas com tratativa)"><span>Cobrar primeiro</span><b>${velha?nf(Math.floor((Date.now()-velha.pedido)/864e5))+' dias':'–'}</b><span>${velha?`mais antiga com tratativa: OS ${velha.os} · ${esc(trat(velha))}`:'nenhuma com tratativa'}</span></div>`;
 }
 function tratCard(L, done){
   const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), base = L.length || 1;
   const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
-  const kp = (k, sub) => { const sid = SETS.push({list:B.filter(o=>trat(o)===k), key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Backlog › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nB(k))}</b>${nB(k)?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(nB(k)/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${sub || ({'Supervisão':'aguardando a supervisão','Comprador':'aguardando o comprador','Planejamento':'aguardando o planejamento'})[k] || 'no backlog'}</span></div>`; };
+  const kp = (k, sub) => { const sid = SETS.push({list:B.filter(o=>trat(o)===k), key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Backlog › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nB(k))}</b>${nB(k)?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(nB(k)/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${sub || ({'Supervisão':'aguardando a supervisão','Comprador':'aguardando o comprador','Planejamento':'aguardando o planejamento'})[k] || 'no backlog'}${(() => { const m = Core.median(B.filter(o=>trat(o)===k).map(o=>o.parado).filter(x=>x!=null)); return m!=null ? ` · parada há ${nf(m)} d (mediana)` : ''; })()}</span></div>`; };
   // escada: quanto sobe o % realizado resolvendo cada grupo do backlog
   const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Aguardando material (na obs.)','Conserto externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
   let acc = done; const steps = [['Hoje', done]];
@@ -937,8 +934,7 @@ const REL = [
   ['set','Setores','OS por setor e localidade, realizadas e pendentes'],
   ['hh','Homem-hora por técnico','OS, horas e média por técnico'],
   ['tp','Tempos de atendimento','Espera até o 1º atendimento, execução e pedido → término, por especialidade e tipo'],
-  ['pend','Pendências nossas por responsável','Com quem as OS do backlog estão paradas (campo Observação) e a lista; aguardando material e conserto externo ficam fora'],
-  ['trat','Pendentes por tratativa','Tratativas padrão do planejamento, % com tratativa, até onde dá para chegar e a lista para cobrar'],
+  ['trat','Pendentes por tratativa','Com quem as OS do backlog estão paradas (frases padrão do planejamento), dias parada, % com tratativa e a lista para cobrar'],
   ['lista','Lista de OS','Todas as OS do período com todos os campos'],
   ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV'],
   ['rep','OS repetidas em aberto','Quais OS fechar porque já estão sendo tratadas em outra']

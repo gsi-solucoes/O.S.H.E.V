@@ -1165,29 +1165,12 @@ Private Sub MontarBacklog(cEsp As Object, cPend As Object)
     ws.Range("A5:F5,A10:F10").Font.Bold = True
     ws.Range("F10").Font.Color = RGB(224, 17, 95): ws.Range("F10").Font.Size = 16
 
-    ws.Range("A12").Value = "Aguardando terceiros (fora do backlog)": ws.Range("A12").Font.Bold = True
-    ws.Range("A13").Value = "Aguardando material"
-    ws.Range("B13").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""aguardando material"",tbOS[Pedido],""<=""&" & E & INI & ")"
-    ws.Range("A14").Value = "Conserto externo"
-    ws.Range("B14").Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""conserto externo"",tbOS[Pedido],""<=""&" & E & INI & ")"
 
-    ws.Range("A16:B16").Value = Array("Backlog por especialidade", "OS"): ws.Range("A16:B16").Font.Bold = True
-    r = 17
+    ws.Range("A12:B12").Value = Array("Backlog por especialidade", "OS"): ws.Range("A12:B12").Font.Bold = True
+    r = 13
     For Each esp In OrdenarPorValor(cEsp, 0)
         ws.Cells(r, 1).Value = esp
         ws.Cells(r, 2).Formula = "=" & FormBacklog(",tbOS[Especialidade],A" & r)
-        r = r + 1
-    Next esp
-
-    ' pendências por responsável (campo Observações, trecho mais recente)
-    r = r + 1
-    ws.Cells(r, 1).Resize(1, 3).Value = Array("Pendências nossas por responsável (só backlog)", "OS", "Mediana de dias parada")
-    ws.Cells(r, 1).Resize(1, 3).Font.Bold = True
-    r = r + 1
-    For Each esp In OrdenarPorValor(cPend, 0)
-        ws.Cells(r, 1).Value = esp
-        ws.Cells(r, 2).Formula = "=COUNTIFS(tbOS[Visivel],1,tbOS[Backlog],""S"",tbOS[Pendente de],A" & r & ")"
-        ws.Cells(r, 3).FormulaArray = "=IFERROR(MEDIAN(IF((tbOS[Visivel]=1)*(tbOS[Backlog]=""S"")*(tbOS[Pendente de]=A" & r & ")*(tbOS[Parado_dias]<>),tbOS[Parado_dias])),)"
         r = r + 1
     Next esp
 
@@ -1255,7 +1238,7 @@ Private Sub MontarBacklog(cEsp As Object, cPend As Object)
     ws.Range("H10").Formula = "=""- Agendar: ""&F8"
     ws.Range("H11").Formula = "=""- Pendentes no corte e resolvidas depois: ""&F9"
     ws.Range("H12").Formula = "=""Por idade: 0–7 dias: ""&B10&"" | 8–15: ""&C10&"" | 16–30: ""&D10&"" | mais de 30: ""&E10"
-    ws.Range("H13").Formula = "=""Aguardando material: ""&B13&"" · Conserto externo: ""&B14&"" (fora do backlog)"""
+    ws.Range("H13").Formula = "=""Aguardando material: ""&COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""aguardando material"",tbOS[Pedido],""<=""&" & E & INI & ")&"" · Conserto externo: ""&COUNTIFS(tbOS[Visivel],1,tbOS[Fila],""conserto externo"",tbOS[Pedido],""<=""&" & E & INI & ")&"" (fora do backlog)"""
     Dim txtT As String
     txtT = "=""Por tratativa: """
     For q = 0 To UBound(tr)
