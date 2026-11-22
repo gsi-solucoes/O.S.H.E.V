@@ -173,7 +173,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </section>
   <section class="view" id="v-config">
     <h2>Configurações</h2>
-    <div class="card" style="margin-bottom:16px"><h3>Regras da observação (Pendente de)</h3><p class="muted">Uma linha por responsável: RESPONSÁVEL = expressão; expressão; ... Aceita erro de digitação (80% parecido) e ignora acentos. Vale o trecho mais recente da observação.</p><textarea id="cfgRegras" style="min-height:180px"></textarea></div>
+    <div class="card" style="margin-bottom:16px"><h3>Regras da observação (Pendente de)</h3><p class="muted">Uma linha por responsável: RESPONSÁVEL = expressão; expressão; ... Aceita erro de digitação (80% parecido) e ignora acentos. Vale o trecho mais recente da observação.</p><div class="note" style="margin-bottom:8px"><b>Frases padrão do planejamento</b> (o que não bater com nenhuma regra é recado do solicitante e não conta como tratativa):<br>TRATATIVA SUPERVISÃO 22/11/26 · TRATATIVA COMPRADOR 22/11/26 · TRATATIVA PLANEJAMENTO 22/11/26 · PROGRAMADO PARA 29/11/26 (FIM DE SEMANA) · EM EXECUÇÃO 22/11/26 · SERVIÇO REALIZADO, AGUARDANDO FECHAMENTO 22/11/26</div><textarea id="cfgRegras" style="min-height:180px"></textarea></div>
     <div class="grid2">
       <div class="card"><h3>Nomes genéricos</h3><p class="muted">Lançamentos no nome destas pessoas aparecem como "Walter / lançamentos genéricos". Um nome (ou começo de nome) por linha.</p><textarea id="cfgGen"></textarea></div>
       <div class="card"><h3>De-para de técnicos</h3><p class="muted">Corrige nomes. Uma linha por pessoa: NOME NO MV = NOME CORRETO</p><textarea id="cfgDepara"></textarea></div>
@@ -369,16 +369,20 @@ var Core = (function () {
     return list;
   }
 
+  // Frases padrão do planejamento (22/11/26):
+  //   TRATATIVA SUPERVISÃO 22/11/26 · TRATATIVA COMPRADOR 22/11/26 · TRATATIVA PLANEJAMENTO 22/11/26
+  //   PROGRAMADO PARA 29/11/26 (FIM DE SEMANA) · EM EXECUÇÃO 22/11/26 · SERVIÇO REALIZADO, AGUARDANDO FECHAMENTO 22/11/26
+  // + frases antigas que o planejamento já usava. O que não bate com nenhuma = recado do solicitante (não é tratativa).
   var REGRAS_PADRAO = [
-    ['Supervisão', ['TRATATIVA (SUPERVIS', 'TRATATIVA DA SUPERVIS', 'TRATATIVA SUPERVIS', 'AGUARDAR SUPERVISOR', 'AGUARDANDO SUPERVISOR', '(SUPERVISOR)', '(SUPERVISÃO)']],
-    ['Comprador', ['TRATATIVA DE COMPRA', '(COMPRADOR)', 'TRATATIVA (COMPRA', 'TRATATIVA DO COMPRADOR', 'AGUARDANDO COMPRADOR']],
-    ['Planejador', ['PLANEJADOR', 'PLANEJAMENTO', 'A AGENDAR', 'MATERIAL ENTREGUE']],
+    ['Supervisão', ['TRATATIVA SUPERVISAO', 'TRATATIVA (SUPERVIS', 'TRATATIVA DA SUPERVIS', 'AGUARDAR SUPERVISOR', 'AGUARDANDO SUPERVISOR', '(SUPERVISOR)', '(SUPERVISÃO)']],
+    ['Comprador', ['TRATATIVA COMPRADOR', 'TRATATIVA DE COMPRA', '(COMPRADOR)', 'TRATATIVA (COMPRA', 'TRATATIVA DO COMPRADOR', 'AGUARDANDO COMPRADOR']],
+    ['Planejador', ['TRATATIVA PLANEJAMENTO', 'PLANEJADOR', 'A AGENDAR', 'MATERIAL ENTREGUE']],
     ['Gestor', ['(GESTOR)', 'TRATATIVA (GESTOR', 'TRATATIVA DO GESTOR', 'AGUARDANDO GESTOR']],
     ['Externo', ['TRATATIVA EXTERNA', 'SERVIÇO EXTERNO', 'SERVICO EXTERNO', 'TRATATIVA DE SERVIÇO EXTERNO']],
     ['Material', ['AGUARDANDO MATERIAL', 'MATERIAL SOLICITADO', 'SOLICITADO MATERIAL', 'PEDIDO FEITO']],
-    ['Feito, falta fechar', ['SERVICO REALIZADO', 'SERVICO EXECUTADO', 'SERVICO CONCLUIDO', 'O.S FINALIZADA', 'OS FINALIZADA', 'FINALIZADA PELO SETOR', 'JA FOI REALIZADO', 'JA REALIZADO']],
-    ['Em execução', ['EM ANDAMENTO', 'EM EXECUCAO', 'SERVICO INICIADO', 'INICIADO', 'EXECUTANDO', 'EM ATENDIMENTO']],
-    ['Programado', ['FINAL DE SEMANA', 'FIM DE SEMANA', 'SABADO', 'DOMINGO', 'PROGRAMADO', 'PROGRAMACAO', 'PROGRAMADA', 'AGENDADO', 'AGENDADA']]
+    ['Feito, falta fechar', ['AGUARDANDO FECHAMENTO']],
+    ['Em execução', ['EM EXECUCAO']],
+    ['Programado', ['PROGRAMADO PARA']]
   ];
   var RX_D = /(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?![\d\/.]*\d)/g;
   function dataTxt(m) { if (m[0].indexOf('.') > 0 && !m[3]) return null; var y = m[3] ? +m[3] : new Date().getFullYear(); if (y < 100) y += 2000; var d = new Date(y, +m[2] - 1, +m[1]); return isNaN(d) || +m[2] > 12 || +m[1] > 31 ? null : d; }
