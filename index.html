@@ -707,6 +707,7 @@ function renderBacklog(L){
   <div class="grid2">
     <div class="card"><h3>Backlog por especialidade</h3>${bars(B.bl,'especialidade',{acc:1})}</div>
     <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v,sid])=>`<button class="bar acc" data-s="${sid}" data-k="" data-v="m" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('')}</div><p class="note">Toque no mês para abrir numa janela as OS que estavam pendentes no fim dele. Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
+    <div class="card"><h3>Backlog por tratativa</h3>${bars(B.bl, trat, {acc:1})}<p class="note">Pelas frases padrão do planejamento na Observação. Toque para abrir as OS.</p></div>
     <div class="card"><h3>Aguardando terceiros (fora do backlog)</h3>${bars(B.terc,'fila')}<p class="note">Aguardando material e conserto externo, só para informação.</p></div>
   </div>
   <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
@@ -718,7 +719,7 @@ function renderBacklog(L){
     toast(`Backlog ${blLabel()}`);
   };
   $('#bLimpa').onclick = () => { bIni = ''; bFim = ''; render(); toast('Backlog atual (todos os arquivos)'); };
-  const txt = `Backlog da manutenção ${blLabel()}\nBacklog total: ${B.bl.length}${velha?`\n${faixa} (mais antiga: OS ${velha.os}, ${diasV} dias; mais nova: OS ${nova.os})`:''}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
+  const txt = `Backlog da manutenção ${blLabel()}\nBacklog total: ${B.bl.length}${velha?`\n${faixa} (mais antiga: OS ${velha.os}, ${diasV} dias; mais nova: OS ${nova.os})`:''}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nPor tratativa: ${Core.count(B.bl, trat).map(([k,n])=>`${k}: ${n}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
   $('#cpBl').onclick = () => copy(txt, 'Resumo copiado.');
   $('#cpBlList').onclick = () => copy(tsv(B.bl));
 }
@@ -861,6 +862,7 @@ const REL = [
   ['hh','Homem-hora por técnico','OS, horas e média por técnico'],
   ['tp','Tempos de atendimento','Espera até o 1º atendimento, execução e pedido → término, por especialidade e tipo'],
   ['pend','Pendências por responsável','Com quem as OS pendentes estão paradas (campo Observação) e a lista'],
+  ['trat','Pendentes por tratativa','Tratativas padrão do planejamento, % com tratativa, até onde dá para chegar e a lista para cobrar'],
   ['lista','Lista de OS','Todas as OS do período com todos os campos'],
   ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV'],
   ['rep','OS repetidas em aberto','Quais OS fechar porque já estão sendo tratadas em outra']
@@ -986,6 +988,19 @@ function relBlocos(k, L, Lall, P){
     const grp = key => { const g = {}; L.forEach(o => (g[o[key]] = g[o[key]] || []).push(o)); return Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a]) => { const e = a.map(o=>o.espera).filter(x=>x!=null), x = a.filter(o=>o.horas>0).map(o=>o.horas), t = a.map(o=>o.total).filter(v=>v!=null); return [k2, a.length, D(Core.median(e)), D(Core.mean(e)), D(Core.mean(x)), D(Core.mean(t))]; }); };
     const cab = ['','OS','Espera mediana','Espera média','Execução média','Pedido → término médio'];
     return [['Tempos de atendimento: '+P.rot], [], ...tabela('Por especialidade', cab, grp('especialidade')), ...tabela('Por tipo', cab, grp('tipo'))];
+  }
+  if (k === 'trat') {
+    const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'];
+    const comL = B.filter(o=>!SEMT.includes(trat(o))), done = L.filter(o=>!o.backlog).length, base = L.length || 1;
+    const grupos = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Terceiros','Outro (recado, sem tratativa)','Sem tratativa'];
+    let acc = done; const esc_ = [['Hoje', done, String(Math.round(done/base*1000)/10).replace('.',',')+'%']];
+    grupos.forEach(g => { const n = B.filter(o=>trat(o)===g).length; if (n) { acc += n; esc_.push(['+ '+g+' ('+n+')', acc, String(Math.round(acc/base*1000)/10).replace('.',',')+'%']); } });
+    const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
+    return [['Pendentes por tratativa: '+P.rot], [],
+      ...tabela('Indicadores', ['Indicador','Valor'], [['Backlog com tratativa', B.length ? String(Math.round(comL.length/B.length*1000)/10).replace('.',',')+'%' : '-'], ['OS do backlog com tratativa', comL.length], ['OS do backlog sem tratativa (nada escrito ou só recado do solicitante)', B.length-comL.length], ['Cobrar primeiro: mais antiga com tratativa', velha ? `OS ${velha.os} · ${trat(velha)} · ${Math.floor((Date.now()-velha.pedido)/864e5)} dias` : '-']]),
+      ...tabela('Por tratativa', ['Tratativa','OS em aberto','No backlog','Mediana de dias parada'], grupos.map(g => { const a = A.filter(o=>trat(o)===g); return [g, a.length, B.filter(o=>trat(o)===g).length, r1(Core.median(a.map(o=>o.parado).filter(x=>x!=null)))]; }).filter(r=>r[1])),
+      ...tabela('Até onde dá para chegar (% realizado resolvendo cada grupo do backlog)', ['Etapa','Realizadas','% realizado'], esc_),
+      ...tabela('Cobrar primeiro (backlog com tratativa, da mais antiga para a mais nova)', ['Tratativa',...cabOS], comL.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(o=>[trat(o), ...linhaOS(o)]))];
   }
   if (k === 'pend') {
     const Pn = L.filter(o=>o.pendente), g = {}; Pn.forEach(o => { const r = g[o.pendente] = g[o.pendente] || []; r.push(o); });
