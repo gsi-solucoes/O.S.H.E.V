@@ -353,7 +353,8 @@ var Core = (function () {
         });
         if (o.sugestao) o.issues.unshift('Provável erro de dia na execução: data sugerida ' + o.sugestao.toLocaleDateString('pt-BR') + ' ' + o.sugestao.toTimeString().slice(0, 5));
       }
-      var c = classificar(o.obs, cfg.regrasObs);
+      var rg = cfg.regrasObs ? cfg.regrasObs.concat(REGRAS_PADRAO.filter(function (d) { return !cfg.regrasObs.some(function (r) { return r[0] === d[0]; }); })) : null; // regras novas entram mesmo com regras salvas
+      var c = classificar(o.obs, rg);
       o.pendente = (o.fila === 'concluída' || o.fila === 'cancelada') ? '' : c.resp;
       o.encaminhado = o.pendente ? c.em : null;
       o.parado = o.encaminhado ? Math.max(0, Math.floor((agora - o.encaminhado) / 864e5)) : null;
@@ -372,7 +373,9 @@ var Core = (function () {
     ['Planejador', ['PLANEJADOR', 'PLANEJAMENTO', 'A AGENDAR', 'MATERIAL ENTREGUE']],
     ['Gestor', ['(GESTOR)', 'TRATATIVA (GESTOR', 'TRATATIVA DO GESTOR', 'AGUARDANDO GESTOR']],
     ['Externo', ['TRATATIVA EXTERNA', 'SERVIÇO EXTERNO', 'SERVICO EXTERNO', 'TRATATIVA DE SERVIÇO EXTERNO']],
-    ['Material', ['AGUARDANDO MATERIAL', 'MATERIAL SOLICITADO', 'SOLICITADO MATERIAL', 'PEDIDO FEITO']]
+    ['Material', ['AGUARDANDO MATERIAL', 'MATERIAL SOLICITADO', 'SOLICITADO MATERIAL', 'PEDIDO FEITO']],
+    ['Em execução', ['EM ANDAMENTO', 'EM EXECUCAO', 'SERVICO INICIADO', 'INICIADO', 'EXECUTANDO', 'EM ATENDIMENTO']],
+    ['Programado', ['FINAL DE SEMANA', 'FIM DE SEMANA', 'SABADO', 'DOMINGO', 'PROGRAMADO', 'PROGRAMACAO', 'PROGRAMADA', 'AGENDADO', 'AGENDADA']]
   ];
   var RX_D = /(\d{1,2})[\/.](\d{1,2})(?:[\/.](\d{2,4}))?(?![\d\/.]*\d)/g;
   function dataTxt(m) { if (m[0].indexOf('.') > 0 && !m[3]) return null; var y = m[3] ? +m[3] : new Date().getFullYear(); if (y < 100) y += 2000; var d = new Date(y, +m[2] - 1, +m[1]); return isNaN(d) || +m[2] > 12 || +m[1] > 31 ? null : d; }
@@ -649,6 +652,7 @@ function render(){
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.espera!=null), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com 1º atendimento"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.horas>0), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com execução"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
   </div>
+  ${tratCard(L, done)}
   <div class="grid2">
     <div class="card"><h3>Pendências por responsável</h3>${pendCard(L)}</div>
     <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
@@ -742,6 +746,29 @@ function renderInc(){
   <div class="card"><div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Problema</th><th>Pedido</th><th>Início atend.</th><th>Fim atend.</th><th>Término</th><th>Técnico</th><th>Fila</th><th>Descrição</th></tr></thead><tbody>
   ${I.map(o=>`<tr><td><b>${o.os}</b></td><td class="warn">${esc(o.arrumar.join('; '))}${o.provisorio?'':' (fora dos relatórios)'}</td><td>${fd(o.pedido)}</td><td>${fd(o.inicio)}</td><td>${fd(o.fim)}</td><td>${fd(o.termino)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td>${o.fila}</td><td>${esc(o.desc)}</td></tr>`).join('') || '<tr><td colspan="9">Nenhuma inconsistência.</td></tr>'}</tbody></table></div></div>`;
   const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
+}
+
+// ===================== PENDENTES POR TRATATIVA =====================
+const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Terceiros','Material':'Terceiros','Outro':'Outro','Sem observação':'Sem tratativa'};
+const trat = o => TRAT[o.pendente] || 'Outro';
+function tratCard(L, done){
+  const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), base = L.length || 1;
+  const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
+  const kp = (k, sub) => { const sid = SETS.push({list:A.filter(o=>trat(o)===k), key:()=>'m'}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Dashboard › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nA(k))}</b><span>${sub || nf(nB(k))+' no backlog'}</span></div>`; };
+  // escada: quanto sobe o % realizado resolvendo cada grupo do backlog
+  const ord = ['Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Outro','Sem tratativa','Terceiros'];
+  let acc = done; const steps = [['Hoje', done]];
+  ord.forEach(k => { const n = nB(k); if (n) { acc += n; steps.push(['+ '+k+' ('+nf(n)+')', acc]); } });
+  const pc = v => v/base*100, bar = ([t,v],i) => `<div class="bar acc" style="cursor:default;grid-template-columns:minmax(0,12.5em) minmax(0,1fr) auto"><span class="n" style="white-space:nowrap">${t}</span><span class="t"><i style="width:${pc(v)}%;${pc(v)>=90?'background:light-dark(#127a3a,#3ddc84)':''}"></i></span><span class="v ${pc(v)>=90?'good':''}">${nf(pc(v),1)}%</span></div>`;
+  const com = B.filter(o=>trat(o)!=='Sem tratativa').length;
+  const velhas = B.filter(o=>!['Sem tratativa','Outro'].includes(trat(o)) && o.pedido).sort((a,b)=>a.pedido-b.pedido).slice(0,5);
+  return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3>
+    <div class="kpis wk" style="margin-bottom:12px">${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${kp('Sem tratativa','nada escrito na OS')}</div>
+    <div class="grid2" style="gap:16px">
+      <div><b>Até onde dá para chegar</b><p class="note" style="margin:2px 0 8px">% realizado se resolvermos cada grupo do backlog (soma em escada)</p><div class="bars">${steps.map(bar).join('')}</div></div>
+      <div><b>Tratativa registrada</b><p style="margin:4px 0 12px"><span class="pc${B.length&&com/B.length>=.9?' good':''}" style="font-size:32px">${nf(B.length?com/B.length*100:0)}%</span> <span class="muted">do backlog tem tratativa escrita (${nf(com)} de ${nf(B.length)})</span></p>
+      <b>Mais antigas com tratativa (cobrar primeiro)</b>${velhas.length?`<div class="drill" style="margin-top:6px">${velhas.map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag bk">${esc(trat(o))}</span><span class="muted">${fd(o.pedido)}${o.parado!=null?` · parada há ${o.parado} d`:''}</span></div><div>${esc(o.desc)}</div></div>`).join('')}</div>`:'<p class="muted">Nenhuma.</p>'}</div>
+    </div></div>`;
 }
 
 // ===================== JANELAS (abrem por cima, arrastáveis, várias ao mesmo tempo) =====================
