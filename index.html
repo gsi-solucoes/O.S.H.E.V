@@ -357,7 +357,9 @@ var Core = (function () {
       }
       var rg = cfg.regrasObs ? cfg.regrasObs.concat(REGRAS_PADRAO.filter(function (d) { return !cfg.regrasObs.some(function (r) { return r[0] === d[0]; }); })) : null; // regras novas entram mesmo com regras salvas
       var c = classificar(o.obs, rg);
-      o.pendente = (o.fila === 'concluída' || o.fila === 'cancelada') ? '' : c.resp;
+      // fechada/cancelada: sem pendência. Em aguardando material / conserto externo a tratativa já foi feita:
+      // a OS está com terceiros, então a pendência é a fila (o que está escrito é histórico)
+      o.pendente = (o.fila === 'concluída' || o.fila === 'cancelada') ? '' : o.fila === 'aguardando material' ? 'Material' : o.fila === 'conserto externo' ? 'Externo' : c.resp;
       o.encaminhado = o.pendente ? c.em : null;
       o.parado = o.encaminhado ? Math.max(0, Math.floor((agora - o.encaminhado) / 864e5)) : null;
       o.ok = o.issues.length === 0;
@@ -763,7 +765,7 @@ function renderInc(){
 }
 
 // ===================== PENDENTES POR TRATATIVA =====================
-const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Terceiros','Material':'Terceiros','Outro':'Outro (recado, sem tratativa)','Sem observação':'Sem tratativa','Feito, falta fechar':'Feito, falta fechar'};
+const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Material/externo (na obs.)','Material':'Material/externo (na obs.)','Outro':'Outro (recado, sem tratativa)','Sem observação':'Sem tratativa','Feito, falta fechar':'Feito, falta fechar'};
 const trat = o => TRAT[o.pendente] || 'Outro';
 function tratKpis(L){
   const B = L.filter(o=>o.backlog), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'], comL = B.filter(o=>!SEMT.includes(trat(o))), semL = B.filter(o=>SEMT.includes(trat(o))), com = comL.length;
@@ -775,14 +777,14 @@ function tratKpis(L){
 function tratCard(L, done){
   const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), base = L.length || 1;
   const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
-  const kp = (k, sub) => { const sid = SETS.push({list:A.filter(o=>trat(o)===k), key:()=>'m'}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Dashboard › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nA(k))}</b><span>${sub || nf(nB(k))+' no backlog'}</span></div>`; };
+  const kp = (k, sub) => { const sid = SETS.push({list:B.filter(o=>trat(o)===k), key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Dashboard › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nB(k))}</b><span>${sub || ({'Supervisão':'aguardando a supervisão','Comprador':'aguardando o comprador','Planejamento':'aguardando o planejamento'})[k] || 'no backlog'}</span></div>`; };
   // escada: quanto sobe o % realizado resolvendo cada grupo do backlog
-  const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Outro (recado, sem tratativa)','Sem tratativa','Terceiros'];
+  const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Material/externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
   let acc = done; const steps = [['Hoje', done]];
   ord.forEach(k => { const n = nB(k); if (n) { acc += n; steps.push(['+ '+k+' ('+nf(n)+')', acc]); } });
   const pc = v => v/base*100, bar = ([t,v],i) => `<div class="bar acc" style="cursor:default;grid-template-columns:minmax(0,12.5em) minmax(0,1fr) auto"><span class="n" style="white-space:nowrap">${t}</span><span class="t"><i style="width:${pc(v)}%;${pc(v)>=90?'background:light-dark(#127a3a,#3ddc84)':''}"></i></span><span class="v ${pc(v)>=90?'good':''}">${nf(pc(v),1)}%</span></div>`;
   const com = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))).length; // recado do solicitante (URGENTE, brevidade…) não é tratativa
-  return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3>
+  return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3><p class="note" style="margin-top:-4px">Só o backlog (aberta, não atendida, agendar). Em aguardando material ou conserto externo a tratativa já foi feita: a OS está com terceiros.</p>
     <div class="kpis wk" style="margin-bottom:12px">${kp('Feito, falta fechar','observação diz que foi feito')}${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${kp('Sem tratativa','nada escrito na OS')}</div>
     <div><div><b>Até onde dá para chegar</b><p class="note" style="margin:2px 0 8px">% realizado se resolvermos cada grupo do backlog (soma em escada)</p><div class="bars">${steps.map(bar).join('')}</div></div>
     </div></div>`;
@@ -995,7 +997,7 @@ function relBlocos(k, L, Lall, P){
   if (k === 'trat') {
     const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'];
     const comL = B.filter(o=>!SEMT.includes(trat(o))), done = L.filter(o=>!o.backlog).length, base = L.length || 1;
-    const grupos = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Terceiros','Outro (recado, sem tratativa)','Sem tratativa'];
+    const grupos = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Material/externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
     let acc = done; const esc_ = [['Hoje', done, String(Math.round(done/base*1000)/10).replace('.',',')+'%']];
     grupos.forEach(g => { const n = B.filter(o=>trat(o)===g).length; if (n) { acc += n; esc_.push(['+ '+g+' ('+n+')', acc, String(Math.round(acc/base*1000)/10).replace('.',',')+'%']); } });
     const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
