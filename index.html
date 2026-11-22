@@ -446,16 +446,33 @@ var Core = (function () {
   function ageBand(d) { return d <= 7 ? '0–7 dias' : d <= 15 ? '8–15 dias' : d <= 30 ? '16–30 dias' : 'Mais de 30 dias'; }
 
   // ---- possíveis OS repetidas (mesmo setor, descrição parecida, ainda pendentes) ----
-  var STOPW = 'SOLICITO SOLICITAMOS SOLICITA SOLICITACAO FAVOR GENTILEZA PARA COM DOS DAS NOS NAS QUE UMA UNS UMAS ESTA ESTAO ESTAR MESMA MESMO MANUTENCAO REALIZAR VERIFICAR VERIFICACAO NECESSARIO PRECISA PRECISAMOS PELO PELA AOS SEU SUA SEM MAIS MUITO URGENTE URGENCIA ENCONTRA POR BOM DIA TARDE NOITE PFV OBRIGADO AGRADECO EVIDENCIADO'.split(' ');
+  var STOPW = 'SOLICITO SOLICITAMOS SOLICITA SOLICITACAO FAVOR GENTILEZA PARA COM DOS DAS NOS NAS QUE UMA UNS UMAS ESTA ESTAO ESTAR MESMA MESMO MANUTENCAO REALIZAR VERIFICAR VERIFICACAO NECESSARIO PRECISA PRECISAMOS PELO PELA AOS SEU SUA SEM MAIS MUITO URGENTE URGENCIA ENCONTRA POR BOM DIA TARDE NOITE PFV FMS VMS DEPARTAMENTO VISTO CONCERTO SAINDO OBRIGADO AGRADECO EVIDENCIADO EVIDENCIADA ADEQUACAO ADEQUAR DANIFICADO DANIFICADA DANIFICADOS DANIFICADAS QUEBRADO QUEBRADA QUEBRADOS QUEBRADAS CONSERTO CONSERTAR REPARO REPARAR TROCA TROCAR AJUSTE AJUSTAR ARRUMAR PROBLEMA DEFEITO ESTRAGADO ESTRAGADA SOLTO SOLTA LOCAL SETOR FUNCIONANDO NAO APRESENTANDO APRESENTA'.split(' ');
   function palavras(x) { return norm(x).replace(/[\/.]/g, ' ').split(' ').filter(function (w) { return (w.length >= 3 && STOPW.indexOf(w) < 0) || /^\d+$/.test(w); }).filter(function (w, i, a) { return a.indexOf(w) === i; }); }
   function pareceW(a, b) { if (a === b) return true; if (/^\d+$/.test(a) || /^\d+$/.test(b)) return false; if (a.length > 3 && b.length > 3 && 1 - lev(a, b) / Math.max(a.length, b.length) >= 0.8) return true; return a.length >= 5 && b.length >= 5 && a.slice(0, 5) === b.slice(0, 5); }
   function simDesc(A, B) { if (!A.length || !B.length) return 0; var nA = A.filter(function (w) { return /^\d+$/.test(w); }), nB = B.filter(function (w) { return /^\d+$/.test(w); });
     if (nA.length && nB.length && !nA.some(function (n) { return nB.indexOf(n) >= 0; })) return 0; // leito 3 x leito 5: não é a mesma coisa
-    var k = 0, kt = 0; A.forEach(function (a) { if (B.some(function (b) { return pareceW(a, b); })) { k++; if (!/^\d+$/.test(a)) kt++; } }); return kt < 2 ? 0 : 2 * k / (A.length + B.length); }
+    if (lugarDif(A, B)) return 0; // sala de equipamentos x WC funcionários
+    // cada palavra pesa pela raridade: palavra que aparece em muitas OS (PINTURA, PORTA…) vale pouco;
+    // o que diferencia (SALA DE EQUIPAMENTOS x WC FUNCIONÁRIOS) vale muito
+    var P = function (w) { return TIRA.indexOf(w) >= 0 ? 0.3 : (PESO[w.slice(0, 5)] || 1); };
+    var k = 0, kt = 0, sm = 0, sa = 0, sb = 0;
+    A.forEach(function (a) { sa += P(a); if (B.some(function (b) { return pareceW(a, b); })) { k++; sm += P(a); if (!/^\d+$/.test(a)) kt++; } });
+    B.forEach(function (b) { sb += P(b); });
+    if (kt < 2) return 0;
+    var sim = 2 * sm / (sa + sb);
+    return sim; }
+  var PESO = {}, TIRA = [];
+  // lugares: se as duas OS dizem o lugar e os lugares são diferentes, não é a mesma coisa
+  var LUGAR = 'CORREDOR BANHEIRO BANHEIROS SANITARIO WC SALA QUARTO LEITO LEITOS PORTA RECEPCAO COPA POSTO EXPURGO VESTIARIO ESCADA ELEVADOR CONSULTORIO DML ALMOXARIFADO CORREDORES HALL ENTRADA JANELA TETO FORRO PISO PAREDE COZINHA REFEITORIO LAVABO ENFERMARIA BOX ISOLAMENTO'.split(' ');
+  function lugarDif(A, B) { var la = A.filter(function (w) { return LUGAR.indexOf(w) >= 0; }), lb = B.filter(function (w) { return LUGAR.indexOf(w) >= 0; });
+    return la.length && lb.length && !la.some(function (w) { return lb.indexOf(w) >= 0 || lb.indexOf(w + 'S') >= 0 || lb.indexOf(w.replace(/S$/, '')) >= 0; }); }
   var RX_LINK = /REALIZAD[OA]\s+(?:NA|PELA|PELO|ATRAV[EÉ]S\s+DA)\s+O\.?\s?S\.?\s*N?[º°.]?\s*(\d{5,6})/i;
+  Core_sim = function (a, b) { TIRA = palavras((a.setor || '') + ' ' + (a.localidade || '') + ' ' + (b.localidade || '')); return simDesc(a._w, b._w); };
   function repetidas(list) {
     var by = {}, pai = {}, motivo = {};
     list.forEach(function (o) { by[o.os] = o; pai[o.os] = o.os; o.repGrupo = null; o.repDe = null; o._w = palavras(o.desc); });
+    var df = {}; list.forEach(function (o) { o._w.map(function (w) { return w.slice(0, 5); }).filter(function (w, i, a) { return a.indexOf(w) === i; }).forEach(function (w) { df[w] = (df[w] || 0) + 1; }); });
+    PESO = {}; Object.keys(df).forEach(function (w) { PESO[w] = Math.log((list.length + 1) / df[w]); });
     function raiz(x) { while (pai[x] !== x) x = pai[x] = pai[pai[x]]; return x; }
     function une(a, b, m) { pai[raiz(a)] = raiz(b); motivo[a + '|' + b] = m; }
     var ativa = function (o) { return o.backlog || o.terceiros; };
@@ -465,8 +482,9 @@ var Core = (function () {
     var A = list.filter(ativa);
     for (var i = 0; i < A.length; i++) for (var j = i + 1; j < A.length; j++) {
       var a = A[i], b = A[j]; if (a.setor !== b.setor) continue;
+      TIRA = palavras((a.setor || '') + ' ' + (a.localidade || '') + ' ' + (b.localidade || '')); // nome do setor repetido na descrição pesa pouco
       var s = simDesc(a._w, b._w), loc = a.localidade && a.localidade === b.localidade;
-      if (s >= 0.7 || (s >= 0.55 && loc)) une(a.os, b.os, 'Descrição parecida');
+      if (s >= 0.6 || (s >= 0.45 && loc)) une(a.os, b.os, 'Descrição parecida');
     }
     var g = {}; list.forEach(function (o) { var r = raiz(o.os); (g[r] = g[r] || []).push(o); });
     // fechadas/canceladas não impactam: só ficam as que ainda estão em aberto
@@ -489,7 +507,8 @@ var Core = (function () {
     return grupos;
   }
 
-  return { REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
+  var Core_sim;
+  return { sim: function (a, b) { return Core_sim(a, b); }, REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
 })();
 
 </script>
