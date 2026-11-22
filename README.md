@@ -15,3 +15,8 @@ Arquivo: `excel/GeradorOS_HEV.bas` (Excel 2016 ou mais novo).
 3. Salve como **Pasta de Trabalho Habilitada para Macro (.xlsm)**.
 4. **Alt + F8** → **Instalar** → Executar.
 5. Na aba Dashboard, clique em **Importar CSVs do MV** e selecione todos os CSVs (ou um .zip com todos).
+6. Para escolher o mês, use o filtro **Mês do pedido** no Dashboard. O botão **Gerar relatório (Excel)** cria um arquivo novo, só com valores, com capa, período, filtros e um relatório por aba.
+
+Abas do Excel: Dashboard (como foi o mês) · Backlog (o que está parado e com quem: tratativas, cobrar primeiro, resumo do gerente) · Tempos · Equipe · Para arrumar · Repetidas · Arquivos · Histórico · Config (frases padrão das tratativas).
+
+Atualizando de uma versão anterior: no editor (Alt + F11), remova o módulo antigo **GeradorOS**, importe o arquivo novo e clique em Importar CSVs de novo.
