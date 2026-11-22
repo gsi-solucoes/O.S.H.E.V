@@ -87,6 +87,7 @@ textarea{min-height:120px}
 .kmain{grid-template-columns:repeat(2,minmax(0,1fr))}@media(min-width:1000px){.kmain{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:420px){.kmain{grid-template-columns:1fr}}
 .kmain .kpi>b{font-size:clamp(26px,2.6vw,38px);white-space:nowrap}
 .kpi[data-s]{cursor:pointer}
+.kd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}.kdi{cursor:pointer;border-radius:8px;padding:4px 6px}.kdi:hover{outline:2px solid var(--accent)}.kdi b{display:block;font:700 clamp(26px,2.6vw,38px)/1.1 "Red Hat Display",sans-serif}.kdi span{font-size:12px;color:var(--muted)}
 .pcw{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .pcr{display:flex;align-items:center;gap:10px}.meta90{display:flex;align-items:center;gap:5px;line-height:1.05;border-left:2px solid var(--line);padding-left:8px}.meta90 b{font:700 22px "Red Hat Display",sans-serif}.meta90 span{font-size:11px;color:var(--muted)}.meta90.ok b{color:light-dark(#127a3a,#3ddc84)}
 .fant{display:flex;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.1;cursor:help}.fant b{font:700 20px "Red Hat Display",sans-serif;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.35)}.fant span{font-size:11px;color:#b08d1a}
@@ -673,8 +674,8 @@ function render(){
     <div class="kpi" data-s="${SETS.push({list:L, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Total de OS"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pcw">${(() => { const B_ = L.filter(o=>o.backlog && !['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))), n = B_.length, g = base ? (done+n)/base : 0;
       if (!n) return '';
       const det = Core.count(B_, trat).map(([k,v]) => `${k}: +${nf(v/base*100,1)} (${v})`).join(' · ');
-      return `<div class="fant" title="Se resolvermos as ${n} OS do backlog que já têm tratativa. ${det}"><b>${nf(g*100,1)}% <small style="font-size:13px">(+${nf(n/base*100,1)})</small></b><span>se resolver as ${nf(n)} com tratativa</span></div>`; })()}<div class="pcr"><div class="pc${base&&done/base>=.9?' good':''}">${nf(base?done/base*100:0)}%</div>${(() => { const f = Math.ceil(base*0.9 - 1e-9) - done; return base ? (f > 0 ? `<div class="meta90"><b>${nf(f)}</b><span>OS faltam<br>para 90%</span></div>` : `<div class="meta90 ok"><b>✓</b><span>meta de<br>90% batida</span></div>`) : ''; })()}</div></div></div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
-    <div class="kpi" data-s="${SETS.push({list:B.terc, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Aguardando terceiros"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
+      return `<div class="fant" title="Se resolvermos as ${n} OS do backlog que já têm tratativa. ${det}"><b>${nf(g*100,1)}% <small style="font-size:13px">(+${nf(n/base*100,1)})</small></b><span>se resolver as ${nf(n)} com tratativa</span></div>`; })()}<div class="pcr"><div class="pc${base&&done/base>=.9?' good':''}">${nf(base?done/base*100:0)}%</div>${(() => { const f = Math.ceil(base*0.9 - 1e-9) - done; return base ? (f > 0 ? `<div class="meta90"><b>${nf(f)}</b><span>OS faltam<br>para 90%</span></div>` : `<div class="meta90 ok"><b>✓</b><span>meta de<br>90% batida</span></div>`) : ''; })()}</div></div></div><span>${nf(nConc)} concluídas + ${nf(L.filter(o=>o.fila==='aguardando material').length)} aguardando material + ${nf(L.filter(o=>o.fila==='conserto externo').length)} conserto externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
+    <div class="kpi kdup"><span>Com terceiros (fora do backlog)</span><div class="kd">${[['aguardando material','Aguardando material'],['conserto externo','Conserto externo']].map(([f,t]) => `<div class="kdi" data-s="${SETS.push({list:B.terc.filter(o=>o.fila===f), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="${t}"><b>${nf(B.terc.filter(o=>o.fila===f).length)}</b><span>${t}</span></div>`).join('')}</div></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.espera!=null), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com 1º atendimento"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.horas>0), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com execução"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
     <div class="kpi hot" data-s="${SETS.push({list:B.bl, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Backlog"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
@@ -778,7 +779,7 @@ function renderInc(){
 }
 
 // ===================== PENDENTES POR TRATATIVA =====================
-const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Material/externo (na obs.)','Material':'Material/externo (na obs.)','Outro':'Outro (recado, sem tratativa)','Sem observação':'Sem tratativa','Feito, falta fechar':'Feito, falta fechar'};
+const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Conserto externo (na obs.)','Material':'Aguardando material (na obs.)','Outro':'Outro (recado, sem tratativa)','Sem observação':'Sem tratativa','Feito, falta fechar':'Feito, falta fechar'};
 const trat = o => TRAT[o.pendente] || 'Outro';
 function tratKpis(L){
   const B = L.filter(o=>o.backlog), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'], comL = B.filter(o=>!SEMT.includes(trat(o))), semL = B.filter(o=>SEMT.includes(trat(o))), com = comL.length;
@@ -792,7 +793,7 @@ function tratCard(L, done){
   const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
   const kp = (k, sub) => { const sid = SETS.push({list:B.filter(o=>trat(o)===k), key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Dashboard › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nB(k))}</b>${nB(k)?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(nB(k)/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${sub || ({'Supervisão':'aguardando a supervisão','Comprador':'aguardando o comprador','Planejamento':'aguardando o planejamento'})[k] || 'no backlog'}</span></div>`; };
   // escada: quanto sobe o % realizado resolvendo cada grupo do backlog
-  const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Material/externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
+  const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Aguardando material (na obs.)','Conserto externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
   let acc = done; const steps = [['Hoje', done]];
   ord.forEach(k => { const n = nB(k); if (n) { acc += n; steps.push(['+ '+k+' ('+nf(n)+')', acc]); } });
   const pc = v => v/base*100, bar = ([t,v],i) => `<div class="bar acc" style="cursor:default;grid-template-columns:minmax(0,12.5em) minmax(0,1fr) auto"><span class="n" style="white-space:nowrap">${t}</span><span class="t"><i style="width:${pc(v)}%;${pc(v)>=90?'background:light-dark(#127a3a,#3ddc84)':''}"></i></span><span class="v ${pc(v)>=90?'good':''}">${nf(pc(v),1)}%</span></div>`;
@@ -808,7 +809,7 @@ function winDash(items){
   const nC = items.filter(o=>o.fila==='concluída').length, nT = items.filter(o=>o.terceiros).length, nX = items.filter(o=>o.fila==='cancelada').length, done = nC+nT+nX;
   const esp = items.map(o=>o.espera).filter(x=>x!=null), hh = items.reduce((s,o)=>s+o.horas,0);
   const k = (t,v,s='') => `<div class="kpi"><span>${t}</span><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
-  return `<div class="kpis wk">${k('OS', nf(items.length))}${k('Realizadas', nf(done), items.length?`<b class="${done/items.length>=.9?'good':''}" style="font-size:16px">${nf(done/items.length*100)}%</b>`:'')}${k('Pendentes nossas', nf(items.filter(o=>o.backlog).length), 'aberta + não atendida + agendar')}${k('Aguardando terceiros', nf(nT), 'material e externo')}${k('Espera 1º atendimento', fh(Core.median(esp)), 'mediana')}${k('Homem-hora', hm(hh))}</div>`;
+  return `<div class="kpis wk">${k('OS', nf(items.length))}${k('Realizadas', nf(done), items.length?`<b class="${done/items.length>=.9?'good':''}" style="font-size:16px">${nf(done/items.length*100)}%</b>`:'')}${k('Pendentes nossas', nf(items.filter(o=>o.backlog).length), 'aberta + não atendida + agendar')}${k('Aguardando material', nf(items.filter(o=>o.fila==='aguardando material').length))}${k('Conserto externo', nf(items.filter(o=>o.fila==='conserto externo').length))}${k('Espera 1º atendimento', fh(Core.median(esp)), 'mediana')}${k('Homem-hora', hm(hh))}</div>`;
 }
 function imprimirOS(onde, oque, list, sel, total, asc){
   const L = list.slice().sort((a,b)=> asc ? (a.pedido||0)-(b.pedido||0) : (b.pedido||0)-(a.pedido||0));
@@ -895,7 +896,7 @@ function renderRep(){
   const fechar = G.reduce((s,a)=>s+a.length-1,0), fAnd = G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0);
   $('#v-repetidas').innerHTML = `<h2>OS repetidas em aberto</h2>
   <div class="kpis"><div class="kpi"><b>${fechar}</b><span>OS repetidas para tratar (fechar)</span></div><div class="kpi"><b>${fAnd}</b><span>Já tratadas em outra OS (com tratativa, material ou externo)</span></div><div class="kpi"><b>${fechar-fAnd}</b><span>Ainda sem tratativa: juntar numa OS só</span></div><div class="kpi"><b>${G.length}</b><span>Grupos</span></div></div>
-  <p class="muted">Só OS em aberto (fechadas e canceladas não entram), do mesmo setor e com descrição parecida. A primeira de cada grupo é a que fica (a mais adiantada: material/externo, em execução, programado, compra, supervisão ou planejamento); as outras devem ser fechadas no MV informando a OS que já está tratando. Confira antes: é só um aviso, nada é alterado aqui.</p>
+  <p class="muted">Só OS em aberto (fechadas e canceladas não entram), do mesmo setor e com descrição parecida. A primeira de cada grupo é a que fica (a mais adiantada: aguardando material, conserto externo, em execução, programado, compra, supervisão ou planejamento); as outras devem ser fechadas no MV informando a OS que já está tratando. Confira antes: é só um aviso, nada é alterado aqui.</p>
   <p><button id="cpRep">Copiar lista para o Excel</button></p>
   ${G.map((a,i)=>`<div class="card rq"><h3>${i+1}. ${esc(a[0].setor)}</h3><p>${a.link?'<span class="tag">observação cita outra OS</span> ':''}${a.mesmaLoc?'<span class="tag">mesma localidade</span> ':''}${a.mesmoSolic?'<span class="tag">mesmo solicitante</span> ':''}<span class="tag">${a.length} OS</span></p><div class="drill" style="margin:0">${a.map(card).join('')}</div></div>`).join('') || '<div class="card">Nenhuma OS repetida encontrada.</div>'}`;
   const b = $('#cpRep'); if (b) b.onclick = () => copy(['Grupo\tO que fazer\tOS\tFila\tPendente de\tPedido\tSetor\tLocalidade\tSolicitante\tDescrição\tObservação', ...G.flatMap((a,i)=>a.map(o=>[i+1,o.repAcao,o.os,o.fila,o.pendente||'',fd(o.pedido),o.setor,o.localidade||'',o.solicitante||'',o.desc,o.obs||''].map(x=>String(x).replace(/[\t\n\r]+/g,' ')).join('\t')))].join('\n'));
@@ -908,7 +909,7 @@ const REL = [
   ['set','Setores','OS por setor e localidade, realizadas e pendentes'],
   ['hh','Homem-hora por técnico','OS, horas e média por técnico'],
   ['tp','Tempos de atendimento','Espera até o 1º atendimento, execução e pedido → término, por especialidade e tipo'],
-  ['pend','Pendências nossas por responsável','Com quem as OS do backlog estão paradas (campo Observação) e a lista; material e externo ficam fora'],
+  ['pend','Pendências nossas por responsável','Com quem as OS do backlog estão paradas (campo Observação) e a lista; aguardando material e conserto externo ficam fora'],
   ['trat','Pendentes por tratativa','Tratativas padrão do planejamento, % com tratativa, até onde dá para chegar e a lista para cobrar'],
   ['lista','Lista de OS','Todas as OS do período com todos os campos'],
   ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV'],
@@ -951,42 +952,82 @@ const FILAS = {'aberta':'Aberta','não atendida':'Não atendida','agendar':'Agen
 const LONGAS = /^(Descrição|Observação|Para arrumar|Problema|Motivo|O que fazer)$/;
 // monta uma aba bonita (ExcelJS) a partir das linhas do relatório
 function abaExcel(wb, nome, linhas){
-  const ws = wb.addWorksheet(nome.slice(0,31), {views:[{showGridLines:false}]});
-  const cor = 'FF0F2A4A', acc = 'FFD6336C', borda = {style:'thin', color:{argb:'FFD0D5DD'}};
-  let maxC = 2; linhas.forEach(r => { if (r && r.T==='head') maxC = Math.max(maxC, r.v.length); else if (Array.isArray(r)) maxC = Math.max(maxC, r.length); });
-  const larg = Array(maxC).fill(10), longa = Array(maxC).fill(false);
-  let cab = null, r = 0, maiorTab = null, ini = 0, primeiro = true;
+  const ws = wb.addWorksheet(nome.slice(0,31), {views:[{showGridLines:false}], properties:{tabColor:{argb:'FFD6336C'}}});
+  const C0 = 2; // coluna A fica de margem
+  const cor = 'FF0F2A4A', acc = 'FFD6336C', cinza = 'FF667085', borda = {style:'thin', color:{argb:'FFD0D5DD'}}, B4 = {top:borda,bottom:borda,left:borda,right:borda};
+  const pctRx = /^\d+(,\d+)?%$/;
+  let maxC = 2; linhas.forEach(r => { if (r && (r.T==='head' || r.T==='kpis')) maxC = Math.max(maxC, r.v.length); else if (Array.isArray(r)) maxC = Math.max(maxC, r.length); });
+  // 1ª passada: largura de cada coluna e quais são numéricas
+  const larg = Array(maxC).fill(12), longa = Array(maxC).fill(false), num = Array(maxC).fill(true);
+  let cab = null;
+  linhas.forEach(L => {
+    if (L && L.T === 'head') { cab = L.v; L.v.forEach((h,i) => { larg[i] = Math.max(larg[i], Math.min(26, String(h).length + 4)); if (LONGAS.test(h)) longa[i] = true; }); }
+    else if (L && (L.T === 'blank' || L.T === 'sec')) cab = null;
+    else if (L && L.T === 'kpis') L.v.forEach((k,i) => { larg[i] = Math.max(larg[i], Math.min(28, String(k[0]).length + 4)); });
+    else if (Array.isArray(L) && cab) L.forEach((v,i) => { const t = v && v.D != null ? '000 h 00 min' : String(v ?? ''); if (typeof v === 'string' && v !== '' && !pctRx.test(v)) num[i] = false; larg[i] = Math.max(larg[i], Math.min(longa[i] ? 60 : (i === 0 ? 58 : 34), t.length + 3)); });
+  });
+  num[0] = false;
+  const W = i => longa[i] ? Math.max(larg[i], 45) : larg[i];
+  ws.getColumn(1).width = 2;
+  for (let i = 0; i < maxC; i++) ws.getColumn(i + C0).width = W(i);
+  const fim = C0 + Math.max(maxC, 4) - 1;
+  // 2ª passada: escreve
+  let r = 1, primeiro = true, ini = 0, maiorTab = null; cab = null;
+  ws.getRow(1).height = 8;
   const fecha = () => { if (cab && (!maiorTab || r - ini > maiorTab[2] - maiorTab[0])) maiorTab = [ini, cab.length, r]; };
   linhas.forEach(L => {
-    if (L && L.T === 'blank') { fecha(); cab = null; r++; return; }
-    if (L && L.T === 'sec') { fecha(); cab = null; r++; const c = ws.getCell(r, 1); c.value = L.v; c.font = {bold:true, size:12, color:{argb:cor}}; ws.getRow(r).height = 20; return; }
-    if (L && L.T === 'head') { r++; cab = L.v; ini = r; L.v.forEach((h,i) => { const c = ws.getCell(r, i+1); c.value = h; c.font = {bold:true, color:{argb:'FFFFFFFF'}}; c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:acc}}; c.alignment = {vertical:'middle', wrapText:true}; c.border = {top:borda,bottom:borda,left:borda,right:borda}; larg[i] = Math.max(larg[i], Math.min(28, String(h).length + 2)); if (LONGAS.test(h)) longa[i] = true; }); return; }
+    if (L && L.T === 'blank') { fecha(); cab = null; r++; ws.getRow(r).height = 10; return; }
+    if (L && L.T === 'sec') { fecha(); cab = null; r++; const c = ws.getCell(r, C0); c.value = L.v; c.font = {bold:true, size:12, color:{argb:cor}}; ws.getRow(r).height = 22; c.alignment = {vertical:'bottom'}; return; }
+    if (L && L.T === 'kpis') { // faixa de cartões com os números principais
+      r++; const r2 = r + 1;
+      L.v.forEach(([t, v], i) => {
+        const a = ws.getCell(r, C0 + i), b = ws.getCell(r2, C0 + i), fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF1F4FA'}};
+        a.value = t; a.font = {size:9, color:{argb:cinza}}; a.alignment = {horizontal:'center', vertical:'bottom', wrapText:true}; a.fill = fill; a.border = {top:{style:'medium', color:{argb:acc}}, left:borda, right:borda};
+        const pc = typeof v === 'string' && pctRx.test(v), val = pc ? parseFloat(v.replace(',','.'))/100 : v;
+        b.value = val; if (pc) b.numFmt = '0.0%';
+        b.font = {bold:true, size:18, color:{argb: pc ? (val >= .9 ? 'FF127A3A' : acc) : cor}}; b.alignment = {horizontal:'center', vertical:'middle'}; b.fill = fill; b.border = {bottom:borda, left:borda, right:borda};
+      });
+      ws.getRow(r).height = 28; ws.getRow(r2).height = 34; r = r2; return;
+    }
+    if (L && L.T === 'head') { r++; cab = L.v; ini = r; L.v.forEach((h,i) => { const c = ws.getCell(r, i + C0); c.value = h; c.font = {bold:true, color:{argb:'FFFFFFFF'}}; c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:acc}}; c.alignment = {vertical:'middle', horizontal: i ? 'center' : 'left', wrapText:true}; c.border = B4; }); ws.getRow(r).height = 24; return; }
     if (!Array.isArray(L)) return;
     r++;
-    if (!cab) { // título ou informação
-      const c = ws.getCell(r, 1); c.value = L[0] ?? '';
-      if (primeiro && L.length) { c.font = {bold:true, size:15, color:{argb:'FFFFFFFF'}}; c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:cor}}; ws.mergeCells(r, 1, r, Math.max(maxC, 6)); ws.getRow(r).height = 26; c.alignment = {vertical:'middle'}; primeiro = false; }
-      else if (L.length) { c.font = {italic:true, color:{argb:'FF667085'}}; }
+    if (!cab) { // título ou linha de informação
+      let txt = String(L[0] ?? ''); const c = ws.getCell(r, C0);
+      if (primeiro && L.length) {
+        const k = txt.indexOf(': '); if (k > 0 && txt.length > 40) txt = txt.slice(0, k); // período vai na linha de baixo
+        c.value = txt; c.font = {bold:true, size:16, color:{argb:'FFFFFFFF'}};
+        for (let j = C0; j <= fim; j++) ws.getCell(r, j).fill = {type:'pattern', pattern:'solid', fgColor:{argb:cor}};
+        ws.mergeCells(r, C0, r, fim); ws.getRow(r).height = 32; c.alignment = {vertical:'middle', indent:1}; primeiro = false;
+      } else if (L.length) { c.value = txt; c.font = {italic:true, size:9, color:{argb:cinza}}; }
       return;
     }
-    const zebra = (r - ini) % 2 === 0;
+    const zebra = (r - ini) % 2 === 0; let linhas_ = 1;
     L.forEach((v,i) => {
-      const c = ws.getCell(r, i+1);
+      const c = ws.getCell(r, i + C0);
       if (v && v.D != null) { c.value = v.D/24; c.numFmt = '[<0.0416666666666667][m]" min";[h]" h "mm" min"'; }
-      else if (typeof v === 'string' && /^\d+(,\d+)?%$/.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; c.font = {bold:true, color:{argb: c.value >= .9 ? 'FF127A3A' : 'FFD6336C'}}; }
+      else if (typeof v === 'string' && pctRx.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; c.font = {bold:true, color:{argb: c.value >= .9 ? 'FF127A3A' : acc}}; }
       else if (typeof v === 'string' && FILAS[v]) c.value = FILAS[v];
       else c.value = v === '' ? null : v;
       if (typeof c.value === 'number' && !Number.isInteger(c.value) && !(v && v.D != null) && !String(c.numFmt||'').includes('%')) c.numFmt = '0.0';
-      c.border = {top:borda,bottom:borda,left:borda,right:borda};
-      c.alignment = {vertical:'top', wrapText: longa[i] || i === 0};
+      if (typeof c.value === 'number' && Number.isInteger(c.value) && c.value >= 1000 && !(i === 0 || /^OS$/.test(cab[i]||''))) c.numFmt = '#,##0';
+      c.border = B4;
+      const centro = i > 0 && (num[i] || (v && v.D != null)) && !longa[i];
+      const quebra = typeof c.value !== 'number' && (longa[i] || i === 0 || String(c.value ?? '').length > W(i));
+      c.alignment = {vertical:'top', horizontal: centro ? 'center' : 'left', wrapText: quebra};
+      if (quebra) linhas_ = Math.max(linhas_, Math.ceil(String(c.value ?? '').length / Math.max(8, W(i) - 2)));
       if (zebra) c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF5F7FA'}};
-      if (i === 0 && /total/i.test(String(v))) c.font = {bold:true};
-      larg[i] = Math.max(larg[i], v && v.D != null ? 14 : Math.min(longa[i] ? 50 : 34, String(c.value ?? '').length + 2));
+      if (i === 0 && /total/i.test(String(v))) { c.font = {bold:true}; }
     });
+    ws.getRow(r).height = Math.min(120, Math.max(18, 15 * linhas_ + 3));
   });
   fecha();
-  larg.forEach((w,i) => ws.getColumn(i+1).width = longa[i] ? Math.max(w, 40) : w);
-  if (maiorTab && maiorTab[2] - maiorTab[0] > 15) ws.autoFilter = {from:{row:maiorTab[0], column:1}, to:{row:maiorTab[2], column:maiorTab[1]}};
+  if (maiorTab && maiorTab[2] - maiorTab[0] > 15) {
+    ws.autoFilter = {from:{row:maiorTab[0], column:C0}, to:{row:maiorTab[2], column:C0 + maiorTab[1] - 1}};
+    ws.pageSetup.printTitlesRow = `${maiorTab[0]}:${maiorTab[0]}`;
+  }
+  Object.assign(ws.pageSetup, {paperSize:9, orientation: maxC > 6 ? 'landscape' : 'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true, margins:{left:0.4, right:0.4, top:0.5, bottom:0.6, header:0.2, footer:0.3}});
+  ws.headerFooter.oddFooter = '&L&8Gerador de OS HEV · Manutenção&R&8Página &P de &N';
   return ws;
 }
 async function baixa(wb, nome){
@@ -1002,8 +1043,9 @@ function relBlocos(k, L, Lall, P){
   if (k === 'ind') {
     const nC = L.filter(o=>o.fila==='concluída').length, nT = L.filter(o=>o.terceiros).length, nX = L.filter(o=>o.fila==='cancelada').length, done = nC+nT+nX;
     const esp = L.map(o=>o.espera).filter(x=>x!=null);
-    return [['Indicadores do período: '+P.rot], [],
-      ...tabela('Resumo', ['Indicador','Valor'], [['Total de OS', L.length], ['Realizadas (concluídas + material/externo + canceladas)', done], ['% realizado', L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',') + '%' : '-'], ['Concluídas', nC], ['Aguardando material / conserto externo', nT], ['Canceladas', nX], ['Pendentes nossas (aberta + não atendida + agendar)', L.filter(o=>o.backlog).length], ['Espera até 1º atendimento - mediana', D(Core.median(esp))], ['Espera até 1º atendimento - média', D(Core.mean(esp))], ['Homem-hora lançado', D(L.reduce((s,o)=>s+o.horas,0))], ['OS com horário ajustado (1 h provisória)', L.filter(o=>o.provisorio).length]]),
+    const fal = Math.max(0, Math.ceil(L.length*0.9 - 1e-9) - done), pc_ = L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',')+'%' : '0%';
+    return [['Indicadores do período: '+P.rot], [], {T:'kpis', v:[['Total de OS', L.length], ['Realizadas', done], ['% realizado', pc_], ['Pendentes nossas', L.filter(o=>o.backlog).length], ['Faltam p/ 90%', fal]]}, {T:'blank'},
+      ...tabela('Resumo', ['Indicador','Valor'], [['Total de OS', L.length], ['Realizadas (concluídas + aguardando material + conserto externo + canceladas)', done], ['% realizado', L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',') + '%' : '-'], ['Concluídas', nC], ['Aguardando material', L.filter(o=>o.fila==='aguardando material').length], ['Conserto externo', L.filter(o=>o.fila==='conserto externo').length], ['Canceladas', nX], ['Pendentes nossas (aberta + não atendida + agendar)', L.filter(o=>o.backlog).length], ['Espera até 1º atendimento - mediana', D(Core.median(esp))], ['Espera até 1º atendimento - média', D(Core.mean(esp))], ['Homem-hora lançado', D(L.reduce((s,o)=>s+o.horas,0))], ['OS com horário ajustado (1 h provisória)', L.filter(o=>o.provisorio).length]]),
       ...tabela('Por fila', ['Fila','OS'], cnt(L,'fila')),
       ...tabela('Por especialidade', ['Especialidade','OS'], cnt(L,'especialidade')),
       ...tabela('Por tipo', ['Tipo','OS'], cnt(L,'tipo'))];
@@ -1015,7 +1057,7 @@ function relBlocos(k, L, Lall, P){
     if (dep.length) rows.push(['Pendentes no corte, resolvidas depois', ...bands.map(b=>dep.filter(o=>age(o)===b).length), dep.length]);
     rows.push(['Backlog total', ...bands.map(b=>bl.filter(o=>age(o)===b).length), bl.length]);
     const ob = bl.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido), v0 = ob[0], v1 = ob[ob.length-1];
-    return [['Backlog até '+fimP.toLocaleDateString('pt-BR')+' (desde o começo)'], [],
+    return [['Backlog até '+fimP.toLocaleDateString('pt-BR')+' (desde o começo)'], [], {T:'kpis', v:[['Backlog total', bl.length], ['Aberta (triagem)', bl.filter(o=>o.fila==='aberta').length], ['Não atendida', bl.filter(o=>o.fila==='não atendida').length], ['Agendar', bl.filter(o=>o.fila==='agendar').length], ['Mais antiga (dias)', v0 ? Math.floor(Math.max(0,(E-v0.pedido)/864e5)) : 0]]}, {T:'blank'},
       ...(v0 ? tabela('Período das OS pendentes', ['','OS','Pedido','Dias','Especialidade','Setor'], [['Mais antiga', +v0.os, dt(v0.pedido), Math.floor(Math.max(0,(E-v0.pedido)/864e5)), v0.especialidade, v0.setor], ['Mais nova', +v1.os, dt(v1.pedido), Math.floor(Math.max(0,(E-v1.pedido)/864e5)), v1.especialidade, v1.setor]]) : []),
       ...tabela('Por fila e idade', ['Fila',...bands,'Total'], rows),
       ...tabela('Por especialidade', ['Especialidade','OS'], cnt(bl,'especialidade')),
@@ -1039,7 +1081,7 @@ function relBlocos(k, L, Lall, P){
   if (k === 'trat') {
     const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'];
     const comL = B.filter(o=>!SEMT.includes(trat(o))), done = L.filter(o=>!o.backlog).length, base = L.length || 1;
-    const grupos = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Material/externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
+    const grupos = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Aguardando material (na obs.)','Conserto externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
     let acc = done; const esc_ = [['Hoje', done, String(Math.round(done/base*1000)/10).replace('.',',')+'%']];
     grupos.forEach(g => { const n = B.filter(o=>trat(o)===g).length; if (n) { acc += n; esc_.push(['+ '+g+' ('+n+')', acc, String(Math.round(acc/base*1000)/10).replace('.',',')+'%']); } });
     const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
