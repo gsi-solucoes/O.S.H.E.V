@@ -3,7 +3,7 @@ Attribute VB_Name = "GeradorOS"
 ' Gerador de Relatórios de OS - HEV  (Excel 2016 ou mais novo)
 ' Lê os CSVs do relatório R_ORDEM_SERVICO do MV (um por fila) e monta:
 ' Dashboard (indicadores, filtros, gráficos e lista de OS), Backlog,
-' Equipe (homem-hora), Tempos, Para arrumar, Repetidas e Histórico do backlog.
+' Equipe (homem-hora), Tempos, Para arrumar (erros e OS repetidas) e Histórico do backlog.
 ' Macros principais: Instalar  |  ImportarCSVs  |  RegistrarBacklog  |  GerarRelatorio
 '==========================================================================
 Option Explicit
@@ -813,13 +813,12 @@ Private Sub Montar(recs As Object, nArq As Long, nVazios As Long)
     MontarTempos cEsp, cTipo, cCrit
     MontarArquivos
     MontarRepetidas okA, nOk
-    ' ordem: Dashboard, Backlog, Tempos, Equipe, Para arrumar, Repetidas, Arquivos...
+    ' ordem: Dashboard, Backlog, Tempos, Equipe, Para arrumar (erros + repetidas), Arquivos...
     ThisWorkbook.Worksheets(SH_BL).Move After:=ThisWorkbook.Worksheets(SH_DASH)
     ThisWorkbook.Worksheets(SH_TP).Move After:=ThisWorkbook.Worksheets(SH_BL)
     ThisWorkbook.Worksheets(SH_EQ).Move After:=ThisWorkbook.Worksheets(SH_TP)
     ThisWorkbook.Worksheets(SH_ERR).Move After:=ThisWorkbook.Worksheets(SH_EQ)
-    ThisWorkbook.Worksheets(SH_REP).Move After:=ThisWorkbook.Worksheets(SH_ERR)
-    ThisWorkbook.Worksheets(SH_ARQ).Move After:=ThisWorkbook.Worksheets(SH_REP)
+    ThisWorkbook.Worksheets(SH_ARQ).Move After:=ThisWorkbook.Worksheets(SH_ERR)
     ThisWorkbook.Worksheets(SH_DASH).Activate
     Application.Calculate
 End Sub
@@ -1519,9 +1518,12 @@ End Function
 Private Sub MontarRepetidas(okA() As Variant, nOk As Long)
     Dim ws As Worksheet, i As Long, j As Long, n As Long, idx() As Long, w() As Collection, x As Variant
     Dim df As Object, peso As Object, k As Variant, sim As Double, loc As Boolean, tira As String
-    Set ws = ThisWorkbook.Worksheets.Add(After:=ThisWorkbook.Worksheets(ThisWorkbook.Worksheets.Count)): ws.Name = SH_REP
-    ws.Range("A1").Value = "OS repetidas em aberto": ws.Range("A1").Font.Size = 18: ws.Range("A1").Font.Bold = True
-    ws.Range("A2").Value = "Mesmo setor e descrição parecida, só OS em aberto (fechadas e canceladas não entram). A primeira de cada grupo é a que fica; as outras: fechar no MV informando a OS que já está tratando. É só um aviso para conferir."
+    ' fica na mesma aba "Para arrumar", embaixo dos erros de data/hora
+    Dim r0 As Long
+    Set ws = ThisWorkbook.Worksheets(SH_ERR)
+    r0 = ws.Cells.Find("*", , xlValues, , xlByRows, xlPrevious).Row + 4
+    ws.Cells(r0, 1).Value = "OS repetidas em aberto": ws.Cells(r0, 1).Font.Size = 16: ws.Cells(r0, 1).Font.Bold = True
+    ws.Cells(r0 + 1, 1).Value = "Mesmo setor e descrição parecida, só OS em aberto (fechadas e canceladas não entram). A primeira de cada grupo é a que fica; as outras: fechar no MV informando a OS que já está tratando. É só um aviso para conferir."
     If nOk = 0 Then Exit Sub
     Application.StatusBar = "Procurando OS repetidas..."
     ' peso de cada palavra pela raridade (palavra que aparece em muitas OS vale pouco)
@@ -1609,27 +1611,23 @@ Private Sub MontarRepetidas(okA() As Variant, nOk As Long)
             Next a
         End If
     Next g
-    ws.Range("A4:D4").Value = Array("OS repetidas para tratar (fechar)", "Já tratadas em outra OS", "Ainda sem tratativa (juntar numa OS só)", "Grupos")
-    ws.Range("A5:D5").Value = Array(nFechar, nAnd, nFechar - nAnd, nG)
-    ws.Range("A4:D4").Font.Color = RGB(91, 102, 131): ws.Range("A4:D4").WrapText = True
-    ws.Range("A5:D5").Font.Size = 22: ws.Range("A5:D5").Font.Bold = True
-    ws.Range("A7:K7").Value = Array("Grupo", "O que fazer", "OS", "Fila", "Pendente de", "Pedido", "Setor", "Localidade", "Solicitante", "Descrição", "Observação")
-    ws.Range("A7:K7").Font.Bold = True: ws.Range("A7:K7").Interior.Color = RGB(214, 51, 108): ws.Range("A7:K7").Font.Color = vbWhite
+    ws.Cells(r0 + 3, 1).Resize(1, 4).Value = Array("OS repetidas para tratar (fechar)", "Já tratadas em outra OS", "Ainda sem tratativa (juntar numa OS só)", "Grupos")
+    ws.Cells(r0 + 4, 1).Resize(1, 4).Value = Array(nFechar, nAnd, nFechar - nAnd, nG)
+    ws.Cells(r0 + 3, 1).Resize(1, 4).Font.Color = RGB(91, 102, 131)
+    ws.Cells(r0 + 4, 1).Resize(1, 4).Font.Size = 18: ws.Cells(r0 + 4, 1).Resize(1, 4).Font.Bold = True
+    ws.Cells(r0 + 6, 1).Resize(1, 11).Value = Array("Grupo", "O que fazer", "OS", "Fila", "Pendente de", "Pedido", "Setor", "Localidade", "Solicitante", "Descrição", "Observação")
+    ws.Cells(r0 + 6, 1).Resize(1, 11).Font.Bold = True: ws.Cells(r0 + 6, 1).Resize(1, 11).Interior.Color = RGB(214, 51, 108): ws.Cells(r0 + 6, 1).Resize(1, 11).Font.Color = vbWhite
     If nOut > 0 Then
-        ws.Range("A8").Resize(nOut, 11).Value = out
-        ws.Range("F8").Resize(nOut, 1).NumberFormat = "dd/mm/yyyy hh:mm"
+        ws.Cells(r0 + 7, 1).Resize(nOut, 11).Value = out
+        ws.Cells(r0 + 7, 6).Resize(nOut, 1).NumberFormat = "dd/mm/yyyy hh:mm"
         For i = 1 To nOut
-            If Left$(out(i, 2), 6) = "Manter" Then ws.Cells(7 + i, 2).Font.Color = RGB(18, 122, 58) Else ws.Cells(7 + i, 2).Font.Color = RGB(179, 90, 0)
-            If out(i, 1) Mod 2 = 0 Then ws.Range(ws.Cells(7 + i, 1), ws.Cells(7 + i, 11)).Interior.Color = RGB(245, 247, 250)
+            If Left$(out(i, 2), 6) = "Manter" Then ws.Cells(r0 + 6 + i, 2).Font.Color = RGB(18, 122, 58) Else ws.Cells(r0 + 6 + i, 2).Font.Color = RGB(179, 90, 0)
+            If out(i, 1) Mod 2 = 0 Then ws.Range(ws.Cells(r0 + 6 + i, 1), ws.Cells(r0 + 6 + i, 11)).Interior.Color = RGB(245, 247, 250)
         Next i
-        ws.Range("A7").Resize(nOut + 1, 11).AutoFilter
+        ws.Cells(r0 + 7, 1).Resize(nOut, 11).VerticalAlignment = xlTop
     Else
-        ws.Range("A8").Value = "Nenhuma OS repetida em aberto."
+        ws.Cells(r0 + 7, 1).Value = "Nenhuma OS repetida em aberto."
     End If
-    ws.Columns("A").ColumnWidth = 22: ws.Columns("B").ColumnWidth = 52: ws.Columns("C:D").ColumnWidth = 18
-    ws.Columns("E:I").ColumnWidth = 18: ws.Columns("J:K").ColumnWidth = 60
-    ws.Range("B8:B2000,J8:K2000").WrapText = True
-    ws.Range("A8:K2000").VerticalAlignment = xlTop
 End Sub
 
 '------------------------------------------------------------ relatório em Excel (arquivo novo)
@@ -1638,16 +1636,15 @@ End Sub
 Public Sub GerarRelatorio()
     Dim esc As String, op As Variant, nomes As Variant, i As Long, quer As Object
     If Not Existe(SH_DASH) Then MsgBox "Importe os CSVs primeiro.", vbExclamation, "Gerador de OS": Exit Sub
-    nomes = Array("Indicadores do período", "Backlog", "Tempos de atendimento", "Homem-hora por técnico", "Para arrumar no MV", "OS repetidas em aberto", "Lista de OS")
     esc = InputBox("Quais relatórios? Digite os números separados por vírgula:" & vbCrLf & vbCrLf & _
         "1 Indicadores do período" & vbCrLf & "2 Backlog (tratativas, cobrar primeiro)" & vbCrLf & "3 Tempos de atendimento" & vbCrLf & _
-        "4 Homem-hora por técnico" & vbCrLf & "5 Para arrumar no MV" & vbCrLf & "6 OS repetidas em aberto" & vbCrLf & "7 Lista de OS" & vbCrLf & vbCrLf & _
-        "O período e os filtros são os que estão marcados no Dashboard (use 'Mês do pedido' para escolher o mês).", "Gerar relatório", "1,2,3,4,5,6,7")
+        "4 Homem-hora por técnico" & vbCrLf & "5 Para arrumar no MV (erros de data/hora e OS repetidas)" & vbCrLf & "6 Lista de OS" & vbCrLf & vbCrLf & _
+        "O período e os filtros são os que estão marcados no Dashboard (use 'Mês do pedido' para escolher o mês).", "Gerar relatório", "1,2,3,4,5,6")
     If Trim$(esc) = "" Then Exit Sub
     Set quer = CreateObject("Scripting.Dictionary")
     For Each op In Split(Replace(esc, " ", ""), ",")
         If IsNumeric(op) Then
-            If CLng(op) >= 1 And CLng(op) <= 7 Then quer(CLng(op)) = 1
+            If CLng(op) >= 1 And CLng(op) <= 6 Then quer(CLng(op)) = 1
         End If
     Next op
     If quer.Count = 0 Then Exit Sub
@@ -1694,9 +1691,8 @@ Public Sub GerarRelatorio()
     If quer.Exists(2) Then CopiarAba wb, SH_BL, "Backlog", per, fil, lista, "Pendentes até a data (desde o começo): fila e idade, tratativas, cobrar primeiro, resumo para o gerente"
     If quer.Exists(3) Then CopiarAba wb, SH_TP, "Tempos de atendimento", per, fil, lista, "Espera até o 1º atendimento e execução por especialidade, tipo e criticidade"
     If quer.Exists(4) Then CopiarAba wb, SH_EQ, "Homem-hora por técnico", per, fil, lista, "OS, horas e média por técnico"
-    If quer.Exists(5) Then CopiarAba wb, SH_ERR, "Para arrumar no MV", per, fil, lista, "OS com erro de data/hora para corrigir no MV"
-    If quer.Exists(6) Then CopiarAba wb, SH_REP, "OS repetidas em aberto", per, fil, lista, "Quais OS fechar porque já estão sendo tratadas em outra"
-    If quer.Exists(7) Then
+    If quer.Exists(5) Then CopiarAba wb, SH_ERR, "Para arrumar no MV", per, fil, lista, "OS com erro de data/hora para corrigir no MV e OS repetidas em aberto (quais fechar)"
+    If quer.Exists(6) Then
         Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.Count)): ws.Name = "Lista de OS"
         CabecalhoRel ws, "Lista de OS", per, fil
         Dim lo As ListObject
