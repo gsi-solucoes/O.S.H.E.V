@@ -84,6 +84,8 @@ textarea{min-height:120px}
 .wk{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}.wk .kpi b{font-size:24px}
 #dock{position:fixed;left:8px;bottom:8px;z-index:9999;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)}
 .dk{background:var(--band);color:#fff;border:0;border-radius:999px;padding:8px 14px;font:14px "Red Hat Text",sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer}
+.kmain{grid-template-columns:repeat(2,minmax(0,1fr))}@media(min-width:1000px){.kmain{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:420px){.kmain{grid-template-columns:1fr}}
+.kmain .kpi>b{font-size:clamp(26px,2.6vw,38px);white-space:nowrap}
 .kpi[data-s]{cursor:pointer}.kpi[data-s]:hover{outline:2px solid var(--accent)}
 .ck{display:grid;gap:8px}
 .ckl{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
@@ -592,8 +594,8 @@ function miniDash(items){
   return `<div class="mini"><div class="mh"><b>${nf(items.length)} OS</b>${items.some(o=>o.horas)?` · ${hm(items.reduce((s,o)=>s+o.horas,0))} lançadas`:''}</div>
     ${grp('Especialidade', o => o.especialidade)}${grp('Setor', o => o.setor)}${grp('Técnico', o => o.exec.length ? o.tecnico : '')}${grp('Fila', o => o.fila)}${grp('Pendente de', o => o.pendente)}</div>`;
 }
-function drillHTML(items, lim){
-  const it = items.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
+function drillHTML(items, lim, asc){
+  const it = items.slice().sort((a,b)=> asc ? (a.pedido||0)-(b.pedido||0) : (b.pedido||0)-(a.pedido||0));
   return `<div class="drill">${miniDash(items)}${it.slice(0,lim).map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.especialidade)} · ${esc(o.setor)}${o.localidade?' · '+esc(o.localidade):''}</div><div>Técnico: <b>${o.exec.length?esc(o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', ')):'ainda sem execução'}</b></div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`).join('')}${it.length>lim?`<button class="drmore" data-lim="${lim+30}">Mostrar mais ${Math.min(30,it.length-lim)} de ${it.length}</button>`:''}</div>`;
 }
 function openDrill(b){
@@ -646,12 +648,13 @@ function render(){
   const bad = data.filter(o=>!o.ok), prov = data.filter(o=>o.provisorio);
   V.innerHTML = `
   <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
-  <div class="kpis">
+  <div class="kpis kmain">
     <div class="kpi hot" data-s="${SETS.push({list:B.bl, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Backlog"><span>Backlog ${blLabel()}</span><b>${nf(B.bl.length)}</b><span>${nf(B.aberta)} aguardando triagem · ${nf(B.nao)} triadas · ${nf(B.agendar)} agendar${B.depois?` · ${nf(B.depois)} resolvidas depois`:''}<br>${!hasPrev?(bFim?'importe o mês anterior para comparar':'escolha a data fim na aba Backlog para comparar com o mês anterior'):diff===0?'igual ao mês anterior':diff>0?`▲ ${nf(diff)} a mais que o mês anterior`:`▼ ${nf(-diff)} a menos que o mês anterior`}</span></div>
     <div class="kpi" data-s="${SETS.push({list:L, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Total de OS"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pc${base&&done/base>=.9?' good':''}">${nf(base?done/base*100:0)}%</div></div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
     <div class="kpi" data-s="${SETS.push({list:B.terc, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Aguardando terceiros"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.espera!=null), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com 1º atendimento"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.horas>0), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com execução"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
+    ${tratKpis(L)}
   </div>
   ${tratCard(L, done)}
   <div class="grid2">
@@ -752,6 +755,13 @@ function renderInc(){
 // ===================== PENDENTES POR TRATATIVA =====================
 const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Terceiros','Material':'Terceiros','Outro':'Outro (recado, sem tratativa)','Sem observação':'Sem tratativa','Feito, falta fechar':'Feito, falta fechar'};
 const trat = o => TRAT[o.pendente] || 'Outro';
+function tratKpis(L){
+  const B = L.filter(o=>o.backlog), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'], comL = B.filter(o=>!SEMT.includes(trat(o))), semL = B.filter(o=>SEMT.includes(trat(o))), com = comL.length;
+  const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
+  return `<div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard" data-t="Backlog com tratativa"><span>Backlog com tratativa</span><b class="${B.length&&com/B.length>=.9?'good':''}">${nf(B.length?com/B.length*100:0)}%</b><span>${nf(com)} de ${nf(B.length)} OS do backlog</span></div>
+          <div class="kpi" data-s="${SETS.push({list:semL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard" data-t="Backlog sem tratativa"><span>Backlog sem tratativa</span><b>${nf(semL.length)}</b><span>nada escrito ou só recado do solicitante</span></div>
+          <div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard" data-t="Cobrar primeiro (mais antigas com tratativa)"><span>Cobrar primeiro</span><b>${velha?nf(Math.floor((Date.now()-velha.pedido)/864e5))+' dias':'–'}</b><span>${velha?`mais antiga com tratativa: OS ${velha.os} · ${esc(trat(velha))}`:'nenhuma com tratativa'}</span></div>`;
+}
 function tratCard(L, done){
   const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), base = L.length || 1;
   const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
@@ -762,13 +772,9 @@ function tratCard(L, done){
   ord.forEach(k => { const n = nB(k); if (n) { acc += n; steps.push(['+ '+k+' ('+nf(n)+')', acc]); } });
   const pc = v => v/base*100, bar = ([t,v],i) => `<div class="bar acc" style="cursor:default;grid-template-columns:minmax(0,12.5em) minmax(0,1fr) auto"><span class="n" style="white-space:nowrap">${t}</span><span class="t"><i style="width:${pc(v)}%;${pc(v)>=90?'background:light-dark(#127a3a,#3ddc84)':''}"></i></span><span class="v ${pc(v)>=90?'good':''}">${nf(pc(v),1)}%</span></div>`;
   const com = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))).length; // recado do solicitante (URGENTE, brevidade…) não é tratativa
-  const velhas = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o)) && o.pedido).sort((a,b)=>a.pedido-b.pedido).slice(0,5);
   return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3>
     <div class="kpis wk" style="margin-bottom:12px">${kp('Feito, falta fechar','observação diz que foi feito')}${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${kp('Sem tratativa','nada escrito na OS')}</div>
-    <div class="grid2" style="gap:16px">
-      <div><b>Até onde dá para chegar</b><p class="note" style="margin:2px 0 8px">% realizado se resolvermos cada grupo do backlog (soma em escada)</p><div class="bars">${steps.map(bar).join('')}</div></div>
-      <div><b>Tratativa registrada</b><p style="margin:4px 0 12px"><span class="pc${B.length&&com/B.length>=.9?' good':''}" style="font-size:32px">${nf(B.length?com/B.length*100:0)}%</span> <span class="muted">do backlog tem tratativa escrita (${nf(com)} de ${nf(B.length)}). Recado do solicitante, como "urgente", não conta.</span></p>
-      <b>Mais antigas com tratativa (cobrar primeiro)</b>${velhas.length?`<div class="drill" style="margin-top:6px">${velhas.map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag bk">${esc(trat(o))}</span><span class="muted">${fd(o.pedido)}${o.parado!=null?` · parada há ${o.parado} d`:` · aberta há ${Math.floor((Date.now()-o.pedido)/864e5)} d (tratativa sem data)`}</span></div><div>${esc(o.desc)}</div><div class="muted">Obs.: ${esc(o.obs||'')}</div></div>`).join('')}</div>`:'<p class="muted">Nenhuma.</p>'}</div>
+    <div><div><b>Até onde dá para chegar</b><p class="note" style="margin:2px 0 8px">% realizado se resolvermos cada grupo do backlog (soma em escada)</p><div class="bars">${steps.map(bar).join('')}</div></div>
     </div></div>`;
 }
 
@@ -780,13 +786,13 @@ function winDash(items){
   const k = (t,v,s='') => `<div class="kpi"><span>${t}</span><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
   return `<div class="kpis wk">${k('OS', nf(items.length))}${k('Realizadas', nf(done), items.length?`<b class="${done/items.length>=.9?'good':''}" style="font-size:16px">${nf(done/items.length*100)}%</b>`:'')}${k('Pendentes nossas', nf(items.filter(o=>o.backlog).length), 'aberta + não atendida + agendar')}${k('Aguardando terceiros', nf(nT), 'material e externo')}${k('Espera 1º atendimento', fh(Core.median(esp)), 'mediana')}${k('Homem-hora', hm(hh))}</div>`;
 }
-function openWin(onde, oque, items){
+function openWin(onde, oque, items, asc){
   const w = document.createElement('div'); w.className = 'win'; const n = WN++ % 6;
   w.style.zIndex = ++WZ;
   if (innerWidth > 700) { w.style.left = (2 + n*2) + 'vw'; w.style.top = (5 + n*3) + 'vh'; w.style.width = '92vw'; w.style.height = '86vh'; }
   w.innerHTML = `<div class="wh"><div class="wt"><span>${esc(onde)}</span><b>${esc(oque)} · ${nf(items.length)} OS</b></div><button class="wcp" title="Copiar lista para o Excel">Copiar</button><button class="wmin" title="Minimizar" aria-label="Minimizar">–</button><button class="wx" title="Fechar" aria-label="Fechar">✕</button></div><div class="wb"></div>`;
   const body = w.querySelector('.wb');
-  const show = lim => { body.innerHTML = winDash(items) + drillHTML(items, lim); const m = body.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
+  const show = lim => { body.innerHTML = winDash(items) + (asc ? '<p class="note">Da mais antiga para a mais nova: cobrar de cima para baixo.</p>' : '') + drillHTML(items, lim, asc); const m = body.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
   show(50);
   document.body.appendChild(w);
   const frente = () => { w.style.zIndex = ++WZ; };
@@ -825,7 +831,7 @@ document.addEventListener('click', e => {
   const kf = typeof S.key === 'function' ? S.key : (o => o[S.key]);
   const items = S.list.filter(o => String(kf(o)) === b.dataset.v);
   const nome = b.dataset.t || ((b.querySelector('.n') || b).textContent.replace('▸','').trim());
-  openWin(b.dataset.w || winOnde(b), nome, items);
+  openWin(b.dataset.w || winOnde(b), nome, items, !!S.asc);
 });
 
 // ===================== POSSÍVEIS REPETIDAS =====================
