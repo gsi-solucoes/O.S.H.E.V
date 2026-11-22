@@ -668,7 +668,7 @@ function render(){
   const hasPrev = !!bFim && L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
   const bad = data.filter(o=>!o.ok), prov = data.filter(o=>o.provisorio);
   V.innerHTML = `
-  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
+  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS${(() => { const ds = data.map(o=>o.pedido).filter(Boolean).sort((a,b)=>a-b); return ds.length ? ` (abertas de <b>${ds[0].toLocaleDateString('pt-BR')}</b> a <b>${ds[ds.length-1].toLocaleDateString('pt-BR')}</b>)` : ''; })()} · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
   <div class="kpis kmain">
     <div class="kpi" data-s="${SETS.push({list:L, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Total de OS"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pcw">${(() => { const B_ = L.filter(o=>o.backlog && !['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))), n = B_.length, g = base ? (done+n)/base : 0;
       if (!n) return '';
@@ -1047,6 +1047,9 @@ async function gerarRel(){
   const todos = data.filter(o => fil.every(([k,v]) => k==='tecnico' ? o.tecnicos.includes(v) : o[k]===v)), base = todos.filter(o => o.ok); P.todos = todos;
   const E = P.fim ? new Date(P.fim.getFullYear(), P.fim.getMonth(), P.fim.getDate(), 23, 59, 59) : null;
   const L = P.ini ? base.filter(o => o.pedido && o.pedido >= P.ini && o.pedido <= E) : base;
+  { const ds = L.map(o=>o.pedido).filter(Boolean).sort((a,b)=>a-b);
+    if (ds.length) { const a = ds[0].toLocaleDateString('pt-BR'), b = ds[ds.length-1].toLocaleDateString('pt-BR');
+      P.rot = P.ini ? `${P.rot} (OS abertas de ${a} a ${b})` : `tudo o que foi carregado: OS abertas de ${a} a ${b}`; } }
   const filTxt = fil.length ? fil.map(([k,v])=>`${k}: ${v}`).join(' · ') : 'sem filtros';
   const fmt = document.querySelector('input[name=r-fmt]:checked').value, nomeRel = k => REL.find(r=>r[0]===k)[1];
   const info = `Período: ${P.rot} · Filtros: ${filTxt} · Gerado em ${new Date().toLocaleString('pt-BR')}`;
@@ -1143,7 +1146,7 @@ $('#cfgSave').onclick = () => {
   store.set('gos_cfg', cfg); rebuild(); toast('Configurações salvas.');
 };
 
-if (matchMedia('(min-width:601px)').matches) $('#fbox').open = true;
+// Filtros começa fechado (abre ao tocar)
 loadState();
 window.addEventListener('hashchange', () => { route(); const t = $('#tabs'); window.scrollTo({top: t.offsetTop, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'}); }); route(); rebuild();
 }
