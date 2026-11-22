@@ -87,6 +87,7 @@ textarea{min-height:120px}
 .kmain{grid-template-columns:repeat(2,minmax(0,1fr))}@media(min-width:1000px){.kmain{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:420px){.kmain{grid-template-columns:1fr}}
 .kmain .kpi>b{font-size:clamp(26px,2.6vw,38px);white-space:nowrap}
 .kpi[data-s]{cursor:pointer}
+.ghost{display:flex;flex-direction:column;justify-content:center;opacity:.5;border:2px dashed currentColor;border-radius:10px;padding:2px 8px;color:var(--accent);line-height:1.1}.ghost b{font:700 22px "Red Hat Display",sans-serif}.ghost span{font-size:11px;color:var(--muted)}.ghost.good{opacity:.75}
 .chip.fc{cursor:pointer;user-select:none}.chip.fc:hover{filter:brightness(.95)}.chip.fc.on{outline:3px solid var(--ink);outline-offset:1px;font-weight:700}.chip.fc.on::before{content:'✓';margin-right:2px}
 .selbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;margin:8px 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;position:sticky;top:-14px;z-index:2}.tag.on{background:var(--ink);color:var(--bg)}.sellimpa{margin-left:auto}.kpi[data-s]:hover{outline:2px solid var(--accent)}
 .ck{display:grid;gap:8px}
@@ -667,7 +668,7 @@ function render(){
   V.innerHTML = `
   <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
   <div class="kpis kmain">
-    <div class="kpi" data-s="${SETS.push({list:L, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Total de OS"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pc${base&&done/base>=.9?' good':''}">${nf(base?done/base*100:0)}%</div></div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
+    <div class="kpi" data-s="${SETS.push({list:L, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Total de OS"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pc${base&&done/base>=.9?' good':''}">${nf(base?done/base*100:0)}%</div>${(() => { const n = L.filter(o=>o.backlog && !['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))).length, g = base ? (done+n)/base : 0; return n ? `<div class="ghost${g>=.9?' good':''}" title="Se resolvermos as ${n} OS do backlog que já têm tratativa"><b>${nf(g*100,1)}%</b><span>se resolver as ${nf(n)} com tratativa</span></div>` : ''; })()}</div><span>${nf(nConc)} concluídas + ${nf(nTer)} aguardando material/externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
     <div class="kpi" data-s="${SETS.push({list:B.terc, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Aguardando terceiros"><span>Aguardando terceiros</span><b>${nf(B.terc.length)}</b><span>material e conserto externo, fora do backlog</span></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.espera!=null), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com 1º atendimento"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
     <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.horas>0), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com execução"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
@@ -793,8 +794,7 @@ function tratCard(L, done){
   const com = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))).length; // recado do solicitante (URGENTE, brevidade…) não é tratativa
   return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3><p class="note" style="margin-top:-4px">Só o backlog (aberta, não atendida, agendar). Em aguardando material ou conserto externo a tratativa já foi feita: a OS está com terceiros.</p>
     <div class="kpis wk" style="margin-bottom:12px">${kp('Feito, falta fechar','observação diz que foi feito')}${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${kp('Sem tratativa','nada escrito na OS')}</div>
-    <div><div><b>Até onde dá para chegar</b><p class="note" style="margin:2px 0 8px">% realizado se resolvermos cada grupo do backlog (soma em escada)</p><div class="bars">${steps.map(bar).join('')}</div></div>
-    </div></div>`;
+    </div>`;
 }
 
 // ===================== JANELAS (abrem por cima, arrastáveis, várias ao mesmo tempo) =====================
@@ -1018,9 +1018,8 @@ function relBlocos(k, L, Lall, P){
     grupos.forEach(g => { const n = B.filter(o=>trat(o)===g).length; if (n) { acc += n; esc_.push(['+ '+g+' ('+n+')', acc, String(Math.round(acc/base*1000)/10).replace('.',',')+'%']); } });
     const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
     return [['Pendentes por tratativa: '+P.rot], [],
-      ...tabela('Indicadores', ['Indicador','Valor'], [['Backlog com tratativa', B.length ? String(Math.round(comL.length/B.length*1000)/10).replace('.',',')+'%' : '-'], ['OS do backlog com tratativa', comL.length], ['OS do backlog sem tratativa (nada escrito ou só recado do solicitante)', B.length-comL.length], ['Cobrar primeiro: mais antiga com tratativa', velha ? `OS ${velha.os} · ${trat(velha)} · ${Math.floor((Date.now()-velha.pedido)/864e5)} dias` : '-']]),
+      ...tabela('Indicadores', ['Indicador','Valor'], [['% realizado hoje', String(Math.round(done/base*1000)/10).replace('.',',')+'%'], ['% realizado se resolver as com tratativa', String(Math.round((done+comL.length)/base*1000)/10).replace('.',',')+'%'], ['Backlog com tratativa', B.length ? String(Math.round(comL.length/B.length*1000)/10).replace('.',',')+'%' : '-'], ['OS do backlog com tratativa', comL.length], ['OS do backlog sem tratativa (nada escrito ou só recado do solicitante)', B.length-comL.length], ['Cobrar primeiro: mais antiga com tratativa', velha ? `OS ${velha.os} · ${trat(velha)} · ${Math.floor((Date.now()-velha.pedido)/864e5)} dias` : '-']]),
       ...tabela('Por tratativa', ['Tratativa','OS em aberto','No backlog','Mediana de dias parada'], grupos.map(g => { const a = A.filter(o=>trat(o)===g); return [g, a.length, B.filter(o=>trat(o)===g).length, r1(Core.median(a.map(o=>o.parado).filter(x=>x!=null)))]; }).filter(r=>r[1])),
-      ...tabela('Até onde dá para chegar (% realizado resolvendo cada grupo do backlog)', ['Etapa','Realizadas','% realizado'], esc_),
       ...tabela('Cobrar primeiro (backlog com tratativa, da mais antiga para a mais nova)', ['Tratativa',...cabOS], comL.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(o=>[trat(o), ...linhaOS(o)]))];
   }
   if (k === 'pend') {
