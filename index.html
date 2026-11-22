@@ -374,6 +374,7 @@ var Core = (function () {
     ['Gestor', ['(GESTOR)', 'TRATATIVA (GESTOR', 'TRATATIVA DO GESTOR', 'AGUARDANDO GESTOR']],
     ['Externo', ['TRATATIVA EXTERNA', 'SERVIÇO EXTERNO', 'SERVICO EXTERNO', 'TRATATIVA DE SERVIÇO EXTERNO']],
     ['Material', ['AGUARDANDO MATERIAL', 'MATERIAL SOLICITADO', 'SOLICITADO MATERIAL', 'PEDIDO FEITO']],
+    ['Feito, falta fechar', ['SERVICO REALIZADO', 'SERVICO EXECUTADO', 'SERVICO CONCLUIDO', 'O.S FINALIZADA', 'OS FINALIZADA', 'FINALIZADA PELO SETOR', 'JA FOI REALIZADO', 'JA REALIZADO']],
     ['Em execução', ['EM ANDAMENTO', 'EM EXECUCAO', 'SERVICO INICIADO', 'INICIADO', 'EXECUTANDO', 'EM ATENDIMENTO']],
     ['Programado', ['FINAL DE SEMANA', 'FIM DE SEMANA', 'SABADO', 'DOMINGO', 'PROGRAMADO', 'PROGRAMACAO', 'PROGRAMADA', 'AGENDADO', 'AGENDADA']]
   ];
@@ -749,25 +750,25 @@ function renderInc(){
 }
 
 // ===================== PENDENTES POR TRATATIVA =====================
-const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Terceiros','Material':'Terceiros','Outro':'Outro','Sem observação':'Sem tratativa'};
+const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Terceiros','Material':'Terceiros','Outro':'Outro (recado, sem tratativa)','Sem observação':'Sem tratativa','Feito, falta fechar':'Feito, falta fechar'};
 const trat = o => TRAT[o.pendente] || 'Outro';
 function tratCard(L, done){
   const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), base = L.length || 1;
   const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
   const kp = (k, sub) => { const sid = SETS.push({list:A.filter(o=>trat(o)===k), key:()=>'m'}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Dashboard › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nA(k))}</b><span>${sub || nf(nB(k))+' no backlog'}</span></div>`; };
   // escada: quanto sobe o % realizado resolvendo cada grupo do backlog
-  const ord = ['Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Outro','Sem tratativa','Terceiros'];
+  const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Outro (recado, sem tratativa)','Sem tratativa','Terceiros'];
   let acc = done; const steps = [['Hoje', done]];
   ord.forEach(k => { const n = nB(k); if (n) { acc += n; steps.push(['+ '+k+' ('+nf(n)+')', acc]); } });
   const pc = v => v/base*100, bar = ([t,v],i) => `<div class="bar acc" style="cursor:default;grid-template-columns:minmax(0,12.5em) minmax(0,1fr) auto"><span class="n" style="white-space:nowrap">${t}</span><span class="t"><i style="width:${pc(v)}%;${pc(v)>=90?'background:light-dark(#127a3a,#3ddc84)':''}"></i></span><span class="v ${pc(v)>=90?'good':''}">${nf(pc(v),1)}%</span></div>`;
-  const com = B.filter(o=>trat(o)!=='Sem tratativa').length;
-  const velhas = B.filter(o=>!['Sem tratativa','Outro'].includes(trat(o)) && o.pedido).sort((a,b)=>a.pedido-b.pedido).slice(0,5);
+  const com = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))).length; // recado do solicitante (URGENTE, brevidade…) não é tratativa
+  const velhas = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o)) && o.pedido).sort((a,b)=>a.pedido-b.pedido).slice(0,5);
   return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3>
-    <div class="kpis wk" style="margin-bottom:12px">${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${kp('Sem tratativa','nada escrito na OS')}</div>
+    <div class="kpis wk" style="margin-bottom:12px">${kp('Feito, falta fechar','observação diz que foi feito')}${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${kp('Sem tratativa','nada escrito na OS')}</div>
     <div class="grid2" style="gap:16px">
       <div><b>Até onde dá para chegar</b><p class="note" style="margin:2px 0 8px">% realizado se resolvermos cada grupo do backlog (soma em escada)</p><div class="bars">${steps.map(bar).join('')}</div></div>
-      <div><b>Tratativa registrada</b><p style="margin:4px 0 12px"><span class="pc${B.length&&com/B.length>=.9?' good':''}" style="font-size:32px">${nf(B.length?com/B.length*100:0)}%</span> <span class="muted">do backlog tem tratativa escrita (${nf(com)} de ${nf(B.length)})</span></p>
-      <b>Mais antigas com tratativa (cobrar primeiro)</b>${velhas.length?`<div class="drill" style="margin-top:6px">${velhas.map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag bk">${esc(trat(o))}</span><span class="muted">${fd(o.pedido)}${o.parado!=null?` · parada há ${o.parado} d`:''}</span></div><div>${esc(o.desc)}</div></div>`).join('')}</div>`:'<p class="muted">Nenhuma.</p>'}</div>
+      <div><b>Tratativa registrada</b><p style="margin:4px 0 12px"><span class="pc${B.length&&com/B.length>=.9?' good':''}" style="font-size:32px">${nf(B.length?com/B.length*100:0)}%</span> <span class="muted">do backlog tem tratativa escrita (${nf(com)} de ${nf(B.length)}). Recado do solicitante, como "urgente", não conta.</span></p>
+      <b>Mais antigas com tratativa (cobrar primeiro)</b>${velhas.length?`<div class="drill" style="margin-top:6px">${velhas.map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag bk">${esc(trat(o))}</span><span class="muted">${fd(o.pedido)}${o.parado!=null?` · parada há ${o.parado} d`:` · aberta há ${Math.floor((Date.now()-o.pedido)/864e5)} d (tratativa sem data)`}</span></div><div>${esc(o.desc)}</div><div class="muted">Obs.: ${esc(o.obs||'')}</div></div>`).join('')}</div>`:'<p class="muted">Nenhuma.</p>'}</div>
     </div></div>`;
 }
 
