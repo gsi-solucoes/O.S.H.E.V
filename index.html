@@ -973,7 +973,7 @@ function abaExcel(wb, nome, linhas){
   const fim = C0 + Math.max(maxC, 4) - 1;
   // 2ª passada: escreve
   let r = 1, primeiro = true, ini = 0, maiorTab = null; cab = null;
-  ws.getRow(1).height = 8;
+  { const c = ws.getCell(1, C0); c.value = 'RELATÓRIO DE ORDENS DE SERVIÇO · MANUTENÇÃO · HOSPITAL EDMUNDO VASCONCELOS'; c.font = {bold:true, size:9, color:{argb:acc}}; ws.getRow(1).height = 20; c.alignment = {vertical:'bottom'}; }
   const fecha = () => { if (cab && (!maiorTab || r - ini > maiorTab[2] - maiorTab[0])) maiorTab = [ini, cab.length, r]; };
   linhas.forEach(L => {
     if (L && L.T === 'blank') { fecha(); cab = null; r++; ws.getRow(r).height = 10; return; }
@@ -1029,6 +1029,32 @@ function abaExcel(wb, nome, linhas){
   Object.assign(ws.pageSetup, {paperSize:9, orientation: maxC > 6 ? 'landscape' : 'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true, margins:{left:0.4, right:0.4, top:0.5, bottom:0.6, header:0.2, footer:0.3}});
   ws.headerFooter.oddFooter = '&L&8Gerador de OS HEV · Manutenção&R&8Página &P de &N';
   return ws;
+}
+function capaExcel(wb, ks, P, filTxt, nomeRel, fmt){
+  const ws = wb.addWorksheet('Capa', {views:[{showGridLines:false}], properties:{tabColor:{argb:'FF0F2A4A'}}});
+  const cor = 'FF0F2A4A', acc = 'FFD6336C', cinza = 'FF667085';
+  ws.getColumn(1).width = 3; ws.getColumn(2).width = 42; ws.getColumn(3).width = 80;
+  const put = (r, c, v, f, h) => { const x = ws.getCell(r, c); x.value = v; if (f) x.font = f; if (h) ws.getRow(r).height = h; return x; };
+  for (let r = 2; r <= 4; r++) for (let c = 2; c <= 3; c++) ws.getCell(r, c).fill = {type:'pattern', pattern:'solid', fgColor:{argb:cor}};
+  put(2, 2, 'MANUTENÇÃO · HOSPITAL EDMUNDO VASCONCELOS', {bold:true, size:10, color:{argb:'FFF7A1C4'}}, 22);
+  put(3, 2, 'Relatório de Ordens de Serviço', {bold:true, size:22, color:{argb:'FFFFFFFF'}}, 38);
+  put(4, 2, `Período: ${P.rot}`, {size:11, color:{argb:'FFDDE3F0'}}, 22);
+  put(6, 2, 'Filtros', {bold:true, color:{argb:cor}}); put(6, 3, filTxt);
+  put(7, 2, 'Gerado em', {bold:true, color:{argb:cor}}); put(7, 3, new Date().toLocaleString('pt-BR'));
+  put(8, 2, 'Fonte', {bold:true, color:{argb:cor}}); put(8, 3, 'Relatórios de OS exportados do MV (R_ORDEM_SERVICO)');
+  put(10, 2, 'O que tem neste arquivo', {bold:true, size:13, color:{argb:cor}}, 24);
+  ks.forEach((k, i) => { const d = REL.find(x=>x[0]===k); const r = 11 + i;
+    const a = put(r, 2, `${i+1}. ${d[1]}`, {bold:true, color:{argb: fmt === 'abas' ? 'FF2347C5' : cor}, underline: fmt === 'abas'});
+    if (fmt === 'abas') a.value = {text:`${i+1}. ${d[1]}`, hyperlink:`#'${d[1].slice(0,31)}'!A1`};
+    put(r, 3, d[2], {color:{argb:cinza}}).alignment = {wrapText:true, vertical:'top'}; a.alignment = {vertical:'top'}; ws.getRow(r).height = 30; });
+  const r = 12 + ks.length;
+  put(r, 2, 'Regras usadas', {bold:true, size:13, color:{argb:cor}}, 24);
+  ['Realizadas = concluídas + aguardando material + conserto externo + canceladas.',
+   'Backlog (pendentes nossas) = aberta + não atendida + agendar. Aguardando material e conserto externo ficam fora.',
+   'Tratativa = só as frases padrão do planejamento na Observação; recado do solicitante não conta.',
+   'Execução acima do limite ou sem hora de fim conta 1 h provisória e aparece em "Para arrumar no MV".'].forEach((t, i) => { const c = put(r + 1 + i, 2, '• ' + t, {color:{argb:cinza}}); ws.mergeCells(r + 1 + i, 2, r + 1 + i, 3); c.alignment = {wrapText:true}; ws.getRow(r + 1 + i).height = 18; });
+  Object.assign(ws.pageSetup, {paperSize:9, orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true});
+  ws.headerFooter.oddFooter = '&L&8Gerador de OS HEV · Manutenção&R&8Página &P de &N';
 }
 async function baixa(wb, nome){
   const buf = await wb.xlsx.writeBuffer();
@@ -1124,7 +1150,8 @@ async function gerarRel(){
       for (const [k,aoa] of blocos) { const wb = new ExcelJS.Workbook(); abaExcel(wb, nomeRel(k), aoa); await baixa(wb, arq(nomeRel(k))); await new Promise(r=>setTimeout(r,900)); }
       msg.textContent = `${blocos.length} arquivo(s) gerado(s). Se o navegador perguntar, permita baixar vários arquivos.`;
     } else {
-      const wb = new ExcelJS.Workbook();
+      const wb = new ExcelJS.Workbook(); wb.title = 'Relatório de Ordens de Serviço · Manutenção HEV'; wb.creator = 'Gerador de OS HEV';
+      capaExcel(wb, ks, P, filTxt, nomeRel, fmt);
       if (fmt === 'uma') abaExcel(wb, 'Relatório', blocos.flatMap(([k,a],n) => n ? [{T:'blank'}, ...a.map((x,i)=> i===0 && Array.isArray(x) ? {T:'sec', v:'■ '+x[0]} : x)] : a));
       else blocos.forEach(([k,a]) => abaExcel(wb, nomeRel(k), a));
       await baixa(wb, arq(ks.length===1 ? nomeRel(ks[0]) : 'Relatorios'));
