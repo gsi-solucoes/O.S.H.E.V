@@ -810,11 +810,31 @@ function winDash(items){
   const k = (t,v,s='') => `<div class="kpi"><span>${t}</span><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
   return `<div class="kpis wk">${k('OS', nf(items.length))}${k('Realizadas', nf(done), items.length?`<b class="${done/items.length>=.9?'good':''}" style="font-size:16px">${nf(done/items.length*100)}%</b>`:'')}${k('Pendentes nossas', nf(items.filter(o=>o.backlog).length), 'aberta + não atendida + agendar')}${k('Aguardando terceiros', nf(nT), 'material e externo')}${k('Espera 1º atendimento', fh(Core.median(esp)), 'mediana')}${k('Homem-hora', hm(hh))}</div>`;
 }
+function imprimirOS(onde, oque, list, sel, total, asc){
+  const L = list.slice().sort((a,b)=> asc ? (a.pedido||0)-(b.pedido||0) : (b.pedido||0)-(a.pedido||0));
+  const selTxt = Object.entries(sel).filter(([g,set])=>set.size).map(([g,set])=>`${g}: ${[...set].join(', ')}`).join(' · ');
+  const tec = o => o.exec.length ? o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', ') : '';
+  const pend = o => o.terceiros ? 'Com terceiros' : (o.pendente||'');
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>OS - ${esc(oque)}</title><style>
+    @page{size:A4 landscape;margin:8mm}body{font:9px/1.25 Arial,sans-serif;color:#111;margin:0}
+    h1{font-size:16px;margin:0 0 2px}.sub{color:#444;margin:0 0 2px}.sel{margin:6px 0 8px;padding:6px 8px;border:1px solid #999;border-radius:4px;background:#f3f3f3}
+    table{width:100%;border-collapse:collapse;table-layout:fixed}td{overflow-wrap:break-word;font-size:10.5px}th,td{border:1px solid #bbb;padding:3px 4px;vertical-align:top;text-align:left}th{background:#e4e7ee;color:#000;font-size:10px;border-bottom:2px solid #000}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    tr{page-break-inside:avoid}tbody tr:nth-child(even){background:#f6f7fa}.n{white-space:normal}thead{display:table-header-group}</style></head><body>
+    <h1>Gerador de OS HEV · ${esc(oque)}</h1>
+    <p class="sub">${esc(onde)} · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
+    <div class="sel"><b>Seleção:</b> ${selTxt ? esc(selTxt) : 'nenhuma (todas as OS da janela)'} · <b>${L.length} OS</b>${L.length!==total?` de ${total}`:''}</div>
+    <table><colgroup><col style="width:5.5%"><col style="width:7.5%"><col style="width:7%"><col style="width:9.5%"><col style="width:12%"><col style="width:25%"><col style="width:16%"><col style="width:8.5%"><col style="width:9%"></colgroup><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor / localidade</th><th>Descrição</th><th>Observação</th><th>Pendente de</th><th>Técnico</th></tr></thead><tbody>
+    ${L.map(o=>`<tr><td class="n"><b>${o.os}</b></td><td class="n">${o.pedido?o.pedido.toLocaleDateString('pt-BR')+'<br>'+o.pedido.toTimeString().slice(0,5):''}</td><td>${esc(o.fila)}</td><td>${esc(o.especialidade||'')}</td><td>${esc(o.setor||'')}${o.localidade&&o.localidade!==o.setor?'<br>'+esc(o.localidade):''}</td><td>${esc(o.desc||'')}</td><td>${esc(o.obs||'')}</td><td>${esc(pend(o))}</td><td>${esc(tec(o))}</td></tr>`).join('')}
+    </tbody></table></body></html>`;
+  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
+  document.body.appendChild(f); f.contentDocument.open(); f.contentDocument.write(html); f.contentDocument.close();
+  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch(e) { toast('Não foi possível abrir a impressão.'); } setTimeout(() => f.remove(), 60000); }, 300);
+}
 function openWin(onde, oque, items, asc){
   const w = document.createElement('div'); w.className = 'win'; const n = WN++ % 6;
   w.style.zIndex = ++WZ;
   if (innerWidth > 700) { w.style.left = (2 + n*2) + 'vw'; w.style.top = (5 + n*3) + 'vh'; w.style.width = '92vw'; w.style.height = '86vh'; }
-  w.innerHTML = `<div class="wh"><div class="wt"><span>${esc(onde)}</span><b>${esc(oque)} · ${nf(items.length)} OS</b></div><button class="wcp" title="Copiar lista para o Excel">Copiar</button><button class="wmin" title="Minimizar" aria-label="Minimizar">–</button><button class="wx" title="Fechar" aria-label="Fechar">✕</button></div><div class="wb"></div>`;
+  w.innerHTML = `<div class="wh"><div class="wt"><span>${esc(onde)}</span><b>${esc(oque)} · ${nf(items.length)} OS</b></div><button class="wpr" title="Imprimir as OS desta janela (com a seleção)">Imprimir</button><button class="wcp" title="Copiar lista para o Excel">Copiar</button><button class="wmin" title="Minimizar" aria-label="Minimizar">–</button><button class="wx" title="Fechar" aria-label="Fechar">✕</button></div><div class="wb"></div>`;
   const body = w.querySelector('.wb');
   const sel = {}; // seleção das bolinhas desta janela (fecha a janela = some a seleção)
   const filt = () => items.filter(o => Object.entries(sel).every(([g,set]) => !set.size || set.has(String(MGF[g](o)))));
@@ -832,7 +852,8 @@ function openWin(onde, oque, items, asc){
   w.addEventListener('pointerdown', frente);
   let chip = null;
   w.querySelector('.wx').onclick = () => { w.remove(); if (chip) chip.remove(); };
-  w.querySelector('.wcp').onclick = () => copy(tsv(items));
+  w.querySelector('.wcp').onclick = () => copy(tsv(filt()));
+  w.querySelector('.wpr').onclick = () => imprimirOS(onde, oque, filt(), sel, items.length, asc);
   w.querySelector('.wmin').onclick = () => {
     w.style.display = 'none';
     chip = document.createElement('button'); chip.className = 'dk'; chip.textContent = `${oque} (${items.length})`; chip.title = onde;
