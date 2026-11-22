@@ -499,15 +499,17 @@ var Core = (function () {
     var g = {}; list.forEach(function (o) { var r = raiz(o.os); (g[r] = g[r] || []).push(o); });
     // fechadas/canceladas não impactam: só ficam as que ainda estão em aberto
     var grupos = Object.keys(g).map(function (k) { return g[k].filter(ativa); }).filter(function (a) { return a.length > 1; });
-    var peso = function (o) { return o.terceiros ? 0 : /Comprador|Externo|Material/.test(o.pendente || '') ? 1 : ativa(o) ? 2 : 3; };
+    // a que fica é a mais adiantada: terceiros/feito > em execução/programado/compra > supervisão/planejamento > sem tratativa
+    var peso = function (o) { var p = o.pendente || ''; return o.terceiros || p === 'Feito, falta fechar' ? 0 : /Em execução|Programado|Comprador|Externo|Material/.test(p) ? 1 : /Supervisão|Planejador|Gestor/.test(p) ? 2 : 3; };
+    var onde = function (o) { var p = o.pendente || ''; return o.terceiros ? o.fila : /Sem observação|Outro/.test(p) ? '' : p === 'Planejador' ? 'Planejamento' : p; };
     grupos.forEach(function (a, n) {
       a.sort(function (x, y) { return peso(x) - peso(y) || (x.pedido || 0) - (y.pedido || 0); });
-      var p0 = a[0], anda = peso(p0) <= 1;
+      var p0 = a[0], anda = peso(p0) <= 2, ond = onde(p0);
       a.andamento = anda;
       a.forEach(function (o, i) {
         o.repGrupo = n + 1; o.repPrincipal = p0.os;
-        o.repAcao = i === 0 ? (anda ? 'Manter: já em andamento' : 'Manter: tratar esta (mais antiga)')
-          : anda ? 'Fechar: informar que já está sendo tratada na OS ' + p0.os : 'Fechar: juntar na OS ' + p0.os;
+        o.repAcao = i === 0 ? (anda ? 'Manter: já em andamento' + (ond ? ' (' + ond + ')' : '') : 'Manter: tratar esta (mais antiga)')
+          : anda ? 'Fechar: informar que já está sendo tratada na OS ' + p0.os + (ond ? ' (' + ond + ')' : '') : 'Fechar: juntar na OS ' + p0.os;
       });
       a.mesmoSolic = a.every(function (o) { return o.solicitante && o.solicitante === a[0].solicitante; });
       a.mesmaLoc = a.every(function (o) { return o.localidade && o.localidade === a[0].localidade; });
@@ -844,8 +846,8 @@ function renderRep(){
   const card = o => `<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div class="${o.os===o.repPrincipal?'ok':'warn'}"><b>${esc(o.repAcao)}</b></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.localidade||'')}${o.solicitante?' · Solicitante: '+esc(o.solicitante):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`;
   const fechar = G.reduce((s,a)=>s+a.length-1,0), fAnd = G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0);
   $('#v-repetidas').innerHTML = `<h2>OS repetidas em aberto</h2>
-  <div class="kpis"><div class="kpi"><b>${fechar}</b><span>OS repetidas para tratar (fechar)</span></div><div class="kpi"><b>${fAnd}</b><span>Já tratadas em outra OS (compra, material ou externo)</span></div><div class="kpi"><b>${fechar-fAnd}</b><span>Ainda sem tratativa: juntar numa OS só</span></div><div class="kpi"><b>${G.length}</b><span>Grupos</span></div></div>
-  <p class="muted">Só OS em aberto (fechadas e canceladas não entram), do mesmo setor e com descrição parecida. A primeira de cada grupo é a que fica; as outras devem ser fechadas no MV informando a OS que já está tratando. Confira antes: é só um aviso, nada é alterado aqui.</p>
+  <div class="kpis"><div class="kpi"><b>${fechar}</b><span>OS repetidas para tratar (fechar)</span></div><div class="kpi"><b>${fAnd}</b><span>Já tratadas em outra OS (com tratativa, material ou externo)</span></div><div class="kpi"><b>${fechar-fAnd}</b><span>Ainda sem tratativa: juntar numa OS só</span></div><div class="kpi"><b>${G.length}</b><span>Grupos</span></div></div>
+  <p class="muted">Só OS em aberto (fechadas e canceladas não entram), do mesmo setor e com descrição parecida. A primeira de cada grupo é a que fica (a mais adiantada: material/externo, em execução, programado, compra, supervisão ou planejamento); as outras devem ser fechadas no MV informando a OS que já está tratando. Confira antes: é só um aviso, nada é alterado aqui.</p>
   <p><button id="cpRep">Copiar lista para o Excel</button></p>
   ${G.map((a,i)=>`<div class="card rq"><h3>${i+1}. ${esc(a[0].setor)}</h3><p>${a.link?'<span class="tag">observação cita outra OS</span> ':''}${a.mesmaLoc?'<span class="tag">mesma localidade</span> ':''}${a.mesmoSolic?'<span class="tag">mesmo solicitante</span> ':''}<span class="tag">${a.length} OS</span></p><div class="drill" style="margin:0">${a.map(card).join('')}</div></div>`).join('') || '<div class="card">Nenhuma OS repetida encontrada.</div>'}`;
   const b = $('#cpRep'); if (b) b.onclick = () => copy(['Grupo\tO que fazer\tOS\tFila\tPendente de\tPedido\tSetor\tLocalidade\tSolicitante\tDescrição\tObservação', ...G.flatMap((a,i)=>a.map(o=>[i+1,o.repAcao,o.os,o.fila,o.pendente||'',fd(o.pedido),o.setor,o.localidade||'',o.solicitante||'',o.desc,o.obs||''].map(x=>String(x).replace(/[\t\n\r]+/g,' ')).join('\t')))].join('\n'));
@@ -992,7 +994,7 @@ function relBlocos(k, L, Lall, P){
   }
   if (k === 'lista') return [['Lista de OS: '+P.rot], [], ...tabela('OS', cabOS, L.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(linhaOS))];
   if (k === 'arr') { const I = P.todos.filter(o=>o.arrumar.length && (!P.ini || (o.pedido && o.pedido>=P.ini && o.pedido<=E))); return [['Para arrumar no MV: '+P.rot], [], ...tabela('OS', ['Problema',...cabOS], I.map(o=>[o.arrumar.join('; '), ...linhaOS(o)]))]; }
-  if (k === 'rep') { const G = Core.repetidas(P.todos); return [['OS repetidas em aberto (situação atual)'], [], ...tabela('Resumo', ['Indicador','OS'], [['OS repetidas para tratar (fechar)', G.reduce((s,a)=>s+a.length-1,0)], ['Já tratadas em outra OS (compra, material ou externo)', G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Ainda sem tratativa (juntar numa OS só)', G.filter(a=>!a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Grupos', G.length]]), ...tabela('Grupos', ['Grupo','O que fazer','Motivo',...cabOS,'Solicitante'], G.flatMap((a,i)=>a.map(o=>[i+1, o.repAcao, [a.link?'observação cita outra OS':'', a.mesmaLoc?'mesma localidade':'', a.mesmoSolic?'mesmo solicitante':''].filter(Boolean).join(', ') || 'descrição parecida', ...linhaOS(o), o.solicitante||''])))]; }
+  if (k === 'rep') { const G = Core.repetidas(P.todos); return [['OS repetidas em aberto (situação atual)'], [], ...tabela('Resumo', ['Indicador','OS'], [['OS repetidas para tratar (fechar)', G.reduce((s,a)=>s+a.length-1,0)], ['Já tratadas em outra OS (com tratativa, material ou externo)', G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Ainda sem tratativa (juntar numa OS só)', G.filter(a=>!a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Grupos', G.length]]), ...tabela('Grupos', ['Grupo','O que fazer','Motivo',...cabOS,'Solicitante'], G.flatMap((a,i)=>a.map(o=>[i+1, o.repAcao, [a.link?'observação cita outra OS':'', a.mesmaLoc?'mesma localidade':'', a.mesmoSolic?'mesmo solicitante':''].filter(Boolean).join(', ') || 'descrição parecida', ...linhaOS(o), o.solicitante||''])))]; }
   return [];
 }
 async function gerarRel(){
