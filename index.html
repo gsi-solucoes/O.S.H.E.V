@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-J3FIfcdBP25x7ofRaJOqClmuYH9ZwbxV2wvSjukA9xo='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-KQ3xL8HN48O34E4Wd8Qfwl/SSALExqGIixDOsMZtpfs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -302,7 +302,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
-const VERSAO = "9e634fbbac";
+const VERSAO = "3e9ab50684";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -422,17 +422,21 @@ async function lerArquivo(f) {
   return await importar(fm, corpo);
 }
 async function importar(fm, corpo) {
-  const c = fm.conjunto, icod = fm.cols.findIndex(x => x.t === 'codigo'), campos = fm.cols.filter(x => x.t !== 'ignorar' && x.t !== 'codigo');
+  let c = fm.conjunto; const icod = fm.cols.findIndex(x => x.t === 'codigo'), campos = fm.cols.filter(x => x.t !== 'ignorar' && x.t !== 'codigo');
   const cod = fm.cols[icod].n;
-  const atual = conjs[c] || { campos: [] };
-  [{ n: cod, t: 'codigo' }].concat(campos).forEach(x => { if (!atual.campos.some(y => y.n === x.n)) atual.campos.push({ n: x.n, t: x.t }); });
-  conjs[c] = atual; salvaConjs();
   const noArq = new Map();
   corpo.forEach(r => {
     const k = Core.t(r[icod]); if (!k) return;
     const v = {}; fm.cols.forEach((x, j) => { if (x.t === 'ignorar' || x.t === 'codigo') return; let s = Core.t(r[j]); if (x.t === 'data') s = Core.dataISO(s); if (s) v[x.n] = s; });
     noArq.set(k, Core.juntar(noArq.get(k), v));
   });
+  // Junção: mesmo nome de campo código e ao menos um código já guardado num conjunto -> entra nele, campo a campo.
+  const comum = n => { for (const k of noArq.keys()) if (mapa.has(chave(n, k))) return true; return false; };
+  const mesmoCod = n => (conjs[n].campos.find(y => y.t === 'codigo') || {}).n === cod;
+  if (!(conjs[c] && mesmoCod(c) && comum(c))) { const alvo = Object.keys(conjs).find(n => mesmoCod(n) && comum(n)); if (alvo) c = alvo; }
+  const atual = conjs[c] || { campos: [] };
+  [{ n: cod, t: 'codigo' }].concat(campos).forEach(x => { if (!atual.campos.some(y => y.n === x.n)) atual.campos.push({ n: x.n, t: x.t }); });
+  conjs[c] = atual; salvaConjs();
   const mudou = []; let novos = 0;
   noArq.forEach((v, k) => {
     const ant = mapa.get(chave(c, k));

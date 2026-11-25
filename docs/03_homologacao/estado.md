@@ -3,6 +3,7 @@
 Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada no `main`.
 
 ## Pronto
+- Junção (CA-81): arquivo com campo código de mesmo nome e códigos já existentes num conjunto entra nele campo a campo (só campos não vazios); sem códigos em comum, conjunto próprio.
 - `src/core.js` novo e genérico: leitor CSV (`;` `,` tab, UTF-8/Windows-1252, cabeçalho automático), tipos por palpite, junção campo a campo, tempo entre datas em faixas e "h min", meta (padrão 90%), semelhança de texto (>= 80%), possíveis repetidos (peso por raridade).
 - `src/app.js` + `src/app.html` novos: aba Painel (Total de registros, mais antigo/mais novo, barras por categoria e por mês, tempo entre datas, tabela de registros, filtros fechados no início: período tudo/mês/de–até, campo categoria, busca), aba Config (cliente, área, logo, metas, sinônimos vazios, formatos lembrados com "Esquecer", backup/restaurar/apagar, versão Excel com 4 passos).
 - Importador "Esta coluna é o quê?" com formato lembrado (localStorage `raiox_fmt`); registros no IndexedDB `gos_hist` (store novo `registros`; o store antigo `os` fica intacto e é copiado uma vez como conjunto "Histórico anterior"); `gos_cfg` mantido.

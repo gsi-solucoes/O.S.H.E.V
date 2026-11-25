@@ -117,17 +117,21 @@ async function lerArquivo(f) {
   return await importar(fm, corpo);
 }
 async function importar(fm, corpo) {
-  const c = fm.conjunto, icod = fm.cols.findIndex(x => x.t === 'codigo'), campos = fm.cols.filter(x => x.t !== 'ignorar' && x.t !== 'codigo');
+  let c = fm.conjunto; const icod = fm.cols.findIndex(x => x.t === 'codigo'), campos = fm.cols.filter(x => x.t !== 'ignorar' && x.t !== 'codigo');
   const cod = fm.cols[icod].n;
-  const atual = conjs[c] || { campos: [] };
-  [{ n: cod, t: 'codigo' }].concat(campos).forEach(x => { if (!atual.campos.some(y => y.n === x.n)) atual.campos.push({ n: x.n, t: x.t }); });
-  conjs[c] = atual; salvaConjs();
   const noArq = new Map();
   corpo.forEach(r => {
     const k = Core.t(r[icod]); if (!k) return;
     const v = {}; fm.cols.forEach((x, j) => { if (x.t === 'ignorar' || x.t === 'codigo') return; let s = Core.t(r[j]); if (x.t === 'data') s = Core.dataISO(s); if (s) v[x.n] = s; });
     noArq.set(k, Core.juntar(noArq.get(k), v));
   });
+  // Junção: mesmo nome de campo código e ao menos um código já guardado num conjunto -> entra nele, campo a campo.
+  const comum = n => { for (const k of noArq.keys()) if (mapa.has(chave(n, k))) return true; return false; };
+  const mesmoCod = n => (conjs[n].campos.find(y => y.t === 'codigo') || {}).n === cod;
+  if (!(conjs[c] && mesmoCod(c) && comum(c))) { const alvo = Object.keys(conjs).find(n => mesmoCod(n) && comum(n)); if (alvo) c = alvo; }
+  const atual = conjs[c] || { campos: [] };
+  [{ n: cod, t: 'codigo' }].concat(campos).forEach(x => { if (!atual.campos.some(y => y.n === x.n)) atual.campos.push({ n: x.n, t: x.t }); });
+  conjs[c] = atual; salvaConjs();
   const mudou = []; let novos = 0;
   noArq.forEach((v, k) => {
     const ant = mapa.get(chave(c, k));
