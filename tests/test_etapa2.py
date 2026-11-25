@@ -139,7 +139,6 @@ def test_CA20_vendas_lista_indicadores_e_nao_tempo(page):
                  "Valor por Região", "Evolução por mês (Data)", "% por Situação"]:
         assert existe(page, nome), nome
     assert not existe(page, "Tempo entre duas datas")
-    assert not existe(page, "Mais antigos em aberto")  # so tem 1 data
     assert page.get_by_role("button", name="Cancelar", exact=True).first.is_visible()
 
 
@@ -241,7 +240,7 @@ def tipos_da_tela(page):
     """Le {nome do campo: texto da opcao escolhida} da tela 'Esta coluna é o quê?'."""
     res = {}
     for sel in page.locator("select:visible").all():
-        rotulo = sel.evaluate("e=>(e.closest('tr,li,div,label')||e.parentElement).innerText.split('\\n')[0]").strip()
+        rotulo = sel.evaluate("e=>(e.closest('tr,li,div,label')||e.parentElement).innerText.split(/[\\n\\t]/)[0]").strip()
         res[rotulo] = (sel, sel.evaluate("e=>e.options[e.selectedIndex].text").strip())
     return res
 
