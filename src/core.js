@@ -143,7 +143,171 @@ var Core = (function () {
     return pares;
   }
 
-  return { decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
+  // ---- pedido escrito ("Peça um indicador"): separa a frase em medida, campo, agrupar, filtros e período; sem rede e sem IA ----
+  var P_STOP = ' de do da dos das o a os as um uma uns umas e em no na nos nas ao aos para pra pelo pela pelos pelas com sem que foi foram ser sao esta estao tem teve houve me mostre mostra mostrar ver veja quero queria gostaria so soh somente apenas agrupado agrupada separado separada dividido dividida segundo conforme ate entre desde por cada este esse neste nesse qual quais ';
+  var P_MED = [['quantidade', 'quantidade'], ['quanto', 'quantidade'], ['quanta', 'quantidade'], ['qtd', 'quantidade'], ['qtde', 'quantidade'], ['qte', 'quantidade'], ['contagem', 'quantidade'],
+    ['soma', 'soma'], ['somar', 'soma'], ['some', 'soma'], ['somatorio', 'soma'], ['total', 'total'], ['totalizar', 'total'], ['media', 'media'], ['medio', 'media'], ['mediana', 'mediana'],
+    ['minimo', 'minimo'], ['minima', 'minimo'], ['menor', 'minimo'], ['maximo', 'maximo'], ['maxima', 'maximo'], ['maior', 'maximo'],
+    ['percentual', 'percentual'], ['porcentagem', 'percentual'], ['percentagem', 'percentual'], ['pct', 'percentual'], ['proporcao', 'percentual'], ['porcento', 'percentual'], ['%', 'percentual']];
+  var P_SUBST = ' registro linha item ocorrencia caso resultado dado ';
+  var P_MESES = ['janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  function sing1(w) {
+    if (w.length <= 3) return w;
+    if (/oes$/.test(w) || /aes$/.test(w)) return w.slice(0, -3) + 'ao';
+    if (/ais$/.test(w)) return w.slice(0, -3) + 'al';
+    if (/eis$/.test(w)) return w.slice(0, -3) + 'el';
+    if (/ns$/.test(w)) return w.slice(0, -2) + 'm';
+    if (/(res|zes|ses)$/.test(w) && w.length > 4 || w === 'meses') return w.slice(0, -2);
+    if (/s$/.test(w)) return w.slice(0, -1);
+    return w;
+  }
+  function nz(s) { return norm(s).toLowerCase(); }
+  function S(s) { return nz(s).split(' ').filter(Boolean).map(sing1).join(' '); }
+  // razão de caracteres iguais (2·casados/total, como o SequenceMatcher); abaixo de 4 letras só vale igual
+  function casados(a, b) {
+    if (!a.length || !b.length) return 0;
+    var bi = 0, bj = 0, bl = 0, i, j, k;
+    for (i = 0; i < a.length; i++) for (j = 0; j < b.length; j++) { k = 0; while (i + k < a.length && j + k < b.length && a[i + k] === b[j + k]) k++; if (k > bl) { bl = k; bi = i; bj = j; } }
+    return bl ? bl + casados(a.slice(0, bi), b.slice(0, bj)) + casados(a.slice(bi + bl), b.slice(bj + bl)) : 0;
+  }
+  function sim(a, b) { if (a === b) return 1; if (a.length < 4 || b.length < 4) return 0; return 2 * casados(a, b) / (a.length + b.length); }
+  function p2n(n) { return (n < 10 ? '0' : '') + n; }
+  function entender(frase, ctx) {
+    frase = String(frase == null ? '' : frase); ctx = ctx || {};
+    var campos = (ctx.campos || []).filter(function (k) { return k.t !== 'codigo' && k.t !== 'ignorar'; }), vals = ctx.valores || {}, sin = ctx.sin || {};
+    var out = { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [] };
+    var H = ctx.hoje && /^\d{4}-\d{2}-\d{2}/.test(ctx.hoje) ? { a: +ctx.hoje.slice(0, 4), m: +ctx.hoje.slice(5, 7), d: +ctx.hoje.slice(8, 10) } : null;
+    var tk = [], re = /\S+/g, mm;
+    while ((mm = re.exec(frase))) { var raw = mm[0].replace(/^[("'“‘¿¡]+|[)"'”’,.;:!?]+$/g, ''); if (!raw) continue; tk.push({ raw: raw, ini: mm.index, fim: mm.index + mm[0].length, n: raw === '%' ? '%' : sing1(nz(raw)), ok: false, forca: null }); }
+    var fld = campos.map(function (k) { return { ref: k, chave: S(k.n) }; });
+    var vls = []; Object.keys(vals).forEach(function (c) { (vals[c] || []).forEach(function (v) { var ch = S(v); if (ch) vls.push({ campo: c, valor: v, chave: ch }); }); });
+    function conhecida(n) { return P_STOP.indexOf(' ' + n + ' ') >= 0 || P_MED.some(function (x) { return x[0] === n; }) || fld.some(function (f) { return f.chave === n; }) || vls.some(function (v) { return v.chave === n; }); }
+    // sinônimos (raiox_sin): apelido -> medida ou campo (ou valor)
+    var sinL = Object.keys(sin).map(function (a) { return [S(a).split(' '), String(sin[a])]; }).filter(function (p) { return p[0][0]; }).sort(function (a, b) { return b[0].length - a[0].length; });
+    sinL.forEach(function (p) {
+      for (var i = 0; i + p[0].length <= tk.length; i++) {
+        if (tk[i].ok || tk[i].forca || !p[0].every(function (w, j) { return !tk[i + j].ok && !tk[i + j].forca && tk[i + j].n === w; })) continue;
+        var al = S(p[1]), f = null, md = P_MED.filter(function (x) { return x[0] === al; })[0];
+        if (md) f = { t: 'med', m: md[1] }; else { var fc = fld.filter(function (x) { return x.chave === al; })[0]; if (fc) f = { t: 'campo', ref: fc.ref }; else { var vv = vls.filter(function (x) { return x.chave === al; })[0]; if (vv) f = { t: 'val', campo: vv.campo, valor: vv.valor }; } }
+        if (!f) continue;
+        tk[i].forca = f; for (var j = 1; j < p[0].length; j++) tk[i + j].ok = true;
+      }
+    });
+    // ---- período (antes do resto: "este mês", "mês passado", datas...) ----
+    function validD(a, m, d) { var x = new Date(a, m - 1, d); return x.getFullYear() === a && x.getMonth() === m - 1 && x.getDate() === d; }
+    function isoD(a, m, d) { return a + '-' + p2n(m) + '-' + p2n(d); }
+    function addDias(iso, n) { var x = new Date(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10) + n); return x.getFullYear() + '-' + p2n(x.getMonth() + 1) + '-' + p2n(x.getDate()); }
+    function dataDe(raw) {
+      var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw); if (m) return validD(+m[1], +m[2], +m[3]) ? isoD(+m[1], +m[2], +m[3]) : null;
+      m = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{4}|\d{2}))?$/.exec(raw); if (!m) return null;
+      var a = m[3] ? (m[3].length === 2 ? 2000 + +m[3] : +m[3]) : (H ? H.a : null); if (a == null) return null;
+      return validD(a, +m[2], +m[1]) ? isoD(a, +m[2], +m[1]) : null;
+    }
+    var hojeISO = H ? isoD(H.a, H.m, H.d) : null;
+    function anoDoMes(mes) { var a = null; (ctx.meses || []).forEach(function (k) { if (+k.slice(5, 7) === mes && (a == null || +k.slice(0, 4) > a)) a = +k.slice(0, 4); }); return a != null ? a : (H ? H.a : null); }
+    function setP(p, ids) { if (out.periodo || !p) return false; out.periodo = p; ids.forEach(function (j) { tk[j].ok = true; }); return true; }
+    function livre(i) { return i < tk.length && !tk[i].ok && !tk[i].forca; }
+    for (var i = 0; i < tk.length; i++) {
+      if (!livre(i)) continue;
+      var r = tk[i].raw, n = tk[i].n, m2, d1 = dataDe(r), prev = i > 0 && !tk[i - 1].ok ? tk[i - 1].n : '', nx = livre(i + 1) ? tk[i + 1].n : '';
+      if ((m2 = /^(\d{1,2})\/(\d{4})$/.exec(r))) { if (+m2[1] >= 1 && +m2[1] <= 12) setP({ tipo: 'mes', mes: +m2[1], ano: +m2[2] }, [i]); continue; }
+      if (d1) {
+        if (livre(i + 2) && /^(a|ate|e|ao|-)$/.test(nx) && dataDe(tk[i + 2].raw)) { var d2 = dataDe(tk[i + 2].raw), de = d1, ate = d2; if (de > ate) { de = d2; ate = d1; } setP({ tipo: 'intervalo', de: de, ate: ate }, [i, i + 1, i + 2]); }
+        else setP({ tipo: 'intervalo', de: d1, ate: d1 }, [i]);
+        continue;
+      }
+      if (n === 'hoje' && hojeISO) { setP({ tipo: 'intervalo', de: hojeISO, ate: hojeISO }, [i]); continue; }
+      if (n === 'ontem' && hojeISO) { var o = addDias(hojeISO, -1); setP({ tipo: 'intervalo', de: o, ate: o }, [i]); continue; }
+      if (/^(19|20)\d\d$/.test(r) && !(i > 0 && P_MESES.indexOf(prev) >= 0)) { setP({ tipo: 'ano', ano: +r }, [i]); continue; }
+      if ((n === 'mes' || n === 'ano') && prev !== 'por' && prev !== 'cada') {
+        var rel = /^(este|esse|neste|nesse)$/.test(prev) || /^(atual|corrente)$/.test(nx) ? 0 : /^(passado|anterior)$/.test(nx) || prev === 'ultimo' ? -1 : null;
+        if (rel != null && H) {
+          var ids = [i]; if (/^(este|esse|neste|nesse|ultimo)$/.test(prev)) ids.push(i - 1); if (/^(atual|corrente|passado|anterior)$/.test(nx)) ids.push(i + 1);
+          if (ids.every(function (j) { return !tk[j].ok; })) {
+            if (n === 'ano') setP({ tipo: 'ano', ano: H.a + rel }, ids);
+            else { var mes = H.m + rel, ano = H.a; if (mes < 1) { mes = 12; ano--; } setP({ tipo: 'mes', mes: mes, ano: ano }, ids); }
+          }
+        }
+        continue;
+      }
+      if (n === 'ultimo' && livre(i + 1) && /^\d+$/.test(tk[i + 1].raw) && livre(i + 2) && tk[i + 2].n === 'dia' && hojeISO) { setP({ tipo: 'intervalo', de: addDias(hojeISO, -(+tk[i + 1].raw)), ate: hojeISO }, [i, i + 1, i + 2]); continue; }
+      var im = P_MESES.indexOf(n), simM = 1;
+      if (im < 0 && n.length >= 5 && !conhecida(n) && !/\d/.test(n)) {
+        var best = 0.8, cnt = 0; P_MESES.forEach(function (x, j) { var s = sim(n, x); if (s > best + 1e-9) { best = s; im = j; cnt = 1; } else if (s >= best - 1e-9 && s >= 0.8 && j !== im) cnt++; }); if (cnt !== 1) im = -1;
+      }
+      if (im >= 0) {
+        var ids2 = [i], ano2 = null;
+        if (livre(i + 1) && tk[i + 1].n === 'de' && livre(i + 2) && /^(19|20)\d\d$/.test(tk[i + 2].raw)) { ano2 = +tk[i + 2].raw; ids2.push(i + 1, i + 2); }
+        else if (livre(i + 1) && /^(19|20)\d\d$/.test(tk[i + 1].raw)) { ano2 = +tk[i + 1].raw; ids2.push(i + 1); }
+        if (ano2 == null) ano2 = anoDoMes(im + 1);
+        if (ano2 != null) setP({ tipo: 'mes', mes: im + 1, ano: ano2 }, ids2);
+      }
+    }
+    // ---- medida, campo, agrupar e filtros ----
+    function achar(i, lista, getCh, maxw) {
+      var best = { s: 0, n: 0, ref: null };
+      for (var w = Math.min(maxw, tk.length - i); w >= 1; w--) {
+        var ok = true, gs = []; for (var j = 0; j < w; j++) { if (!livre(i + j)) { ok = false; break; } gs.push(tk[i + j].n); } if (!ok) continue;
+        var g = gs.join(' ');
+        lista.forEach(function (x) { var s = sim(g, getCh(x)); if (s >= 0.8 && s > best.s) best = { s: s, n: w, ref: x }; });
+      }
+      return best;
+    }
+    var porProx = false, aposQuant = false, total = false, unk = [];
+    function marca(i, w) { for (var j = 0; j < w; j++) tk[i + j].ok = true; }
+    function filtra(campo, valor) { if (!out.filtros.some(function (f) { return f.campo === campo && f.valor === valor; })) out.filtros.push({ campo: campo, valor: valor }); }
+    function setMed(m) { if (m === 'total') { total = true; return; } if (!out.medida) out.medida = m; }
+    for (i = 0; i < tk.length; i++) {
+      var t = tk[i]; if (t.ok) continue;
+      var cls = null;
+      if (t.forca) { cls = t.forca; t.ok = true; }
+      else if (t.n === 'por' || t.n === 'cada') { t.ok = true; porProx = true; continue; }
+      else if (P_STOP.indexOf(' ' + t.n + ' ') >= 0 && !fld.some(function (f) { return f.chave === t.n; }) && !vls.some(function (v) { return v.chave === t.n; }) && achar(i, vls, function (x) { return x.chave; }, 4).n < 2 && achar(i, fld, function (x) { return x.chave; }, 4).n < 2) { t.ok = true; continue; }
+      if (!cls) {
+        if (t.n === 'numero' && i + 1 < tk.length && tk[i + 1].n === 'de' && !fld.some(function (f) { return f.chave === 'numero'; })) { marca(i, 2); setMed('quantidade'); aposQuant = true; porProx = false; continue; }
+        if ((t.n === 'mes' || /^mensal/.test(t.n)) && (porProx || /^mensal/.test(t.n))) { t.ok = true; if (!out.agrupar) out.agrupar = 'mês'; porProx = false; aposQuant = false; continue; }
+        var med = { s: 0, m: null }; P_MED.forEach(function (x) { var s = sim(t.n, x[0]); if (s > med.s && s >= 0.8) med = { s: s, m: x[1] }; });
+        var fc = achar(i, fld, function (x) { return x.chave; }, 4);
+        if (!fc.n) { // palavra distintiva de um único campo de nome composto
+          var hit = fld.filter(function (f) { return f.chave.indexOf(' ') > 0 && f.chave.split(' ').some(function (w) { return w.length >= 4 && w === t.n; }); }); if (hit.length === 1) fc = { s: 0.9, n: 1, ref: hit[0] };
+        }
+        var vc = achar(i, vls, function (x) { return x.chave; }, 4);
+        if (med.m && med.s >= fc.s && med.s >= vc.s) cls = { t: 'med', m: med.m, w: 1 };
+        else if (fc.n && fc.s >= vc.s) cls = { t: 'campo', ref: fc.ref.ref, w: fc.n };
+        else if (vc.n) cls = { t: 'val', campo: vc.ref.campo, valor: vc.ref.valor, w: vc.n };
+        if (cls) marca(i, cls.w); else if (P_SUBST.indexOf(' ' + t.n + ' ') >= 0 || aposQuant) { t.ok = true; aposQuant = false; continue; } else { unk.push(i); porProx = false; continue; }
+      }
+      var por = porProx; porProx = false; aposQuant = false;
+      if (cls.t === 'med') { setMed(cls.m); if (cls.m === 'quantidade') aposQuant = true; }
+      else if (cls.t === 'val') filtra(cls.campo, cls.valor);
+      else {
+        var k = cls.ref, w2 = cls.w || 1;
+        var falha = function () { for (var q0 = i; q0 < i + w2; q0++) unk.push(q0); };
+        if (por) { if (k.t === 'data') { if (!out.agrupar) out.agrupar = 'mês'; } else if (k.t !== 'numero' && !out.agrupar) out.agrupar = k.n; else falha(); }
+        else if (k.t === 'numero') { if (!out.campo) out.campo = k.n; }
+        else if (k.t === 'data') { /* menção ao campo de data: nada a fazer */ }
+        else {
+          var j2 = i + w2; while (j2 < tk.length && !tk[j2].ok && /^(de|do|da|igual|e|=)$/.test(tk[j2].n) && j2 - (i + w2) < 2) j2++;
+          var lv = (vals[k.n] || []).map(function (v) { return { campo: k.n, valor: v, chave: S(v) }; }), vm = j2 < tk.length ? achar(j2, lv, function (x) { return x.chave; }, 4) : { n: 0 };
+          if (vm.n) { for (var q = i + w2; q < j2 + vm.n; q++) tk[q].ok = true; filtra(k.n, vm.ref.valor); }
+          else falha();
+        }
+      }
+    }
+    if (!out.medida && total) out.medida = out.campo ? 'soma' : 'quantidade';
+    if (!out.medida && out.campo) out.medida = 'soma';
+    // trechos não entendidos: palavras soltas (e as palavrinhas entre elas) viram um trecho só, com o texto original da frase
+    var unkSet = {}; unk.forEach(function (j) { unkSet[j] = 1; });
+    var j3 = 0; while (j3 < tk.length) {
+      if (!unkSet[j3]) { j3++; continue; }
+      var fim = j3, k3 = j3 + 1; while (k3 < tk.length) { if (unkSet[k3]) fim = k3; else if (P_STOP.indexOf(' ' + tk[k3].n + ' ') < 0) break; k3++; }
+      out.naoEntendi.push(frase.slice(tk[j3].ini, tk[fim].fim).replace(/[,.;:!?]+$/, '')); j3 = fim + 1;
+    }
+    if (!out.medida && !out.campo && !out.agrupar && !out.filtros.length && !out.periodo && out.naoEntendi.length) out.naoEntendi = [frase.trim().replace(/[,.;:!?]+$/, '')];   // nada entendido: a frase inteira é o trecho
+    return out;
+  }
+
+  return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();

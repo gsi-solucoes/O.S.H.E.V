@@ -47,7 +47,10 @@ function validarBackup(b) {
     if (b.cfg != null && (typeof b.cfg !== 'object' || Array.isArray(b.cfg))) return null;
     const ac = nulo();
     if (b.acomp != null) { if (typeof b.acomp !== 'object' || Array.isArray(b.acomp)) return null; const r = acompLimpa(b.acomp); if (!r) return null; Object.assign(ac, r); }
-    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac };
+    let sn = nulo(), mu = nulo();
+    if (b.sin != null) { sn = sinLimpo(b.sin); if (!sn) return null; }
+    if (b.meus != null) { mu = meusLimpo(b.meus); if (!mu) return null; }
+    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac, sin: sn, meus: mu };
   } catch (e) { return null; }
 }
 let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' });
@@ -246,7 +249,8 @@ function render() {
   $('#kTotal').onclick = () => abrirJanela('Todos os registros', L, c);
 
   const escolhidos = blocosEscolhidos(c); $('#kpis').hidden = $('#blocos').hidden = !!escolhidos.length; $('#blocosEsc').hidden = !escolhidos.length;
-  $('#btnEntender').hidden = !escolhidos.length; $('#blocosEsc').textContent = '';
+  const meusB = blocosMeus(c); $('#btnEntender').hidden = !(escolhidos.length || meusB.length); $('#blocosEsc').textContent = '';
+  $('#meusInd').hidden = !meusB.length; $('#meusGrade').textContent = ''; meusB.forEach(b => $('#meusGrade').append(b.desenha(L, c)));
   if (escolhidos.length) escolhidos.forEach(b => $('#blocosEsc').append(b.desenha(L, c)));
   const bl = $('#blocos'); bl.textContent = '';
   if (!escolhidos.length) cats.slice(0, 3).forEach(cat => {
@@ -367,13 +371,13 @@ function filtrosResumo() {
 function resumoBlocos(c, blocos, L) {
   const fl = filtrosResumo();
   return blocos.map(b => {
-    const cd = b.dataCampo || campoData(c), datas = cd ? L.map(r => r.v[cd]).filter(Boolean).sort() : [];
+    const Lb = b.aplica ? b.aplica(L) : L, cd = b.dataCampo || campoData(c), datas = cd ? Lb.map(r => r.v[cd]).filter(Boolean).sort() : [];
     const per = datas.length ? 'de ' + fmtD(datas[0]) + ' a ' + fmtD(datas[datas.length - 1]) : 'sem datas';
-    return { nome: b.nome, texto: b.nome + ' — ' + b.oque + '. Conta: ' + b.conta + '. Campos: ' + b.campos + '. Período: ' + per + '. Filtros: ' + fl + '.' };
+    return { nome: b.nome, texto: b.nome + ' — ' + b.oque + '. Conta: ' + b.conta + '. Campos: ' + b.campos + '. Período: ' + per + '. Filtros: ' + (b.filtrosProprios ? (fl === 'sem filtros' ? '' : fl + '; ') + b.filtrosProprios : fl) + '.' };
   });
 }
 function abrirPainel(c) {
-  const bl = blocosEscolhidos(c); if (!bl.length) return;
+  const bl = blocosPainel(c); if (!bl.length) return;
   const d = $('#dlgPainel'), ol = $('#painelLista'); ol.textContent = '';
   resumoBlocos(c, bl, filtrar(c)).forEach(x => ol.append(el('li', null, x.texto)));
   d.showModal();
@@ -393,6 +397,198 @@ function janelaAcomp(c) {
     d.onclose = () => { const salvou = d.returnValue === 'ok'; d.returnValue = ''; if (salvou) { render(); abrirPainel(c); } ok(salvou); };
     d.showModal();
   });
+}
+
+/* ---------- etapa 3: "Peça um indicador" (pedido escrito com "É isso?"; sem rede e sem IA) ---------- */
+const MEDS = ['quantidade', 'soma', 'media', 'mediana', 'minimo', 'maximo', 'percentual'];
+const MED_NOME = { quantidade: 'Quantidade', soma: 'Soma', media: 'Média', mediana: 'Mediana', minimo: 'Mínimo', maximo: 'Máximo', percentual: 'Percentual' };
+const MED_SIN = { quantidade: 'quantidade', soma: 'soma', media: 'média', mediana: 'mediana', minimo: 'mínimo', maximo: 'máximo', percentual: 'percentual' };
+const z2 = n => String(n).padStart(2, '0');
+const txtOk = x => typeof x === 'string' && x.length > 0 && x.length <= 200;
+// sinônimos vindos de fora (localStorage, backup): até 200 pares de textos curtos; inválido = null
+function sinLimpo(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const ks = Object.keys(o); if (ks.length > 200) return null; const r = nulo();
+  for (const k of ks) { if (!k.trim() || k.length > 100 || typeof o[k] !== 'string' || !o[k].trim() || o[k].length > 100) return null; r[k] = o[k]; }
+  return r;
+}
+function pedLimpo(p) {
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
+  if (p.medida !== null && MEDS.indexOf(p.medida) < 0) return null;
+  if (!(p.campo === null || txtOk(p.campo)) || !(p.agrupar === null || txtOk(p.agrupar))) return null;
+  if (!Array.isArray(p.filtros) || p.filtros.length > 10 || !p.filtros.every(f => f && typeof f === 'object' && txtOk(f.campo) && txtOk(f.valor))) return null;
+  let per = null; const q = p.periodo;
+  if (q !== null) {
+    if (!q || typeof q !== 'object') return null; const d = x => typeof x === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(x);
+    if (q.tipo === 'mes' && Number.isInteger(q.mes) && q.mes >= 1 && q.mes <= 12 && Number.isInteger(q.ano)) per = { tipo: 'mes', mes: q.mes, ano: q.ano };
+    else if (q.tipo === 'ano' && Number.isInteger(q.ano)) per = { tipo: 'ano', ano: q.ano };
+    else if (q.tipo === 'intervalo' && d(q.de) && d(q.ate)) per = { tipo: 'intervalo', de: q.de, ate: q.ate }; else return null;
+  }
+  return { medida: p.medida, campo: p.campo, agrupar: p.agrupar, filtros: p.filtros.map(f => ({ campo: f.campo, valor: f.valor })), periodo: per };
+}
+function meusLimpo(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const ks = Object.keys(o); if (ks.length > 200) return null; const r = nulo();
+  for (const k of ks) { const l = o[k]; if (!Array.isArray(l) || l.length > 50) return null; const m = l.map(pedLimpo); if (m.some(x => !x)) return null; r[k] = m; }
+  return r;
+}
+let meus = meusLimpo(store.get('raiox_meus', {})) || nulo();   // conjunto -> [pedidos confirmados com "Sim"]
+const salvaMeus = () => store.set('raiox_meus', meus);
+const sinMap = () => sinLimpo(store.get('raiox_sin', {})) || nulo();
+
+function ctxPedido(c) {
+  const L = doConj(c), valores = {}, meses = new Set(); let hoje = '';
+  camposDe(c, 'categoria').forEach(k => { const s = new Set(); L.forEach(r => { const v = r.v[k.n]; if (v) s.add(v); }); valores[k.n] = [...s].slice(0, 500); });
+  camposDe(c, 'data').forEach(k => L.forEach(r => { const v = r.v[k.n]; if (v) { if (v.slice(0, 10) > hoje) hoje = v.slice(0, 10); meses.add(v.slice(0, 7)); } }));   // "hoje" = maior data dos registros, nunca o relógio
+  return { campos: ((conjs[c] || {}).campos || []).map(k => ({ n: k.n, t: k.t })), valores, hoje: hoje || null, meses: [...meses], sin: sinMap() };
+}
+const achaConj = nome => { if (conjs[nome]) return nome; const n = Core.norm(nome || ''); return Object.keys(conjs).find(k => Core.norm(k) === n) || F.conjunto; };
+const entenderPed = (frase, c) => Core.entender(frase, ctxPedido(c));
+window.__entender = (frase, nome) => { const c = achaConj(nome); return JSON.parse(JSON.stringify(c && conjs[c] ? entenderPed(frase, c) : { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [String(frase || '')] })); };
+
+const perTxt = p => !p ? '' : p.tipo === 'mes' ? MESES[p.mes - 1] + '/' + p.ano : p.tipo === 'ano' ? String(p.ano) : p.de === p.ate ? fmtD(p.de) : 'de ' + fmtD(p.de) + ' a ' + fmtD(p.ate);
+// na medida "percentual" o filtro da situação é o numerador (a fatia que se quer); os demais filtram os registros
+function numerador(ped, c) { if (ped.medida !== 'percentual' || !ped.filtros.length) return null; const sit = camposDe(c, 'situacao').map(k => k.n); return (ped.filtros.find(f => sit.indexOf(f.campo) >= 0) || ped.filtros[0]).campo; }
+function partesFiltro(ped, c) {
+  const cn = numerador(ped, c), g = new Map(); ped.filtros.forEach(f => { if (f.campo === cn) return; (g.get(f.campo) || g.set(f.campo, []).get(f.campo)).push(f.valor); });
+  return { cn, grupos: [...g].map(([campo, vals]) => ({ campo, vals })), nums: cn ? ped.filtros.filter(f => f.campo === cn).map(f => f.valor) : [] };
+}
+const filtrosPedTxt = (ped, c) => partesFiltro(ped, c).grupos.map(g => 'só ' + g.campo.toLowerCase() + ' ' + g.vals.join(' ou ')).join('; ');
+function medidaTxt(ped, c) {
+  if (!ped.medida) return '(escolha a medida)';
+  if (ped.medida === 'quantidade') return 'Quantidade de registros';
+  if (ped.medida === 'percentual') { const pf = partesFiltro(ped, c); return 'Percentual de registros' + (pf.cn ? ' com ' + pf.cn + ' ' + pf.nums.join(' ou ') : ' (escolha a situação em Filtro)'); }
+  return MED_NOME[ped.medida] + ' de ' + (ped.campo || '(escolha o campo)');
+}
+const resumoPed = (ped, c) => [medidaTxt(ped, c), ped.agrupar ? 'por ' + ped.agrupar : '', filtrosPedTxt(ped, c), perTxt(ped.periodo)].filter(Boolean).join(' · ');
+function faltaPed(ped) {
+  if (!ped.medida) return 'Falta a medida. Toque em Não e escolha em Medida.';
+  if (ped.medida === 'percentual') return ped.filtros.length ? '' : 'Falta a situação cuja fatia você quer. Toque em Não e escolha em Filtro.';
+  if (ped.medida !== 'quantidade' && !ped.campo) return 'Falta o campo. Toque em Não e escolha em Campo.';
+  return '';
+}
+function listaPed(ped, L, c) {
+  const cd = campoData(c), p = ped.periodo; let B = L;
+  if (p) B = !cd ? [] : B.filter(r => { const d = (r.v[cd] || '').slice(0, 10); return !!d && (p.tipo === 'mes' ? d.slice(0, 7) === p.ano + '-' + z2(p.mes) : p.tipo === 'ano' ? d.slice(0, 4) === String(p.ano) : d >= p.de && d <= p.ate); });
+  const pf = partesFiltro(ped, c); pf.grupos.forEach(g => { B = B.filter(r => g.vals.indexOf(r.v[g.campo]) >= 0); });
+  return { base: B, nset: new Set(pf.cn ? B.filter(r => pf.nums.indexOf(r.v[pf.cn]) >= 0) : []) };
+}
+const fmtVal = (ped, v) => v == null ? '—' : ped.medida === 'quantidade' ? fmtI(v) : ped.medida === 'percentual' ? fmtP(v) : fmtN(v);
+function calcPed(ped, L, c) {
+  const { base, nset } = listaPed(ped, L, c), cd = campoData(c);
+  const val = l => {
+    if (ped.medida === 'quantidade') return l.length;
+    if (ped.medida === 'percentual') return l.length ? 100 * l.filter(r => nset.has(r)).length / l.length : null;
+    const v = numeros(l, ped.campo); if (!v.length) return null; const s = v.reduce((a, b) => a + b, 0);
+    return ped.medida === 'soma' ? s : ped.medida === 'media' ? s / v.length : ped.medida === 'mediana' ? Core.mediana(v) : ped.medida === 'minimo' ? v.reduce((a, b) => Math.min(a, b)) : v.reduce((a, b) => Math.max(a, b));
+  };
+  if (!ped.agrupar) return { base, valor: val(base) };
+  const gr = [...agrupa(base, r => ped.agrupar === 'mês' ? (cd ? (r.v[cd] || '').slice(0, 7) : '') : r.v[ped.agrupar])];
+  let itens;
+  if (ped.agrupar === 'mês') itens = gr.sort((a, b) => a[0] < b[0] ? -1 : 1).map(([k, l]) => [fmtM(k), val(l), l]);
+  else {
+    const o = gr.map(([k, l]) => [k, l, val(l)]).sort((a, b) => (b[2] == null ? -Infinity : b[2]) - (a[2] == null ? -Infinity : a[2]) || String(a[0]).localeCompare(String(b[0]), 'pt'));
+    itens = o.slice(0, 10).map(([k, l, v]) => [k, v, l]); const resto = o.slice(10).flatMap(x => x[1]); if (resto.length) itens.push(['Outros', val(resto), resto]);
+  }
+  return { base, itens };
+}
+// corpo do bloco (número ou gráfico); na prévia o valor leva data-testid="previa-valor" e nada abre janela
+function corpoPed(ped, L, c, previa, titulo) {
+  const f = faltaPed(ped); if (f) return el('p', { class: 'muted', text: f });
+  const r = calcPed(ped, L, c);
+  if (!ped.agrupar) {
+    const b = el('b', { text: fmtVal(ped, r.valor) }); if (previa) b.setAttribute('data-testid', 'previa-valor');
+    const k = previa ? el('div', { class: 'kpi' }, b) : el('button', { class: 'kpi', type: 'button', onclick: () => abrirJanela(titulo, r.base, c) }, b);
+    return el('div', null, k, el('p', { class: 'muted', text: fmtI(r.base.length) + ' registros considerados' }));
+  }
+  if (!r.itens.length) return el('p', { class: 'muted', text: 'Nenhum registro para este pedido.' });
+  return barras(r.itens.map(([n, v, l]) => [n, v == null ? 0 : v, l, fmtVal(ped, v)]), previa ? () => {} : (n, l) => abrirJanela(titulo + ': ' + n, l, c));
+}
+function contaPed(ped, c) {
+  const por = ped.agrupar ? ', separada por ' + ped.agrupar : '', k = ped.campo || '(campo)';
+  if (ped.medida === 'quantidade') return 'contagem de registros' + (ped.agrupar ? ' por ' + ped.agrupar : '');
+  if (ped.medida === 'percentual') { const pf = partesFiltro(ped, c); return 'percentual de registros com ' + pf.cn + ' ' + pf.nums.join(' ou ') + (ped.agrupar ? ', por ' + ped.agrupar : ''); }
+  return { soma: 'soma do campo ', media: 'média do campo ', mediana: 'mediana do campo ', minimo: 'menor valor do campo ', maximo: 'maior valor do campo ' }[ped.medida] + k + por;
+}
+function camposPed(ped, c) {
+  const l = []; const add = x => { if (x && l.indexOf(x) < 0) l.push(x); };
+  if (ped.medida && ped.medida !== 'quantidade' && ped.medida !== 'percentual') add(ped.campo);
+  if (ped.agrupar) add(ped.agrupar === 'mês' ? campoData(c) : ped.agrupar); ped.filtros.forEach(f => add(f.campo)); if (ped.periodo) add(campoData(c));
+  return l.length ? l.join(', ') : 'nenhum campo específico, conta os registros';
+}
+// bloco "Meu indicador": mesma forma dos blocos do catálogo, para entrar no Seu painel e na planilha
+function blocoMeu(c, ped, idx) {
+  const nome = resumoPed(ped, c);
+  return { nome, oque: 'o indicador pedido por escrito (' + nome + ')', conta: contaPed(ped, c), campos: camposPed(ped, c), filtrosProprios: [filtrosPedTxt(ped, c), perTxt(ped.periodo)].filter(Boolean).join('; '), aplica: L => listaPed(ped, L, c).base,
+    desenha: L => cartao({ nome }, corpoPed(ped, L, c, false, nome), el('button', { type: 'button', text: 'Remover', onclick: () => { meus[c].splice(idx, 1); salvaMeus(); render(); } })) };
+}
+const blocosMeus = c => (conjs[c] && meus[c] || []).map((p, i) => blocoMeu(c, p, i));
+const blocosPainel = c => blocosEscolhidos(c).concat(blocosMeus(c));
+
+const nomeMesAno = k => MESES[+k.slice(5, 7) - 1] + '/' + k.slice(0, 4);
+function exemplosPed(c) {
+  const cs = camposDe(c, 'categoria'), ns = camposDe(c, 'numero'), ds = camposDe(c, 'data'), pool = [];
+  if (cs[0]) pool.push('quantidade por ' + cs[0].n); if (ns[0] && cs[0]) pool.push('soma de ' + ns[0].n + ' por ' + cs[0].n); if (ns[0]) pool.push('média de ' + ns[0].n);
+  if (ds[0]) pool.push('quantidade por ' + ds[0].n); if (cs[1]) pool.push('quantidade por ' + cs[1].n); if (ns[0]) pool.push('maior ' + ns[0].n);   // cada exemplo leva um campo real
+  const ok = [...new Set(pool)].filter(f => { const e = entenderPed(f, c); return e.medida && !e.naoEntendi.length; });
+  return ok.slice(0, 3);
+}
+function abrirPedido(frase, c) {
+  const d = $('#pedCard'), box = $('#pedBox'), L = filtrar(c); let ped = entenderPed(frase, c), nao = false, corr = '', erro = '';
+  const nada = !ped.medida && !ped.campo && !ped.agrupar && !ped.filtros.length && !ped.periodo, nEnt = ped.naoEntendi.slice();
+  const fecha = el('button', { type: 'button', text: 'Cancelar', onclick: () => { d.hidden = true; } });
+  const editor = () => {
+    const nomes = { 'Medida': () => [[['', '(nenhuma)']].concat(MEDS.map(m => [m, MED_NOME[m]])), ped.medida || ''],
+      'Campo': () => [[['', '(nenhum)']].concat(camposDe(c, 'numero').map(k => [k.n, k.n])), ped.campo || ''],
+      'Agrupar por': () => [[['', '(nenhum)']].concat(camposDe(c, 'data').length ? [['mês', 'mês']] : [], camposDe(c, 'categoria').map(k => [k.n, k.n])), ped.agrupar || ''],
+      'Filtro': () => { const ops = [], cont = {}; camposDe(c, 'categoria').forEach(k => ctxPedido(c).valores[k.n].forEach(v => { ops.push([k.n, v]); cont[v] = (cont[v] || 0) + 1; }));
+        const cur = ped.filtros[0] ? ped.filtros[0].campo + '\u0001' + ped.filtros[0].valor : ''; return [[['', '(sem filtro)']].concat(ops.map(([k, v]) => [k + '\u0001' + v, cont[v] > 1 ? k + ': ' + v : v])), cur]; },
+      'Período': () => { const ms = [...new Set(ctxPedido(c).meses)].sort().reverse(), anos = [...new Set(ms.map(m => m.slice(0, 4)))];
+        const p = ped.periodo, cur = p ? (p.tipo === 'mes' ? 'm:' + p.ano + '-' + z2(p.mes) : p.tipo === 'ano' ? 'a:' + p.ano : '') : '';
+        return [[['', '(sem período)']].concat(ms.map(m => ['m:' + m, nomeMesAno(m)]), anos.map(a => ['a:' + a, a])), cur]; } };
+    const [ops, cur] = nomes[corr](), sel = el('select', {}); fillSel(sel, ops, cur);
+    const aplica = () => {
+      const v = sel.value;
+      if (corr === 'Medida') ped.medida = v || null; else if (corr === 'Campo') ped.campo = v || null; else if (corr === 'Agrupar por') ped.agrupar = v || null;
+      else if (corr === 'Filtro') ped.filtros = v ? [{ campo: v.split('\u0001')[0], valor: v.split('\u0001')[1] }] : [];
+      else ped.periodo = !v ? null : v[0] === 'm' ? { tipo: 'mes', mes: +v.slice(7, 9), ano: +v.slice(2, 6) } : { tipo: 'ano', ano: +v.slice(2) };
+      corr = ''; pinta();
+    };
+    return el('div', { class: 'row', style: 'margin:8px 0' }, el('label', { class: 'f' }, corr, sel), el('button', { type: 'button', class: 'prim', text: 'Aplicar', onclick: aplica }));
+  };
+  function pinta() {
+    box.textContent = ''; box.append(el('h3', { text: 'Seu pedido' }));
+    if (nada) {
+      (nEnt.length ? nEnt : [frase.trim()]).forEach(t => box.append(el('p', { text: 'não entendi: ' + t })));
+      box.append(el('p', { text: 'Tente um destes:' }), el('div', { class: 'row' }, exemplosPed(c).map(ex => el('button', { type: 'button', text: ex, onclick: () => { $('#pedTxt').value = ex; abrirPedido(ex, c); } }))));
+      box.append(el('div', { class: 'row', style: 'margin-top:12px' }, fecha)); return;
+    }
+    box.append(el('p', { text: 'Entendi assim: ' + resumoPed(ped, c) }));
+    nEnt.forEach(t => box.append(el('p', { text: 'não entendi: ' + t })));
+    box.append(el('h3', { text: 'Prévia' }), corpoPed(ped, L, c, true, resumoPed(ped, c)));
+    if (erro) box.append(el('p', { class: 'muted', role: 'alert', text: erro }));
+    box.append(el('div', { class: 'row', style: 'margin:12px 0' }, el('span', { text: 'É isso?' }),
+      el('button', { type: 'button', class: 'prim', text: 'Sim', onclick: () => {
+        const f = faltaPed(ped); if (f) { erro = f; pinta(); return; }
+        const lim = pedLimpo(ped), l = meus[c] || (meus[c] = []);
+        if (l.some(x => JSON.stringify(x) === JSON.stringify(lim))) { erro = 'Esse indicador já está no painel.'; pinta(); return; }
+        l.push(lim); salvaMeus(); d.hidden = true; $('#pedTxt').value = ''; render(); toast('Indicador adicionado ao painel.');
+      } }),
+      el('button', { type: 'button', text: 'Não', onclick: () => { nao = true; erro = ''; pinta(); } })));
+    if (nao) box.append(el('div', { class: 'row' }, ['Medida', 'Campo', 'Agrupar por', 'Filtro', 'Período'].map(n => el('button', { type: 'button', text: n, onclick: () => { corr = n; pinta(); } }))), corr ? editor() : null);
+    box.append(el('div', { class: 'row', style: 'margin-top:12px' }, fecha));
+  }
+  pinta(); d.hidden = false;
+}
+
+/* Config → Sinônimos (raiox_sin): apelido -> medida ou campo do conjunto atual */
+function renderSin() {
+  const c = F.conjunto, sel = $('#sinSig'), campos = ((conjs[c] || {}).campos || []).filter(k => k.t !== 'codigo' && k.t !== 'ignorar');
+  const ops = Object.keys(MED_SIN).map(m => [MED_SIN[m], MED_SIN[m]]).concat(campos.map(k => [k.n, k.n])), chave = JSON.stringify(ops);
+  if (sel.dataset.ops !== chave) { sel.dataset.ops = chave; fillSel(sel, ops, sel.value); }
+  const l = $('#listaSin'); l.textContent = ''; const m = sinMap(), ks = Object.keys(m);
+  if (!ks.length) l.append(el('p', { class: 'muted', text: 'Nenhum sinônimo ainda.' }));
+  ks.forEach(k => l.append(el('div', { class: 'row', style: 'margin-bottom:6px' }, el('span', { text: k + ' = ' + m[k] }), el('button', { type: 'button', text: 'Remover', onclick: () => { const n = sinMap(); delete n[k]; store.set('raiox_sin', n); renderSin(); } }))));
 }
 
 /* ---------- janelas flutuantes ---------- */
@@ -456,7 +652,7 @@ function capa(wb, nomeRel, grupos) {
 }
 const cortaCelula = v => typeof v === 'string' && v.length > 32000 ? v.slice(0, 32000) : v;   // B-3: limite do Excel é 32.767 caracteres por célula
 function comoLer(wb, grupos) {
-  const itens = []; grupos.forEach(g => { const bl = blocosEscolhidos(g.c); if (bl.length) resumoBlocos(g.c, bl, g.lista).forEach(x => itens.push(grupos.length > 1 && grupos.filter(h => blocosEscolhidos(h.c).length).length > 1 ? '[' + g.c + '] ' + x.texto : x.texto)); });
+  const itens = []; grupos.forEach(g => { const bl = blocosPainel(g.c); if (bl.length) resumoBlocos(g.c, bl, g.lista).forEach(x => itens.push(grupos.length > 1 && grupos.filter(h => blocosPainel(h.c).length).length > 1 ? '[' + g.c + '] ' + x.texto : x.texto)); });
   if (!itens.length) return;   // sem escolha confirmada a planilha não é criada
   const ws = wb.addWorksheet('Como ler este relatório'); ws.columns = [{ width: 120 }];
   ws.getCell('A1').value = 'Seu painel'; ws.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF0F2A4A' } };
@@ -507,6 +703,7 @@ function renderConfig() {
   const l = $('#listaFmt'); l.textContent = '';
   const ks = Object.keys(fmts); if (!ks.length) l.append(el('p', { class: 'muted', text: 'Nenhum formato lembrado ainda.' }));
   ks.forEach(k => l.append(el('div', { class: 'row', style: 'margin-bottom:6px' }, el('span', { text: fmts[k].conjunto + ' (' + fmts[k].cols.length + ' colunas)' }), el('button', { type: 'button', text: 'Esquecer', onclick: () => { delete fmts[k]; store.set('raiox_fmt', fmts); renderConfig(); } }))));
+  renderSin();
   $('#infoDados').textContent = regs.length + ' registros guardados neste aparelho.';
 }
 function iniciaConfig() {
@@ -516,7 +713,8 @@ function iniciaConfig() {
   $('#cfgLogoX').onclick = () => { cfg.logo = ''; salvaCfg(); topo(); };
   document.querySelectorAll('.passosBas').forEach(p => { const d = el('details', null, el('summary', { text: 'Como instalar a versão Excel (4 passos)' }), el('ol', { class: 'passos' }, PASSOS.map(x => el('li', { text: x })))); p.append(d); });
   document.querySelectorAll('[data-baixar-bas]').forEach(a => a.addEventListener('click', () => document.querySelectorAll('.passosBas details').forEach(d => { d.open = true; })));
-  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
+  $('#sinAdd').onclick = () => { const ap = $('#sinAp').value.trim(), sg = $('#sinSig').value; if (!ap || ap.length > 100 || !sg) { toast('Escreva o apelido e escolha o que ele significa.'); return; } const n = sinMap(); n[ap] = sg; store.set('raiox_sin', n); $('#sinAp').value = ''; renderSin(); };
+  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
   $('#bkArq').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (f.size > LIM.backup) { toast('Backup grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.backup) + '). Nada foi alterado.'); return; }
@@ -524,14 +722,15 @@ function iniciaConfig() {
     if (!b) { toast('Esse arquivo não é um backup do Raio X (ou está com a estrutura errada). Nada foi alterado.'); return; }
     const r = await perguntar('Restaurar backup', 'O backup tem ' + b.registros.length + ' registros. Somar aos dados atuais ou substituir tudo?', [{ t: 'Somar', v: 'somar', prim: true }, { t: 'Substituir', v: 'subst' }, { t: 'Cancelar', v: null }]);
     if (!r) return;
-    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
+    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
     Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp();
+    Object.keys(b.meus).forEach(k => { meus[k] = b.meus[k]; }); salvaMeus(); { const sn = sinMap(); Object.keys(b.sin).forEach(k => { sn[k] = b.sin[k]; }); store.set('raiox_sin', sn); }
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };
   $('#apagarTudo').onclick = async () => {
     const r = await perguntar('Apagar todos os dados', 'Isso apaga os ' + regs.length + ' registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]);
-    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
+    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
   };
 }
 function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
@@ -540,13 +739,14 @@ function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea')
 function abas(qual) { $('#painel').hidden = qual !== 'painel'; $('#config').hidden = qual !== 'config'; $('#tPainel').classList.toggle('on', qual === 'painel'); $('#tConfig').classList.toggle('on', qual === 'config'); window.scrollTo(0, 0); }
 $('#tPainel').onclick = () => abas('painel'); $('#tConfig').onclick = () => abas('config');
 $('#arquivo').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) carregar(fs); };
-$('#fConj').onchange = e => { F.conjunto = e.target.value; F.cat = F.val = F.cd = ''; mostrar = 50; render(); };
+$('#fConj').onchange = e => { $('#pedCard').hidden = true; F.conjunto = e.target.value; F.cat = F.val = F.cd = ''; mostrar = 50; render(); };
 $('#fPer').onchange = e => { F.per = e.target.value; render(); };
 $('#fMes').oninput = e => { F.mes = e.target.value; render(); }; $('#fDe').oninput = e => { F.de = e.target.value; render(); }; $('#fAte').oninput = e => { F.ate = e.target.value; render(); };
 $('#fCD').onchange = e => { F.cd = e.target.value; render(); }; $('#fCat').onchange = e => { F.cat = e.target.value; F.val = ''; render(); }; $('#fVal').onchange = e => { F.val = e.target.value; render(); };
 $('#fQ').oninput = e => { F.q = e.target.value; mostrar = 50; render(); };
 $('#gerarXlsx').onclick = gerarExcel;
 $('#btnAcomp').onclick = () => { if (F.conjunto) janelaAcomp(F.conjunto); };
+$('#fPed').onsubmit = e => { e.preventDefault(); const f = $('#pedTxt').value.trim(); if (f && F.conjunto) abrirPedido(f, F.conjunto); };
 $('#btnEntender').onclick = () => abrirPainel(F.conjunto);
 $('#painelFechar').onclick = () => $('#dlgPainel').close();
 $('#versao').textContent = 'Versão ' + VERSAO;
