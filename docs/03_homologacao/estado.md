@@ -18,3 +18,9 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 - Migração do histórico antigo: campos viram os nomes das chaves guardadas (código = keyPath do store `os`); a regra do "genérico" da configuração antiga não é mantida (era do caso de origem).
 - Cartão de repetidos olha até 5000 registros do filtro atual; CA-82 (72 mil) não medido.
 - Etapas 2 a 7 não iniciadas.
+
+## Conferência do coordenador (25/11/2026 14h55)
+- Build da branch `etapa-1`: 0 termos proibidos no `index.html`.
+- Suíte do Testador contra o build novo: **12 passam, 13 falham, 2 skip** (CA-15, CA-82).
+- Causa das falhas: (1) a especificação não dá os **nomes dos botões e telas** (backup, restaurar, gerar Excel, campos cliente/área/logo, aba Histórico, tela "Esta coluna é o quê?"), então teste e app usaram textos diferentes; (2) macro `.bas` ainda é a antiga (CA-03, CA-16) — fica para a F-45.
+- Próximo passo (nova sessão): Especificador acrescenta à seção 0 a **lista de nomes na tela** (rótulos exatos) e responde às dúvidas 1–3 do Testador (formato da mediana no CA-96; data no nome do arquivo no CA-98); depois Construtor e Testador alinham e a suíte roda de novo. Só então Revisor e publicação.
