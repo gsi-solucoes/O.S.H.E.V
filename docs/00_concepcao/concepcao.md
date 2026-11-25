@@ -5,7 +5,7 @@ Agente 1 (Conceptor) · versão 1.0 · 25/11/2026 · aguardando portão 1
 ## 1. Origem
 Nasceu como gerador de relatórios de OS da manutenção do HEV (O.S.H.E.V), feito em conversa de 19 a 25/11/2026, a partir dos CSVs `R_ORDEM_SERVICO` do MV. Em 25/11 o Galindo decidiu transformá-lo num produto genérico: **Raio X do Relatório**, que serve para qualquer relatório e qualquer empresa, usando o mesmo repositório e o mesmo link.
 
-**Definição (Galindo, 25/11/2026):** O Raio X do Relatório lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel e PDF, como os de ordens de serviço) e monta sozinho o painel e os relatórios que a pessoa escolher. Funciona no navegador, sem API e sem custo por uso, e serve para qualquer cliente.
+**Definição (Galindo, 25/11/2026):** O Raio X do Relatório lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel, PDF e imagem) e monta sozinho o painel e os relatórios que a pessoa escolher. Funciona no navegador, sem API e sem custo por uso, e serve para qualquer cliente.
 
 ## 2. Dor
 - Os relatórios do ERP saem como CSV cru; montar indicadores no Excel toma horas todo mês.
@@ -22,8 +22,8 @@ Nasceu como gerador de relatórios de OS da manutenção do HEV (O.S.H.E.V), fei
 7. **Excel** gerado seguindo o layout do usuário (capa, período, filtros).
 8. Guardar o histórico no próprio aparelho, juntando os arquivos novos pelo número do registro.
 9. Funcionar **offline** depois do primeiro acesso (PWA instalável).
-10. Ler também XLSX e PDF com texto; OCR só como último recurso.
-11. Manter tudo que já existe no modo OS (dashboard, backlog, tratativas, % fantasma, janelas, repetidas, tempos, histórico) como o **primeiro modelo pronto** ("Ordens de serviço").
+10. Ler todo tipo de arquivo que der: CSV/TXT, Excel (.xlsx, .xls, .ods), JSON/XML, PDF com texto, PDF escaneado e **imagem (foto ou print, JPG/PNG) com OCR no aparelho**, e .zip com qualquer mistura. O que vem por OCR aparece para conferir antes de entrar (Galindo, 25/11/2026).
+11. Manter tudo que já existe para relatórios de ordens de serviço (dashboard, backlog, tratativas, % fantasma, janelas, repetidas, tempos, histórico) como o **primeiro modelo pronto** ("Ordens de serviço").
 
 ## 4. O que NÃO quero
 - Nada do hospital no código (nome, logo, nomes de pessoas): tudo na Config.
@@ -34,7 +34,7 @@ Nasceu como gerador de relatórios de OS da manutenção do HEV (O.S.H.E.V), fei
 - Somar "aguardando material" com "conserto externo"; mudar as regras aprovadas (realizadas = concluída + material + externo + cancelada; backlog sem terceiros; ≥ 90% verde).
 
 ## 5. Serviços externos e dublês: nenhum (caminho direto, Método 1.8.4)
-**Nenhum.** O app não fala com nenhum serviço externo, então não há encaixe `_MODO=simulado|real` nem dublê (decisão do Galindo, 25/11/2026: "não precisa criar o esqueleto fake"). Bibliotecas (JSZip, ExcelJS; depois leitor de PDF e OCR) ficam copiadas dentro do repositório, em `vendor/`, para funcionar offline. Dados de teste: CSVs reais do MV anonimizados.
+**Nenhum.** O app não fala com nenhum serviço externo, então não há encaixe `_MODO=simulado|real` nem dublê (decisão do Galindo, 25/11/2026: "não precisa criar o esqueleto fake"). Bibliotecas (JSZip, ExcelJS; depois leitor de planilhas, de PDF e OCR) ficam copiadas dentro do repositório, em `vendor/`, para funcionar offline. Dados de teste: CSVs reais do MV anonimizados.
 
 ## 6. Armazenamento (Método 2.1)
 Porte: ferramenta local, dados do próprio usuário. Configuração e layouts no `localStorage`; histórico no `IndexedDB`; backup é um arquivo que o usuário baixa. Nada no Supabase/R2.
@@ -51,7 +51,7 @@ Planejador/controlador de manutenção (primeiro usuário: Galindo), gestores qu
 | 4 | Excel seguindo o layout |
 | 5 | Contas personalizadas |
 | 6 | Editar layout |
-| 7 | Ler XLSX e PDF (OCR por último) |
+| 7 | Ler Excel, JSON/XML, PDF e imagem (OCR) |
 
 ## 9. Riscos
 - Repositório é **público** (GitHub Pages grátis). O código não tem segredo nem dado; os CSVs de teste precisam ser anonimizados antes de entrar.
