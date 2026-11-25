@@ -45,3 +45,6 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 - F-50 feita (25/11): B-1 a B-4 corrigidos, 6 testes de regressão em `tests/test_seguranca.py` (SEG2); suíte 53 verdes, 3 skip; no `main` (`5a6ca9b`). Testes da macro só rodam onde há LibreOffice/uno.
 - Divergências decididas: mediana no formato da etapa 1 (não "1 d 4 h"); tipo `Data e hora` não criado (Data cobre).
 - Publicada: 45 verdes conferidos no `main` (25/11 19h). Próximo: F-50 (Baixos + regressão) e F-51, etapa 3 (pedido escrito). Regra nova: etapa pronta vai ao `main` sozinha.
+
+## Etapa 3 (F-51, 25/11/2026) — publicada no `main`
+- Pedido escrito com "É isso?", sinônimos, Meus indicadores, CA-28. Suíte: 88 verdes, 3 skip. Revisão: 0 Crítico/Alto, 2 Médios (M-1, M-2) e 4 Baixos em `docs/04_seguranca/revisao-etapa3.md` → F-52 (correção + regressão). Próximo: F-52, depois etapa 4 (Excel seguindo o painel).
