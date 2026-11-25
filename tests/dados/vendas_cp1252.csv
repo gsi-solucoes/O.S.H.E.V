@@ -1,0 +1,501 @@
+Código;Data;Cliente;Região;Vendedor;Valor;Situação
+V00001;05/01/2026;Zeta Ferragens;Oeste;Elisa Teste;652,09;Entregue
+V00002;24/09/2026;Eta Livraria;Sul;Diego Teste;2014,78;Entregue
+V00003;02/06/2026;Kappa Calcados;Oeste;Ana Teste;2293,42;Cancelado
+V00004;24/11/2026;Alfa Comercial;Norte;Elisa Teste;756,75;Pendente
+V00005;14/11/2026;Beta Distribuidora;Sul;Carla Teste;1150,77;Cancelado
+V00006;04/05/2026;Zeta Ferragens;Leste;Carla Teste;1983,54;Cancelado
+V00007;10/01/2026;Zeta Ferragens;Centro;Diego Teste;1036,56;Em transporte
+V00008;03/03/2026;Theta Brinquedos;Sul;Bruno Teste;1095,49;Em transporte
+V00009;12/04/2026;Kappa Calcados;Oeste;Ana Teste;1608,36;Pendente
+V00010;05/06/2026;Theta Brinquedos;Norte;Ana Teste;323,90;Em transporte
+V00011;03/10/2026;Gama Papelaria;Centro;Carla Teste;1488,35;Em transporte
+V00012;12/04/2026;Theta Brinquedos;Centro;Carla Teste;88,37;Entregue
+V00013;02/04/2026;Beta Distribuidora;Leste;Ana Teste;2052,51;Cancelado
+V00014;21/09/2026;Zeta Ferragens;Leste;Diego Teste;1109,85;Entregue
+V00015;02/05/2026;Delta Moveis;Leste;Diego Teste;1192,30;Em transporte
+V00016;09/11/2026;Alfa Comercial;Norte;Elisa Teste;309,62;Pendente
+V00017;24/04/2026;Theta Brinquedos;Leste;Elisa Teste;867,15;Entregue
+V00018;03/01/2026;Eta Livraria;Centro;Bruno Teste;660,57;Pendente
+V00019;26/01/2026;Zeta Ferragens;Centro;Ana Teste;1606,35;Entregue
+V00020;13/01/2026;Alfa Comercial;Centro;Diego Teste;1304,86;Entregue
+V00021;20/01/2026;Alfa Comercial;Leste;Bruno Teste;732,28;Cancelado
+V00022;22/10/2026;Zeta Ferragens;Leste;Ana Teste;2072,65;Entregue
+V00023;10/04/2026;Theta Brinquedos;Oeste;Bruno Teste;2246,77;Pendente
+V00024;29/09/2026;Kappa Calcados;Leste;Diego Teste;1480,39;Em transporte
+V00025;04/08/2026;Theta Brinquedos;Oeste;Diego Teste;1958,01;Em transporte
+V00026;13/06/2026;Kappa Calcados;Norte;Elisa Teste;331,61;Cancelado
+V00027;05/03/2026;Alfa Comercial;Leste;Elisa Teste;145,42;Em transporte
+V00028;20/10/2026;Theta Brinquedos;Centro;Bruno Teste;1115,88;Pendente
+V00029;10/10/2026;Eta Livraria;Centro;Carla Teste;929,00;Pendente
+V00030;07/05/2026;Iota Cosmeticos;Centro;Bruno Teste;1301,97;Cancelado
+V00031;13/06/2026;Alfa Comercial;Oeste;Elisa Teste;646,63;Em transporte
+V00032;14/08/2026;Eta Livraria;Leste;Diego Teste;1723,99;Pendente
+V00033;16/06/2026;Alfa Comercial;Leste;Diego Teste;52,08;Entregue
+V00034;07/10/2026;Gama Papelaria;Centro;Carla Teste;1259,28;Cancelado
+V00035;13/02/2026;Eta Livraria;Centro;Ana Teste;412,93;Entregue
+V00036;13/11/2026;Epsilon Tecidos;Oeste;Carla Teste;909,40;Entregue
+V00037;30/10/2026;Kappa Calcados;Norte;Carla Teste;1592,31;Cancelado
+V00038;24/11/2026;Delta Moveis;Leste;Diego Teste;365,78;Pendente
+V00039;01/08/2026;Beta Distribuidora;Centro;Diego Teste;1739,90;Pendente
+V00040;25/02/2026;Theta Brinquedos;Centro;Diego Teste;561,12;Em transporte
+V00041;07/02/2026;Gama Papelaria;Sul;Bruno Teste;871,00;Pendente
+V00042;20/02/2026;Beta Distribuidora;Sul;Carla Teste;1262,05;Cancelado
+V00043;16/09/2026;Kappa Calcados;Norte;Carla Teste;1936,43;Em transporte
+V00044;27/08/2026;Zeta Ferragens;Centro;Bruno Teste;2360,59;Entregue
+V00045;21/05/2026;Kappa Calcados;Leste;Elisa Teste;956,36;Em transporte
+V00046;19/03/2026;Iota Cosmeticos;Norte;Elisa Teste;244,56;Entregue
+V00047;21/06/2026;Iota Cosmeticos;Centro;Bruno Teste;36,44;Pendente
+V00048;07/07/2026;Alfa Comercial;Leste;Ana Teste;1573,99;Cancelado
+V00049;19/04/2026;Theta Brinquedos;Oeste;Carla Teste;46,04;Pendente
+V00050;01/02/2026;Zeta Ferragens;Norte;Elisa Teste;1720,38;Cancelado
+V00051;24/11/2026;Beta Distribuidora;Centro;Ana Teste;2424,07;Cancelado
+V00052;20/02/2026;Iota Cosmeticos;Oeste;Bruno Teste;1704,62;Cancelado
+V00053;25/08/2026;Gama Papelaria;Sul;Diego Teste;385,26;Em transporte
+V00054;24/04/2026;Alfa Comercial;Centro;Diego Teste;1732,19;Cancelado
+V00055;07/07/2026;Gama Papelaria;Norte;Diego Teste;2277,98;Pendente
+V00056;07/09/2026;Epsilon Tecidos;Norte;Carla Teste;2094,69;Cancelado
+V00057;08/03/2026;Kappa Calcados;Oeste;Bruno Teste;1689,78;Pendente
+V00058;26/03/2026;Theta Brinquedos;Oeste;Diego Teste;754,50;Pendente
+V00059;31/07/2026;Zeta Ferragens;Centro;Diego Teste;313,14;Entregue
+V00060;14/05/2026;Zeta Ferragens;Norte;Diego Teste;1442,48;Cancelado
+V00061;11/10/2026;Theta Brinquedos;Leste;Carla Teste;2046,87;Entregue
+V00062;05/07/2026;Eta Livraria;Leste;Elisa Teste;1279,88;Pendente
+V00063;19/11/2026;Theta Brinquedos;Sul;Carla Teste;1961,49;Entregue
+V00064;27/06/2026;Eta Livraria;Sul;Carla Teste;1822,46;Cancelado
+V00065;29/03/2026;Delta Moveis;Norte;Diego Teste;738,10;Em transporte
+V00066;21/11/2026;Eta Livraria;Oeste;Carla Teste;2238,89;Em transporte
+V00067;20/06/2026;Kappa Calcados;Sul;Diego Teste;1331,64;Cancelado
+V00068;02/03/2026;Alfa Comercial;Leste;Carla Teste;2388,60;Entregue
+V00069;26/05/2026;Iota Cosmeticos;Sul;Bruno Teste;800,50;Em transporte
+V00070;20/01/2026;Zeta Ferragens;Sul;Ana Teste;1798,37;Cancelado
+V00071;19/04/2026;Delta Moveis;Centro;Diego Teste;1179,51;Cancelado
+V00072;01/02/2026;Alfa Comercial;Norte;Elisa Teste;1995,96;Entregue
+V00073;01/06/2026;Epsilon Tecidos;Sul;Elisa Teste;1062,14;Pendente
+V00074;10/05/2026;Gama Papelaria;Centro;Bruno Teste;811,41;Em transporte
+V00075;18/07/2026;Zeta Ferragens;Centro;Elisa Teste;1373,50;Pendente
+V00076;16/07/2026;Eta Livraria;Centro;Ana Teste;82,32;Cancelado
+V00077;23/06/2026;Beta Distribuidora;Leste;Bruno Teste;999,28;Pendente
+V00078;08/01/2026;Gama Papelaria;Sul;Diego Teste;170,87;Entregue
+V00079;01/02/2026;Delta Moveis;Sul;Carla Teste;2002,39;Em transporte
+V00080;04/06/2026;Theta Brinquedos;Oeste;Elisa Teste;1452,05;Cancelado
+V00081;26/11/2026;Gama Papelaria;Norte;Bruno Teste;1106,79;Cancelado
+V00082;03/04/2026;Alfa Comercial;Oeste;Ana Teste;2072,90;Em transporte
+V00083;31/07/2026;Alfa Comercial;Oeste;Ana Teste;1520,28;Cancelado
+V00084;10/08/2026;Alfa Comercial;Leste;Diego Teste;2291,60;Cancelado
+V00085;19/05/2026;Zeta Ferragens;Sul;Bruno Teste;14,73;Cancelado
+V00086;09/03/2026;Alfa Comercial;Centro;Diego Teste;1861,02;Entregue
+V00087;27/11/2026;Alfa Comercial;Oeste;Bruno Teste;1295,94;Em transporte
+V00088;24/06/2026;Epsilon Tecidos;Centro;Carla Teste;459,91;Cancelado
+V00089;05/07/2026;Theta Brinquedos;Norte;Bruno Teste;816,06;Cancelado
+V00090;01/07/2026;Epsilon Tecidos;Norte;Ana Teste;1080,45;Pendente
+V00091;02/08/2026;Epsilon Tecidos;Centro;Ana Teste;956,56;Em transporte
+V00092;19/05/2026;Alfa Comercial;Sul;Bruno Teste;406,88;Entregue
+V00093;24/08/2026;Eta Livraria;Norte;Bruno Teste;475,82;Pendente
+V00094;09/09/2026;Beta Distribuidora;Norte;Carla Teste;1268,83;Cancelado
+V00095;22/10/2026;Kappa Calcados;Sul;Ana Teste;112,05;Entregue
+V00096;25/07/2026;Iota Cosmeticos;Leste;Ana Teste;1697,07;Entregue
+V00097;03/01/2026;Iota Cosmeticos;Oeste;Diego Teste;1860,41;Cancelado
+V00098;12/03/2026;Epsilon Tecidos;Sul;Carla Teste;1787,66;Pendente
+V00099;29/07/2026;Beta Distribuidora;Centro;Elisa Teste;78,02;Em transporte
+V00100;07/02/2026;Theta Brinquedos;Leste;Bruno Teste;1157,64;Entregue
+V00101;10/04/2026;Eta Livraria;Leste;Elisa Teste;1937,13;Cancelado
+V00102;29/05/2026;Beta Distribuidora;Sul;Elisa Teste;1961,86;Pendente
+V00103;30/07/2026;Epsilon Tecidos;Norte;Bruno Teste;2024,28;Em transporte
+V00104;13/07/2026;Beta Distribuidora;Leste;Carla Teste;2029,89;Pendente
+V00105;16/03/2026;Epsilon Tecidos;Oeste;Diego Teste;1752,06;Pendente
+V00106;31/01/2026;Iota Cosmeticos;Sul;Diego Teste;531,16;Cancelado
+V00107;25/06/2026;Gama Papelaria;Sul;Bruno Teste;1794,07;Cancelado
+V00108;16/07/2026;Eta Livraria;Leste;Diego Teste;322,10;Pendente
+V00109;11/03/2026;Theta Brinquedos;Oeste;Ana Teste;669,34;Cancelado
+V00110;27/09/2026;Kappa Calcados;Oeste;Ana Teste;350,61;Cancelado
+V00111;12/01/2026;Beta Distribuidora;Norte;Bruno Teste;81,28;Pendente
+V00112;11/02/2026;Theta Brinquedos;Sul;Carla Teste;1691,47;Em transporte
+V00113;23/04/2026;Kappa Calcados;Sul;Elisa Teste;745,45;Em transporte
+V00114;10/08/2026;Kappa Calcados;Norte;Elisa Teste;575,32;Cancelado
+V00115;04/02/2026;Delta Moveis;Centro;Elisa Teste;2265,91;Cancelado
+V00116;25/07/2026;Epsilon Tecidos;Leste;Carla Teste;584,99;Entregue
+V00117;10/01/2026;Kappa Calcados;Oeste;Bruno Teste;234,97;Cancelado
+V00118;08/04/2026;Beta Distribuidora;Leste;Diego Teste;2398,43;Cancelado
+V00119;27/01/2026;Theta Brinquedos;Norte;Carla Teste;2181,49;Entregue
+V00120;08/03/2026;Delta Moveis;Sul;Ana Teste;357,42;Cancelado
+V00121;12/02/2026;Theta Brinquedos;Leste;Diego Teste;130,70;Em transporte
+V00122;07/10/2026;Iota Cosmeticos;Centro;Carla Teste;1259,46;Em transporte
+V00123;07/10/2026;Beta Distribuidora;Centro;Ana Teste;1648,39;Pendente
+V00124;31/07/2026;Eta Livraria;Oeste;Carla Teste;2010,44;Pendente
+V00125;29/05/2026;Kappa Calcados;Norte;Elisa Teste;2115,30;Em transporte
+V00126;05/02/2026;Epsilon Tecidos;Centro;Carla Teste;1280,42;Cancelado
+V00127;13/01/2026;Iota Cosmeticos;Centro;Elisa Teste;1116,58;Cancelado
+V00128;29/01/2026;Kappa Calcados;Sul;Carla Teste;551,40;Entregue
+V00129;07/04/2026;Iota Cosmeticos;Leste;Carla Teste;1448,72;Entregue
+V00130;18/07/2026;Zeta Ferragens;Centro;Ana Teste;1908,79;Pendente
+V00131;24/05/2026;Theta Brinquedos;Leste;Carla Teste;572,66;Pendente
+V00132;18/11/2026;Delta Moveis;Oeste;Diego Teste;418,97;Entregue
+V00133;13/04/2026;Iota Cosmeticos;Centro;Diego Teste;85,56;Pendente
+V00134;25/02/2026;Epsilon Tecidos;Oeste;Carla Teste;756,39;Entregue
+V00135;16/11/2026;Kappa Calcados;Sul;Elisa Teste;1209,75;Pendente
+V00136;19/06/2026;Delta Moveis;Sul;Bruno Teste;340,76;Em transporte
+V00137;10/10/2026;Alfa Comercial;Oeste;Diego Teste;1796,61;Cancelado
+V00138;17/10/2026;Zeta Ferragens;Centro;Ana Teste;1440,84;Em transporte
+V00139;01/03/2026;Gama Papelaria;Centro;Ana Teste;174,58;Entregue
+V00140;16/07/2026;Zeta Ferragens;Sul;Elisa Teste;450,54;Cancelado
+V00141;05/06/2026;Eta Livraria;Sul;Bruno Teste;1959,19;Cancelado
+V00142;17/08/2026;Eta Livraria;Oeste;Elisa Teste;1707,19;Pendente
+V00143;26/06/2026;Eta Livraria;Sul;Elisa Teste;1861,33;Cancelado
+V00144;05/10/2026;Gama Papelaria;Sul;Bruno Teste;1095,23;Entregue
+V00145;11/04/2026;Beta Distribuidora;Norte;Carla Teste;116,54;Pendente
+V00146;07/01/2026;Kappa Calcados;Centro;Ana Teste;42,94;Em transporte
+V00147;27/11/2026;Eta Livraria;Centro;Bruno Teste;1685,69;Em transporte
+V00148;14/02/2026;Alfa Comercial;Oeste;Ana Teste;1927,99;Entregue
+V00149;28/07/2026;Delta Moveis;Norte;Diego Teste;257,34;Pendente
+V00150;18/03/2026;Gama Papelaria;Norte;Diego Teste;510,92;Entregue
+V00151;16/05/2026;Epsilon Tecidos;Oeste;Diego Teste;2104,15;Pendente
+V00152;29/05/2026;Alfa Comercial;Centro;Diego Teste;2295,35;Cancelado
+V00153;03/07/2026;Theta Brinquedos;Sul;Ana Teste;583,23;Pendente
+V00154;18/08/2026;Theta Brinquedos;Centro;Ana Teste;691,09;Entregue
+V00155;25/02/2026;Iota Cosmeticos;Norte;Bruno Teste;621,07;Cancelado
+V00156;05/07/2026;Epsilon Tecidos;Centro;Ana Teste;316,78;Cancelado
+V00157;23/11/2026;Zeta Ferragens;Norte;Elisa Teste;2118,22;Em transporte
+V00158;05/09/2026;Iota Cosmeticos;Centro;Bruno Teste;1449,56;Entregue
+V00159;17/05/2026;Gama Papelaria;Norte;Elisa Teste;2307,15;Cancelado
+V00160;27/09/2026;Theta Brinquedos;Sul;Carla Teste;940,99;Entregue
+V00161;29/05/2026;Eta Livraria;Sul;Elisa Teste;1916,34;Cancelado
+V00162;03/01/2026;Alfa Comercial;Oeste;Elisa Teste;1390,15;Cancelado
+V00163;02/02/2026;Epsilon Tecidos;Leste;Diego Teste;100,31;Pendente
+V00164;24/06/2026;Delta Moveis;Oeste;Ana Teste;1155,31;Entregue
+V00165;10/01/2026;Gama Papelaria;Sul;Carla Teste;818,54;Pendente
+V00166;21/06/2026;Theta Brinquedos;Leste;Carla Teste;1850,36;Em transporte
+V00167;08/10/2026;Beta Distribuidora;Norte;Carla Teste;2158,21;Entregue
+V00168;25/08/2026;Beta Distribuidora;Sul;Carla Teste;574,32;Cancelado
+V00169;05/09/2026;Epsilon Tecidos;Oeste;Elisa Teste;1039,42;Cancelado
+V00170;24/04/2026;Iota Cosmeticos;Sul;Elisa Teste;398,06;Cancelado
+V00171;26/04/2026;Kappa Calcados;Norte;Bruno Teste;1193,77;Em transporte
+V00172;22/01/2026;Alfa Comercial;Sul;Diego Teste;193,43;Cancelado
+V00173;02/05/2026;Iota Cosmeticos;Oeste;Diego Teste;1172,89;Entregue
+V00174;28/02/2026;Delta Moveis;Oeste;Diego Teste;229,12;Em transporte
+V00175;14/11/2026;Zeta Ferragens;Norte;Bruno Teste;1478,93;Pendente
+V00176;06/05/2026;Zeta Ferragens;Centro;Elisa Teste;456,91;Pendente
+V00177;28/08/2026;Epsilon Tecidos;Oeste;Ana Teste;1359,13;Cancelado
+V00178;14/05/2026;Iota Cosmeticos;Norte;Ana Teste;2319,43;Pendente
+V00179;01/03/2026;Theta Brinquedos;Norte;Bruno Teste;1789,26;Cancelado
+V00180;21/04/2026;Zeta Ferragens;Sul;Bruno Teste;1993,33;Entregue
+V00181;05/11/2026;Gama Papelaria;Norte;Diego Teste;1958,53;Entregue
+V00182;23/03/2026;Zeta Ferragens;Norte;Bruno Teste;878,50;Cancelado
+V00183;15/09/2026;Eta Livraria;Centro;Ana Teste;659,58;Em transporte
+V00184;10/03/2026;Epsilon Tecidos;Norte;Bruno Teste;2272,15;Cancelado
+V00185;16/04/2026;Theta Brinquedos;Sul;Ana Teste;625,44;Em transporte
+V00186;06/09/2026;Gama Papelaria;Leste;Diego Teste;1940,36;Em transporte
+V00187;07/08/2026;Epsilon Tecidos;Leste;Elisa Teste;1097,81;Cancelado
+V00188;21/05/2026;Kappa Calcados;Oeste;Bruno Teste;949,04;Pendente
+V00189;04/09/2026;Alfa Comercial;Centro;Bruno Teste;2441,84;Cancelado
+V00190;02/05/2026;Alfa Comercial;Oeste;Elisa Teste;2402,02;Pendente
+V00191;21/06/2026;Zeta Ferragens;Leste;Bruno Teste;470,16;Em transporte
+V00192;22/10/2026;Alfa Comercial;Oeste;Elisa Teste;1290,39;Em transporte
+V00193;25/03/2026;Iota Cosmeticos;Sul;Ana Teste;969,83;Pendente
+V00194;29/07/2026;Kappa Calcados;Leste;Bruno Teste;112,64;Entregue
+V00195;23/05/2026;Alfa Comercial;Leste;Diego Teste;273,40;Entregue
+V00196;14/11/2026;Eta Livraria;Sul;Bruno Teste;1384,66;Entregue
+V00197;16/02/2026;Iota Cosmeticos;Leste;Elisa Teste;2425,48;Pendente
+V00198;12/05/2026;Iota Cosmeticos;Sul;Carla Teste;2323,98;Em transporte
+V00199;10/03/2026;Beta Distribuidora;Leste;Ana Teste;2492,36;Pendente
+V00200;18/03/2026;Iota Cosmeticos;Norte;Bruno Teste;1041,83;Em transporte
+V00201;10/11/2026;Eta Livraria;Norte;Ana Teste;147,41;Entregue
+V00202;22/10/2026;Zeta Ferragens;Sul;Diego Teste;134,99;Pendente
+V00203;24/09/2026;Kappa Calcados;Leste;Ana Teste;1958,06;Pendente
+V00204;27/09/2026;Theta Brinquedos;Centro;Carla Teste;2478,73;Pendente
+V00205;04/02/2026;Eta Livraria;Sul;Carla Teste;1748,96;Pendente
+V00206;17/10/2026;Iota Cosmeticos;Norte;Ana Teste;894,90;Pendente
+V00207;28/01/2026;Iota Cosmeticos;Sul;Ana Teste;129,81;Pendente
+V00208;29/10/2026;Delta Moveis;Sul;Bruno Teste;1064,54;Cancelado
+V00209;05/01/2026;Zeta Ferragens;Oeste;Bruno Teste;1540,29;Em transporte
+V00210;04/09/2026;Eta Livraria;Centro;Ana Teste;921,76;Pendente
+V00211;27/09/2026;Alfa Comercial;Norte;Ana Teste;2483,51;Em transporte
+V00212;17/01/2026;Alfa Comercial;Sul;Elisa Teste;1951,95;Em transporte
+V00213;06/08/2026;Zeta Ferragens;Centro;Ana Teste;1911,74;Entregue
+V00214;18/10/2026;Epsilon Tecidos;Norte;Carla Teste;1245,09;Pendente
+V00215;21/09/2026;Kappa Calcados;Leste;Diego Teste;2351,71;Em transporte
+V00216;29/10/2026;Beta Distribuidora;Oeste;Elisa Teste;445,73;Pendente
+V00217;26/01/2026;Beta Distribuidora;Sul;Diego Teste;2337,50;Em transporte
+V00218;02/07/2026;Delta Moveis;Centro;Ana Teste;183,10;Cancelado
+V00219;14/11/2026;Kappa Calcados;Centro;Bruno Teste;2257,92;Entregue
+V00220;17/10/2026;Alfa Comercial;Leste;Carla Teste;2326,48;Cancelado
+V00221;16/11/2026;Iota Cosmeticos;Sul;Carla Teste;10,62;Em transporte
+V00222;29/03/2026;Theta Brinquedos;Leste;Bruno Teste;875,53;Pendente
+V00223;22/10/2026;Kappa Calcados;Oeste;Ana Teste;1295,17;Entregue
+V00224;03/06/2026;Gama Papelaria;Sul;Elisa Teste;2083,68;Cancelado
+V00225;16/05/2026;Theta Brinquedos;Norte;Elisa Teste;1855,32;Entregue
+V00226;02/02/2026;Alfa Comercial;Oeste;Bruno Teste;1854,16;Cancelado
+V00227;09/07/2026;Gama Papelaria;Centro;Ana Teste;2413,38;Pendente
+V00228;10/05/2026;Zeta Ferragens;Norte;Ana Teste;704,00;Cancelado
+V00229;01/09/2026;Gama Papelaria;Leste;Ana Teste;564,53;Pendente
+V00230;28/02/2026;Gama Papelaria;Sul;Elisa Teste;1335,39;Entregue
+V00231;02/06/2026;Alfa Comercial;Sul;Ana Teste;1176,73;Em transporte
+V00232;24/11/2026;Alfa Comercial;Oeste;Ana Teste;1355,03;Cancelado
+V00233;31/05/2026;Delta Moveis;Oeste;Elisa Teste;2479,47;Pendente
+V00234;20/03/2026;Gama Papelaria;Centro;Elisa Teste;34,81;Em transporte
+V00235;05/08/2026;Kappa Calcados;Leste;Carla Teste;2306,92;Pendente
+V00236;04/10/2026;Epsilon Tecidos;Leste;Diego Teste;2032,01;Entregue
+V00237;21/05/2026;Eta Livraria;Oeste;Bruno Teste;1335,59;Entregue
+V00238;19/08/2026;Kappa Calcados;Oeste;Diego Teste;176,71;Em transporte
+V00239;21/05/2026;Iota Cosmeticos;Centro;Carla Teste;326,81;Cancelado
+V00240;30/06/2026;Epsilon Tecidos;Centro;Elisa Teste;878,73;Pendente
+V00241;14/04/2026;Alfa Comercial;Leste;Diego Teste;1652,69;Entregue
+V00242;20/08/2026;Eta Livraria;Norte;Diego Teste;1075,71;Cancelado
+V00243;04/07/2026;Alfa Comercial;Sul;Bruno Teste;1880,43;Em transporte
+V00244;13/03/2026;Zeta Ferragens;Oeste;Elisa Teste;2403,16;Entregue
+V00245;18/01/2026;Epsilon Tecidos;Leste;Diego Teste;1279,30;Em transporte
+V00246;27/04/2026;Gama Papelaria;Centro;Bruno Teste;1284,45;Entregue
+V00247;16/05/2026;Eta Livraria;Leste;Carla Teste;1639,47;Entregue
+V00248;16/10/2026;Theta Brinquedos;Centro;Bruno Teste;570,14;Entregue
+V00249;17/06/2026;Eta Livraria;Leste;Carla Teste;1385,20;Cancelado
+V00250;18/04/2026;Delta Moveis;Leste;Bruno Teste;193,38;Entregue
+V00251;30/10/2026;Kappa Calcados;Oeste;Elisa Teste;1841,60;Em transporte
+V00252;27/08/2026;Beta Distribuidora;Centro;Bruno Teste;524,26;Em transporte
+V00253;18/10/2026;Zeta Ferragens;Norte;Carla Teste;1541,38;Em transporte
+V00254;17/02/2026;Gama Papelaria;Leste;Ana Teste;361,04;Cancelado
+V00255;17/05/2026;Beta Distribuidora;Sul;Diego Teste;1613,71;Pendente
+V00256;02/05/2026;Epsilon Tecidos;Sul;Carla Teste;1679,71;Cancelado
+V00257;03/05/2026;Epsilon Tecidos;Leste;Bruno Teste;1738,32;Em transporte
+V00258;06/06/2026;Theta Brinquedos;Centro;Elisa Teste;1917,70;Em transporte
+V00259;06/03/2026;Epsilon Tecidos;Sul;Elisa Teste;2390,85;Cancelado
+V00260;11/01/2026;Theta Brinquedos;Leste;Carla Teste;51,67;Entregue
+V00261;24/11/2026;Theta Brinquedos;Sul;Elisa Teste;762,05;Cancelado
+V00262;07/11/2026;Delta Moveis;Oeste;Bruno Teste;1106,53;Pendente
+V00263;29/04/2026;Theta Brinquedos;Centro;Ana Teste;1298,45;Em transporte
+V00264;17/05/2026;Eta Livraria;Sul;Elisa Teste;1787,92;Cancelado
+V00265;22/10/2026;Gama Papelaria;Sul;Ana Teste;2451,42;Cancelado
+V00266;19/01/2026;Iota Cosmeticos;Norte;Carla Teste;210,31;Entregue
+V00267;10/06/2026;Alfa Comercial;Norte;Ana Teste;45,15;Cancelado
+V00268;30/04/2026;Eta Livraria;Centro;Ana Teste;452,84;Cancelado
+V00269;13/07/2026;Alfa Comercial;Oeste;Diego Teste;1165,16;Entregue
+V00270;12/01/2026;Beta Distribuidora;Centro;Ana Teste;971,70;Entregue
+V00271;05/11/2026;Kappa Calcados;Sul;Elisa Teste;414,70;Entregue
+V00272;27/09/2026;Theta Brinquedos;Centro;Bruno Teste;702,88;Entregue
+V00273;18/11/2026;Iota Cosmeticos;Sul;Elisa Teste;1945,88;Entregue
+V00274;17/01/2026;Kappa Calcados;Leste;Carla Teste;1419,38;Pendente
+V00275;27/10/2026;Iota Cosmeticos;Centro;Carla Teste;440,14;Entregue
+V00276;16/11/2026;Kappa Calcados;Sul;Bruno Teste;372,26;Em transporte
+V00277;10/11/2026;Alfa Comercial;Leste;Ana Teste;1030,66;Entregue
+V00278;20/03/2026;Zeta Ferragens;Centro;Elisa Teste;1805,42;Em transporte
+V00279;25/10/2026;Epsilon Tecidos;Centro;Elisa Teste;285,49;Pendente
+V00280;09/02/2026;Alfa Comercial;Oeste;Ana Teste;1928,02;Cancelado
+V00281;03/11/2026;Delta Moveis;Sul;Carla Teste;364,29;Entregue
+V00282;26/03/2026;Beta Distribuidora;Leste;Carla Teste;864,70;Cancelado
+V00283;25/05/2026;Zeta Ferragens;Oeste;Bruno Teste;2447,32;Em transporte
+V00284;27/10/2026;Zeta Ferragens;Leste;Elisa Teste;2089,19;Em transporte
+V00285;30/01/2026;Kappa Calcados;Oeste;Diego Teste;1014,54;Cancelado
+V00286;24/06/2026;Beta Distribuidora;Leste;Ana Teste;2035,32;Entregue
+V00287;29/09/2026;Zeta Ferragens;Oeste;Ana Teste;1051,93;Pendente
+V00288;02/09/2026;Theta Brinquedos;Centro;Ana Teste;1708,94;Pendente
+V00289;16/02/2026;Gama Papelaria;Oeste;Bruno Teste;2330,01;Em transporte
+V00290;05/04/2026;Kappa Calcados;Centro;Diego Teste;1359,73;Cancelado
+V00291;24/08/2026;Gama Papelaria;Centro;Bruno Teste;2144,96;Entregue
+V00292;07/10/2026;Iota Cosmeticos;Leste;Diego Teste;2417,70;Entregue
+V00293;18/02/2026;Gama Papelaria;Norte;Carla Teste;1406,14;Pendente
+V00294;10/11/2026;Delta Moveis;Centro;Bruno Teste;1921,85;Entregue
+V00295;09/02/2026;Eta Livraria;Leste;Diego Teste;1931,33;Entregue
+V00296;17/02/2026;Theta Brinquedos;Oeste;Ana Teste;1736,58;Cancelado
+V00297;15/04/2026;Delta Moveis;Leste;Elisa Teste;225,57;Em transporte
+V00298;16/03/2026;Alfa Comercial;Sul;Ana Teste;1587,65;Pendente
+V00299;28/03/2026;Gama Papelaria;Norte;Bruno Teste;1368,11;Entregue
+V00300;14/10/2026;Iota Cosmeticos;Norte;Bruno Teste;433,21;Entregue
+V00301;17/01/2026;Iota Cosmeticos;Norte;Diego Teste;2450,85;Entregue
+V00302;24/05/2026;Kappa Calcados;Oeste;Diego Teste;800,27;Entregue
+V00303;08/11/2026;Theta Brinquedos;Leste;Elisa Teste;109,04;Em transporte
+V00304;28/10/2026;Epsilon Tecidos;Norte;Ana Teste;1190,01;Em transporte
+V00305;03/07/2026;Zeta Ferragens;Leste;Carla Teste;489,78;Pendente
+V00306;27/09/2026;Beta Distribuidora;Norte;Bruno Teste;49,65;Cancelado
+V00307;08/07/2026;Delta Moveis;Norte;Elisa Teste;2297,29;Em transporte
+V00308;28/09/2026;Gama Papelaria;Sul;Bruno Teste;782,27;Entregue
+V00309;19/01/2026;Alfa Comercial;Oeste;Bruno Teste;72,92;Entregue
+V00310;24/09/2026;Beta Distribuidora;Leste;Bruno Teste;1545,01;Entregue
+V00311;10/11/2026;Zeta Ferragens;Oeste;Bruno Teste;433,66;Em transporte
+V00312;07/01/2026;Epsilon Tecidos;Oeste;Diego Teste;1823,28;Pendente
+V00313;24/08/2026;Zeta Ferragens;Norte;Carla Teste;1985,80;Entregue
+V00314;13/04/2026;Beta Distribuidora;Norte;Elisa Teste;1483,96;Entregue
+V00315;13/03/2026;Gama Papelaria;Norte;Carla Teste;1468,82;Cancelado
+V00316;01/03/2026;Theta Brinquedos;Sul;Bruno Teste;233,13;Pendente
+V00317;21/03/2026;Eta Livraria;Centro;Ana Teste;1339,03;Cancelado
+V00318;11/01/2026;Epsilon Tecidos;Leste;Carla Teste;358,38;Em transporte
+V00319;05/10/2026;Alfa Comercial;Centro;Diego Teste;1122,90;Em transporte
+V00320;16/05/2026;Gama Papelaria;Centro;Diego Teste;2070,28;Cancelado
+V00321;07/03/2026;Iota Cosmeticos;Centro;Carla Teste;2142,39;Cancelado
+V00322;25/11/2026;Epsilon Tecidos;Centro;Carla Teste;2244,99;Entregue
+V00323;24/05/2026;Theta Brinquedos;Norte;Bruno Teste;1481,38;Cancelado
+V00324;24/11/2026;Delta Moveis;Sul;Ana Teste;432,59;Entregue
+V00325;29/10/2026;Zeta Ferragens;Norte;Bruno Teste;618,25;Pendente
+V00326;11/02/2026;Beta Distribuidora;Centro;Ana Teste;2259,08;Entregue
+V00327;04/01/2026;Beta Distribuidora;Leste;Diego Teste;20,79;Cancelado
+V00328;31/03/2026;Beta Distribuidora;Centro;Bruno Teste;1896,52;Em transporte
+V00329;10/10/2026;Delta Moveis;Norte;Diego Teste;1285,32;Cancelado
+V00330;11/05/2026;Epsilon Tecidos;Norte;Ana Teste;2349,86;Entregue
+V00331;06/09/2026;Alfa Comercial;Norte;Bruno Teste;1313,66;Em transporte
+V00332;27/07/2026;Eta Livraria;Oeste;Carla Teste;496,26;Entregue
+V00333;14/03/2026;Eta Livraria;Leste;Carla Teste;63,33;Cancelado
+V00334;20/06/2026;Delta Moveis;Leste;Elisa Teste;1863,08;Em transporte
+V00335;07/10/2026;Kappa Calcados;Sul;Elisa Teste;1763,97;Cancelado
+V00336;09/03/2026;Alfa Comercial;Leste;Diego Teste;2348,85;Pendente
+V00337;26/10/2026;Delta Moveis;Norte;Bruno Teste;641,41;Cancelado
+V00338;12/07/2026;Theta Brinquedos;Leste;Diego Teste;1872,16;Cancelado
+V00339;09/06/2026;Theta Brinquedos;Oeste;Ana Teste;1239,58;Em transporte
+V00340;16/06/2026;Gama Papelaria;Sul;Elisa Teste;482,05;Em transporte
+V00341;19/03/2026;Zeta Ferragens;Centro;Carla Teste;646,62;Pendente
+V00342;19/01/2026;Epsilon Tecidos;Norte;Carla Teste;2065,43;Entregue
+V00343;25/03/2026;Eta Livraria;Centro;Carla Teste;1860,55;Entregue
+V00344;22/04/2026;Zeta Ferragens;Centro;Ana Teste;1115,28;Cancelado
+V00345;21/10/2026;Iota Cosmeticos;Oeste;Carla Teste;211,84;Cancelado
+V00346;09/09/2026;Eta Livraria;Norte;Carla Teste;21,26;Pendente
+V00347;18/03/2026;Alfa Comercial;Norte;Elisa Teste;875,62;Entregue
+V00348;20/07/2026;Eta Livraria;Oeste;Diego Teste;1464,33;Pendente
+V00349;07/09/2026;Alfa Comercial;Sul;Ana Teste;1037,02;Em transporte
+V00350;14/09/2026;Zeta Ferragens;Sul;Carla Teste;2451,61;Entregue
+V00351;14/11/2026;Zeta Ferragens;Oeste;Diego Teste;898,89;Entregue
+V00352;03/04/2026;Kappa Calcados;Oeste;Carla Teste;1839,43;Entregue
+V00353;25/11/2026;Theta Brinquedos;Leste;Elisa Teste;2181,71;Cancelado
+V00354;25/10/2026;Delta Moveis;Oeste;Bruno Teste;24,37;Pendente
+V00355;27/04/2026;Delta Moveis;Oeste;Ana Teste;1916,92;Cancelado
+V00356;12/10/2026;Theta Brinquedos;Norte;Carla Teste;1593,68;Cancelado
+V00357;15/08/2026;Beta Distribuidora;Norte;Diego Teste;2139,61;Entregue
+V00358;24/05/2026;Kappa Calcados;Norte;Elisa Teste;1171,23;Cancelado
+V00359;27/06/2026;Theta Brinquedos;Norte;Ana Teste;985,05;Entregue
+V00360;19/04/2026;Eta Livraria;Sul;Elisa Teste;636,32;Pendente
+V00361;23/10/2026;Iota Cosmeticos;Leste;Elisa Teste;1167,66;Pendente
+V00362;21/01/2026;Theta Brinquedos;Leste;Elisa Teste;394,36;Cancelado
+V00363;18/04/2026;Delta Moveis;Centro;Ana Teste;1392,26;Entregue
+V00364;13/10/2026;Epsilon Tecidos;Oeste;Ana Teste;2064,38;Pendente
+V00365;06/02/2026;Gama Papelaria;Sul;Diego Teste;1438,48;Cancelado
+V00366;19/10/2026;Beta Distribuidora;Norte;Elisa Teste;779,29;Em transporte
+V00367;06/05/2026;Gama Papelaria;Norte;Bruno Teste;1061,71;Em transporte
+V00368;29/09/2026;Epsilon Tecidos;Leste;Carla Teste;1048,18;Cancelado
+V00369;14/05/2026;Iota Cosmeticos;Sul;Bruno Teste;2138,67;Pendente
+V00370;08/05/2026;Epsilon Tecidos;Leste;Elisa Teste;673,41;Em transporte
+V00371;05/01/2026;Beta Distribuidora;Oeste;Carla Teste;303,97;Pendente
+V00372;20/10/2026;Gama Papelaria;Leste;Elisa Teste;1333,35;Cancelado
+V00373;05/06/2026;Eta Livraria;Sul;Elisa Teste;735,45;Pendente
+V00374;27/10/2026;Eta Livraria;Centro;Elisa Teste;1864,03;Entregue
+V00375;12/01/2026;Beta Distribuidora;Oeste;Diego Teste;713,39;Pendente
+V00376;17/07/2026;Epsilon Tecidos;Oeste;Diego Teste;1629,70;Pendente
+V00377;02/09/2026;Zeta Ferragens;Sul;Elisa Teste;972,59;Em transporte
+V00378;26/03/2026;Kappa Calcados;Leste;Diego Teste;1001,29;Em transporte
+V00379;08/01/2026;Kappa Calcados;Norte;Elisa Teste;273,16;Entregue
+V00380;06/04/2026;Gama Papelaria;Oeste;Diego Teste;2450,19;Em transporte
+V00381;14/01/2026;Zeta Ferragens;Centro;Diego Teste;345,90;Pendente
+V00382;05/05/2026;Kappa Calcados;Sul;Elisa Teste;1380,98;Cancelado
+V00383;16/11/2026;Delta Moveis;Leste;Diego Teste;58,12;Entregue
+V00384;14/10/2026;Epsilon Tecidos;Norte;Carla Teste;1669,35;Pendente
+V00385;07/03/2026;Beta Distribuidora;Norte;Carla Teste;1638,68;Cancelado
+V00386;15/04/2026;Eta Livraria;Centro;Elisa Teste;2420,38;Pendente
+V00387;10/10/2026;Iota Cosmeticos;Sul;Elisa Teste;1637,99;Entregue
+V00388;11/06/2026;Zeta Ferragens;Oeste;Bruno Teste;645,47;Em transporte
+V00389;11/02/2026;Epsilon Tecidos;Sul;Bruno Teste;253,21;Pendente
+V00390;06/02/2026;Iota Cosmeticos;Oeste;Ana Teste;202,26;Em transporte
+V00391;19/05/2026;Eta Livraria;Leste;Ana Teste;2398,74;Pendente
+V00392;21/04/2026;Kappa Calcados;Norte;Ana Teste;1966,65;Em transporte
+V00393;20/10/2026;Gama Papelaria;Norte;Elisa Teste;2428,85;Cancelado
+V00394;11/10/2026;Delta Moveis;Oeste;Bruno Teste;846,00;Em transporte
+V00395;22/01/2026;Iota Cosmeticos;Oeste;Elisa Teste;1005,21;Pendente
+V00396;07/05/2026;Zeta Ferragens;Centro;Elisa Teste;2245,41;Entregue
+V00397;10/07/2026;Eta Livraria;Centro;Bruno Teste;1527,04;Em transporte
+V00398;03/05/2026;Delta Moveis;Oeste;Elisa Teste;1692,91;Cancelado
+V00399;14/07/2026;Alfa Comercial;Leste;Bruno Teste;1215,57;Em transporte
+V00400;30/10/2026;Epsilon Tecidos;Oeste;Bruno Teste;324,86;Pendente
+V00401;23/01/2026;Zeta Ferragens;Centro;Ana Teste;826,41;Entregue
+V00402;08/05/2026;Alfa Comercial;Oeste;Carla Teste;614,85;Pendente
+V00403;12/03/2026;Delta Moveis;Sul;Bruno Teste;234,18;Pendente
+V00404;18/08/2026;Eta Livraria;Norte;Carla Teste;1511,03;Entregue
+V00405;31/07/2026;Iota Cosmeticos;Centro;Diego Teste;1837,47;Cancelado
+V00406;13/07/2026;Delta Moveis;Centro;Elisa Teste;1040,07;Entregue
+V00407;12/01/2026;Alfa Comercial;Sul;Elisa Teste;2324,48;Pendente
+V00408;02/05/2026;Alfa Comercial;Oeste;Ana Teste;1233,81;Entregue
+V00409;28/01/2026;Gama Papelaria;Leste;Bruno Teste;798,08;Em transporte
+V00410;14/03/2026;Gama Papelaria;Sul;Elisa Teste;1837,59;Pendente
+V00411;14/04/2026;Kappa Calcados;Oeste;Elisa Teste;956,04;Entregue
+V00412;09/06/2026;Gama Papelaria;Norte;Diego Teste;1295,99;Cancelado
+V00413;22/08/2026;Beta Distribuidora;Sul;Diego Teste;1705,46;Pendente
+V00414;27/09/2026;Beta Distribuidora;Sul;Carla Teste;251,38;Cancelado
+V00415;01/11/2026;Gama Papelaria;Sul;Diego Teste;1562,18;Cancelado
+V00416;30/04/2026;Eta Livraria;Centro;Bruno Teste;1333,81;Entregue
+V00417;28/09/2026;Beta Distribuidora;Centro;Bruno Teste;1917,29;Pendente
+V00418;25/01/2026;Alfa Comercial;Norte;Elisa Teste;62,54;Cancelado
+V00419;25/02/2026;Zeta Ferragens;Centro;Ana Teste;1961,22;Entregue
+V00420;26/07/2026;Alfa Comercial;Norte;Elisa Teste;436,25;Em transporte
+V00421;09/07/2026;Gama Papelaria;Oeste;Bruno Teste;61,32;Em transporte
+V00422;19/02/2026;Kappa Calcados;Sul;Diego Teste;887,56;Cancelado
+V00423;28/06/2026;Delta Moveis;Sul;Bruno Teste;461,97;Pendente
+V00424;21/06/2026;Gama Papelaria;Oeste;Ana Teste;2329,96;Entregue
+V00425;06/09/2026;Zeta Ferragens;Leste;Bruno Teste;1920,66;Entregue
+V00426;05/02/2026;Eta Livraria;Sul;Ana Teste;2352,29;Pendente
+V00427;16/06/2026;Alfa Comercial;Sul;Bruno Teste;464,30;Pendente
+V00428;05/06/2026;Zeta Ferragens;Leste;Elisa Teste;1371,92;Cancelado
+V00429;08/11/2026;Kappa Calcados;Oeste;Elisa Teste;692,10;Pendente
+V00430;19/09/2026;Zeta Ferragens;Sul;Elisa Teste;2328,34;Entregue
+V00431;23/02/2026;Delta Moveis;Centro;Bruno Teste;1132,88;Entregue
+V00432;30/10/2026;Gama Papelaria;Oeste;Carla Teste;346,26;Pendente
+V00433;02/05/2026;Gama Papelaria;Sul;Bruno Teste;1329,94;Pendente
+V00434;25/04/2026;Epsilon Tecidos;Leste;Diego Teste;2067,56;Entregue
+V00435;15/01/2026;Alfa Comercial;Oeste;Bruno Teste;2305,29;Em transporte
+V00436;20/07/2026;Epsilon Tecidos;Centro;Bruno Teste;148,29;Cancelado
+V00437;08/08/2026;Kappa Calcados;Centro;Bruno Teste;924,74;Entregue
+V00438;20/09/2026;Delta Moveis;Centro;Diego Teste;2286,64;Pendente
+V00439;20/07/2026;Epsilon Tecidos;Norte;Diego Teste;1801,79;Entregue
+V00440;09/09/2026;Alfa Comercial;Leste;Ana Teste;293,76;Entregue
+V00441;28/06/2026;Eta Livraria;Norte;Diego Teste;351,30;Em transporte
+V00442;10/07/2026;Eta Livraria;Oeste;Carla Teste;1802,53;Entregue
+V00443;25/06/2026;Gama Papelaria;Leste;Bruno Teste;1241,83;Em transporte
+V00444;27/11/2026;Iota Cosmeticos;Oeste;Ana Teste;876,22;Cancelado
+V00445;11/04/2026;Theta Brinquedos;Centro;Elisa Teste;1250,28;Pendente
+V00446;07/11/2026;Beta Distribuidora;Centro;Carla Teste;1443,93;Pendente
+V00447;27/08/2026;Delta Moveis;Centro;Ana Teste;1617,75;Entregue
+V00448;15/01/2026;Theta Brinquedos;Sul;Ana Teste;1569,27;Cancelado
+V00449;15/04/2026;Zeta Ferragens;Centro;Bruno Teste;1744,59;Cancelado
+V00450;12/07/2026;Zeta Ferragens;Oeste;Elisa Teste;1868,34;Cancelado
+V00451;15/09/2026;Iota Cosmeticos;Centro;Carla Teste;1906,13;Cancelado
+V00452;18/09/2026;Alfa Comercial;Centro;Carla Teste;992,61;Em transporte
+V00453;07/07/2026;Kappa Calcados;Norte;Carla Teste;2151,88;Entregue
+V00454;08/08/2026;Theta Brinquedos;Oeste;Carla Teste;1511,87;Entregue
+V00455;11/07/2026;Epsilon Tecidos;Centro;Bruno Teste;2468,00;Pendente
+V00456;16/11/2026;Beta Distribuidora;Oeste;Carla Teste;1723,53;Entregue
+V00457;11/07/2026;Beta Distribuidora;Norte;Carla Teste;1225,10;Cancelado
+V00458;23/08/2026;Alfa Comercial;Centro;Bruno Teste;342,13;Cancelado
+V00459;03/05/2026;Zeta Ferragens;Sul;Elisa Teste;1796,56;Em transporte
+V00460;12/09/2026;Zeta Ferragens;Sul;Bruno Teste;1096,74;Entregue
+V00461;20/08/2026;Epsilon Tecidos;Centro;Ana Teste;2054,54;Entregue
+V00462;02/10/2026;Alfa Comercial;Centro;Carla Teste;558,40;Pendente
+V00463;09/08/2026;Alfa Comercial;Sul;Bruno Teste;1780,86;Cancelado
+V00464;12/04/2026;Delta Moveis;Norte;Elisa Teste;1384,97;Cancelado
+V00465;23/11/2026;Gama Papelaria;Oeste;Elisa Teste;2004,73;Em transporte
+V00466;16/11/2026;Zeta Ferragens;Norte;Ana Teste;993,95;Pendente
+V00467;20/07/2026;Iota Cosmeticos;Centro;Diego Teste;1028,29;Cancelado
+V00468;11/05/2026;Iota Cosmeticos;Centro;Bruno Teste;1268,71;Cancelado
+V00469;19/03/2026;Beta Distribuidora;Centro;Carla Teste;2146,03;Em transporte
+V00470;05/04/2026;Gama Papelaria;Leste;Ana Teste;2247,27;Entregue
+V00471;09/05/2026;Gama Papelaria;Centro;Bruno Teste;2144,83;Entregue
+V00472;31/10/2026;Kappa Calcados;Leste;Carla Teste;1897,84;Em transporte
+V00473;24/05/2026;Delta Moveis;Oeste;Bruno Teste;1626,60;Em transporte
+V00474;16/10/2026;Gama Papelaria;Norte;Carla Teste;1829,32;Entregue
+V00475;28/10/2026;Kappa Calcados;Oeste;Carla Teste;408,49;Cancelado
+V00476;01/09/2026;Theta Brinquedos;Sul;Ana Teste;1858,02;Cancelado
+V00477;30/06/2026;Beta Distribuidora;Norte;Bruno Teste;2359,11;Cancelado
+V00478;10/09/2026;Iota Cosmeticos;Oeste;Ana Teste;2480,46;Pendente
+V00479;10/03/2026;Theta Brinquedos;Oeste;Carla Teste;1036,37;Pendente
+V00480;08/09/2026;Eta Livraria;Leste;Carla Teste;1298,79;Pendente
+V00481;08/03/2026;Gama Papelaria;Oeste;Ana Teste;935,60;Cancelado
+V00482;24/08/2026;Theta Brinquedos;Leste;Ana Teste;963,11;Pendente
+V00483;30/06/2026;Delta Moveis;Sul;Ana Teste;1077,98;Cancelado
+V00484;30/05/2026;Delta Moveis;Oeste;Diego Teste;1158,46;Em transporte
+V00485;06/05/2026;Iota Cosmeticos;Oeste;Diego Teste;1431,48;Entregue
+V00486;14/06/2026;Alfa Comercial;Leste;Carla Teste;2017,18;Pendente
+V00487;13/11/2026;Kappa Calcados;Norte;Diego Teste;1385,51;Cancelado
+V00488;07/02/2026;Iota Cosmeticos;Oeste;Carla Teste;1355,61;Em transporte
+V00489;25/10/2026;Gama Papelaria;Leste;Ana Teste;824,28;Em transporte
+V00490;20/08/2026;Gama Papelaria;Centro;Elisa Teste;966,91;Pendente
+V00491;06/04/2026;Iota Cosmeticos;Oeste;Bruno Teste;1913,56;Em transporte
+V00492;13/10/2026;Theta Brinquedos;Norte;Ana Teste;1990,11;Cancelado
+V00493;29/04/2026;Alfa Comercial;Norte;Bruno Teste;79,97;Cancelado
+V00494;11/08/2026;Epsilon Tecidos;Oeste;Diego Teste;2058,16;Cancelado
+V00495;18/05/2026;Eta Livraria;Sul;Diego Teste;2063,33;Entregue
+V00496;10/11/2026;Alfa Comercial;Centro;Bruno Teste;11,26;Em transporte
+V00497;29/04/2026;Zeta Ferragens;Leste;Ana Teste;666,30;Cancelado
+V00498;15/03/2026;Zeta Ferragens;Oeste;Carla Teste;1695,20;Entregue
+V00499;01/05/2026;Alfa Comercial;Norte;Ana Teste;290,38;Entregue
+V00500;04/02/2026;Gama Papelaria;Sul;Bruno Teste;2034,93;Cancelado

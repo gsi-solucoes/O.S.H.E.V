@@ -3,1100 +3,158 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-/*CSPHASH*/'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;700&family=Red+Hat+Text:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* VOICE work: painel de manutenção para o planejador e o gerente operacional
-   IDEA o quadro de controle da oficina: faixa azul de comando, filas como prateleiras
-   PICTURE quadro de backlog grande + barras por fila e especialidade, lista de OS embaixo
-   COLOUR azul oxford #0b1f4b na faixa, branco nos painéis, magenta #e0115f para backlog
-   TYPE Red Hat Display 700 + Red Hat Text
-   LAYOUT laptop: faixa de comando, filtros em linha, números, gráficos em 2 colunas, lista; celular: tudo empilhado */
-:root{color-scheme:light dark;--bg:light-dark(#f4f6fb,#070f26);--panel:light-dark(#fff,#0f1c3d);--ink:light-dark(#0b1630,#e8ecf6);--muted:light-dark(#5b6683,#9aa6c4);--line:light-dark(#dfe4ef,#22305a);--band:#0b1f4b;--accent:#e0115f;--blue:light-dark(#2347c5,#7d9bff);--soft:light-dark(#e9edf8,#18264d);--warn:light-dark(#b35a00,#ffb066)}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root{color-scheme:light dark;--bg:light-dark(#f4f6fb,#0b1220);--panel:light-dark(#fff,#142038);--ink:light-dark(#0b1630,#e8ecf6);--muted:light-dark(#5b6683,#9aa6c4);--line:light-dark(#dfe4ef,#27375f);--band:#0f2a4a;--accent:#1f6feb;--good:light-dark(#127a3a,#3ddc84)}
 *{box-sizing:border-box;min-width:0}
-html{scroll-padding-top:72px}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Red Hat Text",system-ui,sans-serif;overflow-x:clip}
-h1,h2,h3{font-family:"Red Hat Display",system-ui,sans-serif;letter-spacing:-.02em;line-height:1.1;margin:0}
-h1{font-size:clamp(28px,5vw,44px)}
-h2{font-size:22px;margin-bottom:12px}
-h3{font-size:16px;margin-bottom:10px}
-.band{padding:clamp(20px,3vw,40px) max(4vw,16px)}
-.top{background:var(--band);color:#fff}
-.top p{color:#c9d3ee;margin:6px 0 0;max-width:62ch}
-.cmd{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px;align-items:center}
-button,.btn{font:600 15px/1 "Red Hat Text",sans-serif;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
-button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.prim{background:var(--accent);border-color:var(--accent);color:#fff}
-.top .ghost{background:transparent;color:#fff;border-color:#40558f}
-label.btn{display:inline-flex;align-items:center}
-.pick{position:relative;overflow:hidden}
-.pick input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px}
-.status{color:#c9d3ee;font-size:14px}
-nav.tabs{display:flex;gap:4px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);padding:0 max(4vw,16px);position:sticky;top:0;z-index:5}
-nav.tabs a{flex:none;padding:14px 12px;color:var(--muted);text-decoration:none;font-weight:600;border-bottom:3px solid transparent}
-nav.tabs a.on{color:var(--ink);border-color:var(--accent)}
-.fbox{margin-bottom:18px}.fbox summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
-.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:18px}
-.filters label{font-size:13px;color:var(--muted);display:grid;gap:4px}
-select,input[type=date],input[type=search],textarea{font:16px "Red Hat Text",sans-serif;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;width:100%}
-textarea{min-height:120px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px;margin-bottom:18px}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-.kpi b{display:block;font:700 clamp(26px,4vw,34px)/1.1 "Red Hat Display",sans-serif;white-space:nowrap}
-.kpi span{font-size:14px;color:var(--muted)}
-.frac{display:flex;align-items:center;gap:14px;margin:4px 0 6px}
-.fr{display:grid;justify-items:center}
-.fr em{font:700 clamp(22px,3.4vw,28px)/1.1 "Red Hat Display",sans-serif;font-style:normal;font-variant-numeric:tabular-nums}
-.fr i{display:block;width:100%;height:2px;background:currentColor;margin:3px 0;opacity:.7}
-.pc{font:700 clamp(30px,5vw,40px)/1 "Red Hat Display",sans-serif;color:var(--accent);white-space:nowrap}
-.pc.good,.good{color:light-dark(#127a3a,#3ddc84)!important}
-.pc small{display:block;font:500 13px "Red Hat Text",sans-serif;color:var(--muted)}
-.kpi.hot{background:var(--band);color:#fff;border-color:var(--band)}
-.kpi.hot span{color:#c9d3ee}
-.kpi.hot b{color:#ff5c96}
-.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;margin-bottom:18px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-.bars{display:grid;gap:7px}
-.bar{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr) auto;gap:10px;align-items:center;font-size:14px;cursor:pointer;background:none;border:0;padding:0;min-height:28px;text-align:left;color:var(--ink);font-weight:400}
-.bar .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bar .t{height:16px;background:var(--soft);border-radius:4px;overflow:hidden}
-.bar .t i{display:block;height:100%;background:var(--blue);border-radius:4px}
-.bar.acc .t i{background:var(--accent)}
-.bar.open .n{font-weight:700}
-.chev{display:inline-block;width:1.2em;font-size:18px;line-height:1;text-align:center;color:var(--accent);font-weight:700;transition:transform .15s}
-.bar.open .chev,tr.eq.open .chev{transform:rotate(90deg)}
-@media(prefers-reduced-motion:reduce){.chev{transition:none}}
-.drill{display:grid;gap:8px;margin:2px 0 10px;padding:10px;border-left:3px solid var(--accent);background:var(--soft);border-radius:0 8px 8px 0;font-size:14px}
-.dr{display:grid;gap:2px;padding-bottom:8px;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
-.dr:last-of-type{border-bottom:0}
-.dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.drmore{justify-self:start}
-.rq{margin-bottom:14px}
-.top h1 .cli{font-weight:500;font-size:.6em;opacity:.8}#logoTopo img{height:34px;vertical-align:middle;margin-right:10px;border-radius:6px;background:#fff;padding:2px}
-.colmap select{min-width:200px}.colmap td{vertical-align:middle}
-.mmw{display:grid;gap:4px}.mm{display:grid;grid-template-columns:3em 1fr;align-items:center;gap:6px}.mm .n{font-size:13px;color:var(--muted)}.mb{display:grid;gap:2px}.mb .bar{padding:1px 0;min-height:0}.mb .bar.ant i{background:var(--line)!important;filter:brightness(.8)}.mb .bar:not(.ant) i{background:var(--accent)!important}.wl .bar{grid-template-columns:minmax(0,17em) minmax(0,1fr) auto}
-.lg{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}.lg.a{background:var(--accent)}.lg.b{background:var(--line);filter:brightness(.8)}.hb{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
-.win{position:fixed;inset:0;z-index:60;background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45)}
-@media(min-width:701px){.win{inset:auto;border-radius:14px;resize:both;min-width:360px;min-height:260px}.win.max{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0}}
-.wh{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;background:var(--band);color:#fff;user-select:none;touch-action:none}
-@media(min-width:701px){.wh{cursor:move}}
-.wt{flex:1;display:flex;flex-direction:column;min-width:0;line-height:1.25}.wt span{font-size:13px;opacity:.75}.wt b{font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.wh button{min-width:44px;min-height:40px;font-size:18px;background:transparent;color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:8px;cursor:pointer}.wh .wcp{font-size:14px}.wh .wx:hover{background:var(--accent)}
-.wb{overflow:auto;padding:14px;flex:1}.wb .drill{margin:0}
-.wk{grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr))}.wk .kpi b{font-size:24px}
-#dock{position:fixed;left:8px;bottom:8px;z-index:9999;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)}
-.dk{background:var(--band);color:#fff;border:0;border-radius:999px;padding:8px 14px;font:14px "Red Hat Text",sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3);cursor:pointer}
-.kmain{grid-template-columns:repeat(2,minmax(0,1fr))}@media(min-width:1000px){.kmain{grid-template-columns:repeat(4,minmax(0,1fr))}}@media(max-width:420px){.kmain{grid-template-columns:1fr}}
-.kmain .kpi>b{font-size:clamp(26px,2.6vw,38px);white-space:nowrap}
-.kpi[data-s]{cursor:pointer}
-.esp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,128px),1fr));gap:10px;margin:0 0 18px}
-.et{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line);border-top:5px solid var(--c);transition:transform .12s,box-shadow .12s}
-.et:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.12)}
-.et .en{font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.et b{font:700 30px/1.1 "Red Hat Display",sans-serif}
-.et .eb{height:6px;border-radius:99px;background:var(--soft);overflow:hidden;margin:4px 0}.et .eb i{display:block;height:100%;background:var(--c)}
-.et .es{font-size:12px;color:var(--muted)}.et .es em{font-style:normal;font-weight:700;color:var(--ink)}.et .es em.good{color:light-dark(#127a3a,#3ddc84)}
-.kmain .kpi,.grid2 .card{transition:box-shadow .15s}.kmain .kpi:hover{box-shadow:0 6px 18px rgba(0,0,0,.10)}
-.kd{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}.kdi{cursor:pointer;border-radius:8px;padding:4px 6px}.kdi:hover{outline:2px solid var(--accent)}.kdi b{display:block;font:700 clamp(26px,2.6vw,38px)/1.1 "Red Hat Display",sans-serif}.kdi span{font-size:12px;color:var(--muted)}
-.pcw{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
-.pcr{display:flex;align-items:center;gap:10px}.meta90{display:flex;align-items:center;gap:5px;line-height:1.05;border-left:2px solid var(--line);padding-left:8px}.meta90 b{font:700 22px "Red Hat Display",sans-serif}.meta90 span{font-size:11px;color:var(--muted)}.meta90.ok b{color:light-dark(#127a3a,#3ddc84)}
-.fant{display:flex;flex-direction:column;align-items:flex-start;gap:1px;line-height:1.1;cursor:help}.fant b{font:700 20px "Red Hat Display",sans-serif;color:#c9a227;text-shadow:0 0 10px rgba(201,162,39,.35)}.fant span{font-size:11px;color:#b08d1a}
-.chip.fc{cursor:pointer;user-select:none}.chip.fc:hover{filter:brightness(.95)}.chip.fc.on{outline:3px solid var(--ink);outline-offset:1px;font-weight:700}.chip.fc.on::before{content:'✓';margin-right:2px}
-.selbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;margin:8px 0;background:var(--panel);border:1px solid var(--line);border-radius:10px;position:sticky;top:-14px;z-index:2}.tag.on{background:var(--ink);color:var(--bg)}.sellimpa{margin-left:auto}.kpi[data-s]:hover{outline:2px solid var(--accent)}
-.ck{display:grid;gap:8px}
-.ckl{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer}
-.ckl input[type=checkbox],.ckl input[type=radio]{width:22px;height:22px;flex:none;margin-top:2px;accent-color:var(--accent)}
-.ckl select,.ckl input[type=date]{width:auto;min-height:38px;display:inline-block;margin:4px 0}
-.mini{display:grid;gap:8px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:4px}
-.mg{display:grid;gap:4px}
-.mt{font-size:12px;color:var(--muted);font-weight:600}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 4px 3px 10px;border-radius:99px;background:var(--soft);font-size:13px;overflow-wrap:anywhere}
-.chip b{flex:none;white-space:nowrap;min-width:24px;height:24px;padding:0 6px;border-radius:99px;background:var(--accent);color:#fff;display:inline-grid;place-items:center;font-size:12px;font-variant-numeric:tabular-nums}
-tr.eq{cursor:pointer}
-tr.eq.open td{font-weight:700}
-.drtr td{padding:0 0 8px}
-.drtr td::before{content:none!important}
-@media(max-width:600px){.stack tr.drtr{display:block;border-bottom:0;padding:0}.stack tr.drtr td{display:block;padding:0}}
-.bar .v{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
-.scroll{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{font-size:13px;color:var(--muted);font-weight:600;white-space:nowrap}
-td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.tag.pri{background:var(--accent);color:#fff}
-.tag{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--soft);font-size:12px;white-space:nowrap}
-.tag.bk{background:color-mix(in srgb,var(--accent) 18%,transparent)}
-.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:clip;padding-bottom:60px}
+h1,h2,h3{line-height:1.15;margin:0}h1{font-size:clamp(26px,5vw,40px)}h2{font-size:21px;margin-bottom:10px}h3{font-size:16px;margin-bottom:8px}
+.band{padding:clamp(16px,3vw,32px) max(4vw,14px)}
+.top{background:var(--band);color:#fff}.top p{color:#c9d3ee;margin:6px 0 0}
+.top h1 img{height:34px;vertical-align:middle;margin-right:10px;border-radius:6px;background:#fff;padding:2px}.cli{font-weight:500;font-size:.55em;opacity:.85}
+.cmd{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px;align-items:center}
+button,.btn{font:600 15px/1 system-ui,sans-serif;min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;text-decoration:none}
+.prim{background:var(--accent);border-color:var(--accent);color:#fff}.top .ghost{background:transparent;color:#fff;border-color:#4a6590}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.pick{position:relative;overflow:hidden}.pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:100px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;background:var(--panel);border-bottom:1px solid var(--line);padding:0 max(4vw,14px);position:sticky;top:0;z-index:5}
+nav.tabs button{border:0;border-bottom:3px solid transparent;border-radius:0;background:none;color:var(--muted)}nav.tabs button.on{color:var(--ink);border-color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px}
 .muted{color:var(--muted);font-size:14px}
-.empty{max-width:640px}
-.empty ol{padding-left:20px}
-.view{display:none}.view.on{display:block}
-.note{font-size:13px;color:var(--muted);margin-top:8px}
-.warn{color:var(--warn)}
-.ok{color:#127a3a}
-.ic{font-size:20px;font-weight:700;width:28px}.f-ok .ic{color:#1a8f4c}.f-vazio .ic{color:var(--warn)}.f-erro .ic{color:var(--accent)}
-#prog{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 70%,transparent);display:grid;place-items:center;z-index:20;padding:16px}
-#prog[hidden]{display:none}
-.pin{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;width:min(420px,100%);display:grid;gap:8px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
-#progSub{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
-.pbar{height:10px;background:var(--soft);border-radius:99px;overflow:hidden}
-.pbar i{display:block;height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s}
-@media(prefers-reduced-motion:reduce){.pbar i{transition:none}}
-#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--band);color:#fff;padding:10px 16px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none}
-#toast.on{opacity:1}
-@media(prefers-reduced-motion:reduce){#toast{transition:none}}
-@media(max-width:600px){table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:12px;border-bottom:2px solid var(--accent)}.stack td{display:flex;justify-content:space-between;gap:12px;border:0;padding:3px 0;text-align:right}.stack td::before{content:attr(data-l);color:var(--muted);text-align:left}.stack td:empty{display:none}.bar{grid-template-columns:minmax(0,7.5em) minmax(0,1fr) auto}}
+details.fbox{margin-bottom:16px}details.fbox>summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;padding:0 14px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:8px}
+label.f{font-size:13px;color:var(--muted);display:grid;gap:4px}
+select,input[type=date],input[type=month],input[type=search],input[type=text],input[type=number],textarea{font:16px system-ui,sans-serif;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:6px 8px;width:100%}
+textarea{min-height:90px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:left;display:block;width:100%;min-height:0;height:auto}
+.kpi b{display:block;font:700 clamp(24px,4vw,32px)/1.1 system-ui,sans-serif}.kpi span{font-size:14px;color:var(--muted);font-weight:400}
+.good{color:var(--good)!important}
+.bars{display:grid;gap:6px}.bar{display:grid;grid-template-columns:minmax(80px,30%) 1fr auto;gap:8px;align-items:center;text-align:left;background:none;border:0;min-height:32px;padding:0;font-weight:400}
+.bar i{display:block;height:14px;background:var(--accent);border-radius:4px;opacity:.85}.bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;max-width:340px;min-width:70px;overflow-wrap:break-word}
+th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:uppercase;color:var(--muted)}
+.jan{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 40px #0006;width:min(720px,96vw);max-height:80vh;display:flex;flex-direction:column}
+.jan header{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--band);color:#fff;border-radius:12px 12px 0 0;cursor:move;touch-action:none}
+.jan header b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jan header button{min-height:32px;padding:0 10px;background:#ffffff22;color:#fff;border-color:#ffffff44}
+.jan .corpo{overflow:auto;padding:10px}.jan.min .corpo,.jan.min .barra{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.chip{min-height:30px;padding:0 10px;font-size:13px;border-radius:99px}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.barra{display:flex;gap:8px;padding:8px 10px;border-top:1px solid var(--line);flex-wrap:wrap}
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;gap:6px;padding:6px;background:var(--panel);border-top:1px solid var(--line);overflow-x:auto}
+#dock:empty{display:none}#dock button{min-height:34px;font-size:13px;flex:none}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:70px;background:var(--band);color:#fff;padding:12px 18px;border-radius:10px;z-index:50;display:none;max-width:92vw}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);max-width:min(760px,96vw);width:100%}
+dialog::backdrop{background:#0008}
+footer{padding:16px max(4vw,14px);color:var(--muted);font-size:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+ol.passos{margin:8px 0 0;padding-left:22px}ol.passos li{margin:4px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.vazio{padding:24px;text-align:center;color:var(--muted)}
 </style>
 </head>
 <body>
 <header class="band top">
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
-  <p>Escolha os relatórios de ordens de serviço em CSV (relatórios do MV ou qualquer planilha; vários de uma vez ou um .zip). Os arquivos são lidos só no seu aparelho.</p>
+  <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
-    <label class="btn prim pick">Escolher arquivos<input type="file" id="files" multiple accept=".csv,.zip,application/zip,application/x-zip-compressed,text/csv,text/comma-separated-values,text/plain,application/vnd.ms-excel,application/octet-stream"></label>
-    <button class="ghost" id="clear">Limpar</button>
-    <span class="status" id="status">Nenhum arquivo carregado.</span>
+    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,text/csv,text/plain" multiple></label>
+    <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
   </div>
 </header>
-<nav class="tabs" id="tabs">
-  <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#relatorios">Relatórios</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#historico">Histórico</a><a href="#inconsistencias">Para arrumar</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
+<nav class="tabs" role="tablist">
+  <button id="tPainel" class="on" role="tab">Painel</button>
+  <button id="tConfig" role="tab">Config</button>
 </nav>
-<main class="band">
-  <section id="emptyState" class="empty">
-    <h2>Como usar</h2>
-    <ol>
-      <li>No MV, puxe o R_ORDEM_SERVICO de cada fila: aberta, agendar, aguardando material, externo, não atendida, cancelada e concluída.</li>
-      <li>Toque em <b>Escolher CSVs do MV</b> e selecione todos de uma vez (ou um único .zip com todos dentro). Pode adicionar mais arquivos depois (ex.: o backlog).</li>
-      <li>Para o backlog completo, puxe as filas pendentes sem filtro de mês.</li>
-    </ol>
-  </section>
-  <div id="app" hidden>
-    <details class="fbox" id="fbox"><summary id="fsum">Filtros</summary><div class="filters" id="filters"></div></details>
-    <section class="view" id="v-dashboard"></section>
-    <section class="view" id="v-relatorios"></section>
-    <section class="view" id="v-backlog"></section>
-    <section class="view" id="v-tempos"></section>
-    <section class="view" id="v-equipe"></section>
-    <section class="view" id="v-setores"></section>
-    <section class="view" id="v-historico"></section>
-    <section class="view" id="v-inconsistencias"></section>
-  </div>
-  <section class="view" id="v-arquivos">
-    <h2 id="filesSum">Arquivos carregados</h2>
-    <div class="card"><div class="scroll"><table><tbody id="filesList"><tr><td>Nenhum arquivo carregado ainda.</td></tr></tbody></table></div></div>
-    <p class="note">✓ carregado · ⚠ arquivo sem OS (fila vazia no MV) · ✗ não foi lido. Para adicionar, toque em Escolher CSVs de novo: os que já estão aqui continuam (ficam guardados neste navegador até você tocar em Limpar). Arquivo repetido é ignorado.</p>
-  </section>
-  <section class="view" id="v-config">
-    <h2>Configurações</h2>
-    <div class="card" style="margin-bottom:16px"><h3>Empresa / cliente</h3><p class="muted">Aparece no topo, nas impressões e nos relatórios em Excel. Nada disso fica no código: cada cliente configura o seu.</p><div class="filters" style="margin:0"><label>Nome do cliente<input id="cfgCli" placeholder="ex.: Hospital Exemplo"></label><label>Área<input id="cfgArea" placeholder="ex.: Manutenção"></label><label>Logo (imagem)<input type="file" id="cfgLogo" accept="image/*"></label><label>&nbsp;<button id="cfgLogoX" type="button">Tirar logo</button></label></div><p id="cfgLogoPrev"></p></div>
-    <div class="card" style="margin-bottom:16px"><h3>Regras da observação (Pendente de)</h3><p class="muted">Uma linha por responsável: RESPONSÁVEL = expressão; expressão; ... Aceita erro de digitação (80% parecido) e ignora acentos. Vale o trecho mais recente da observação.</p><div class="note" style="margin-bottom:8px"><b>Frases padrão do planejamento</b> (o que não bater com nenhuma regra é recado do solicitante e não conta como tratativa):<br>TRATATIVA SUPERVISÃO 22/11/26 · TRATATIVA COMPRADOR 22/11/26 · TRATATIVA PLANEJAMENTO 22/11/26 · PROGRAMADO PARA 29/11/26 (FIM DE SEMANA) · EM EXECUÇÃO 22/11/26 · SERVIÇO REALIZADO, AGUARDANDO FECHAMENTO 22/11/26</div><textarea id="cfgRegras" style="min-height:180px"></textarea></div>
-    <div class="grid2">
-      <div class="card"><h3>Nomes genéricos</h3><p class="muted">Lançamentos no nome destas pessoas (usuários genéricos do sistema) aparecem juntos com o nome abaixo. Um nome (ou começo de nome) por linha.</p><label>Nome que aparece para eles <input id="cfgGenNome" style="max-width:320px"></label><textarea id="cfgGen"></textarea></div>
-      <div class="card"><h3>De-para de técnicos</h3><p class="muted">Corrige nomes. Uma linha por pessoa: NOME NO MV = NOME CORRETO</p><textarea id="cfgDepara"></textarea></div>
+
+<main>
+<section id="painel" class="band">
+  <div id="semDados" class="card vazio">Nenhum relatório carregado ainda. Toque em “Carregar relatório” e escolha um arquivo CSV.</div>
+  <div id="comDados" hidden>
+    <details class="fbox" id="filtros"><summary>Filtros</summary>
+      <div class="filters">
+        <label class="f" id="lConj">Relatório<select id="fConj"></select></label>
+        <label class="f">Período<select id="fPer"><option value="tudo">Tudo</option><option value="mes">Mês</option><option value="de">De–até</option></select></label>
+        <label class="f" id="lMes" hidden>Mês<input type="month" id="fMes"></label>
+        <label class="f" id="lDe" hidden>De<input type="date" id="fDe"></label>
+        <label class="f" id="lAte" hidden>Até<input type="date" id="fAte"></label>
+        <label class="f" id="lCD">Campo de data<select id="fCD"></select></label>
+        <label class="f">Campo categoria<select id="fCat"></select></label>
+        <label class="f">Valor<select id="fVal"></select></label>
+        <label class="f">Buscar texto<input type="search" id="fQ"></label>
+      </div>
+    </details>
+    <div class="kpis">
+      <button class="kpi" id="kTotal"><b>0</b><span>Total de registros</span></button>
+      <div class="kpi" id="kAnt"><b>—</b><span>Mais antigo</span></div>
+      <div class="kpi" id="kNov"><b>—</b><span>Mais novo</span></div>
     </div>
-    <div class="card" style="margin-bottom:16px"><h3>Limite de horas por execução</h3><p class="muted">Execução acima deste limite é tratada como erro de lançamento e a OS vai para "Para arrumar".</p><label class="muted">Horas <input type="number" id="cfgMax" min="1" max="72" step="1" style="font-size:16px;min-height:44px;width:7em"></label></div>
-    <div class="card" style="margin-bottom:16px"><h3>Formatos de planilha aprendidos</h3><p class="muted">Planilhas CSV que não são do formato do MV: o app pergunta uma vez o que é cada coluna e lembra. Aqui você vê os formatos e pode esquecer um para ele perguntar de novo.</p><div id="cfgLayouts"></div></div>
-    <button class="prim" id="cfgSave">Salvar e recalcular</button>
-    <p class="note">As configurações ficam guardadas só neste navegador.</p>
-  </section>
+    <div id="blocos" class="grid2"></div>
+    <h2>Registros</h2>
+    <div class="tw" id="tabReg"></div>
+    <div class="row" style="margin-top:10px"><button id="maisReg" hidden>Mostrar mais</button><span id="infoReg" class="muted"></span></div>
+    <div class="card" style="margin-top:16px"><h3>Gerar Excel</h3>
+      <div class="row">
+        <label class="f">Formato<select id="xFmt"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label>
+        <button class="prim" id="gerarXlsx">Gerar Excel</button><span id="xMsg" class="muted" role="status"></span>
+      </div>
+      <p class="muted">O Excel segue o período e os filtros escolhidos acima.</p>
+    </div>
+  </div>
+</section>
+
+<section id="config" class="band" hidden>
+  <div class="card"><h3>Empresa / cliente</h3>
+    <p class="muted">Aparece no topo, na impressão e na capa do Excel. Fica só neste aparelho.</p>
+    <div class="grid2">
+      <label class="f">Cliente<input type="text" id="cfgCliente"></label>
+      <label class="f">Área<input type="text" id="cfgArea"></label>
+    </div>
+    <div class="row" style="margin-top:10px"><label class="btn pick">Escolher logo<input type="file" id="cfgLogo" accept="image/*"></label><span id="cfgLogoPrev"></span><button id="cfgLogoX">Apagar logo</button></div>
+  </div>
+  <div class="card"><h3>Metas</h3>
+    <div class="grid2">
+      <label class="f">Meta dos indicadores em % (padrão 90)<input type="number" id="cfgMeta" min="0" max="100"></label>
+      <label class="f">Prazo para “dentro do prazo”, em horas (padrão 24)<input type="number" id="cfgPrazo" min="1"></label>
+    </div>
+  </div>
+  <div class="card"><h3>Sinônimos</h3>
+    <p class="muted">Uma regra por linha, no formato <code>palavra = outra palavra</code>. Usados na semelhança de texto. Começa vazio.</p>
+    <textarea id="cfgSin" spellcheck="false"></textarea>
+  </div>
+  <div class="card"><h3>Formatos lembrados</h3>
+    <p class="muted">Quando você diz “o que é cada coluna” uma vez, o formato fica lembrado. Esqueça para perguntar de novo.</p>
+    <div id="listaFmt"></div>
+  </div>
+  <div class="card"><h3>Dados deste aparelho</h3>
+    <div class="row"><button id="bkBaixar">Baixar backup</button><label class="btn pick">Restaurar backup<input type="file" id="bkArq" accept=".json,application/json"></label><button id="apagarTudo">Apagar todos os dados</button></div>
+    <p class="muted" id="infoDados"></p>
+  </div>
+  <div class="card"><h3>Versão Excel para o PC</h3>
+    <p class="muted">A mesma estrutura do app, como macro do Excel 2016 ou mais novo.</p>
+    <a class="btn prim" href="excel/RaioX_Relatorio.bas" download="RaioX_Relatorio.bas" data-baixar-bas>Baixar versão Excel para o PC</a>
+    <div class="passosBas"></div>
+  </div>
+</section>
 </main>
-<div id="toast"></div>
-<div id="prog" hidden role="status" aria-live="polite"><div class="pin"><div style="display:flex;justify-content:space-between;gap:12px"><b id="progTxt">Carregando...</b><b id="progPct" style="color:var(--accent);font-variant-numeric:tabular-nums">0%</b></div><span id="progSub"></span><div class="pbar"><i id="progBar"></i></div></div></div>
-<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+
+<footer>
+  <a class="btn" href="excel/RaioX_Relatorio.bas" download="RaioX_Relatorio.bas" data-baixar-bas>Baixar versão Excel para o PC</a>
+  <span id="versao"></span>
+</footer>
+
+<div id="dock"></div>
+<div id="toast" role="status"></div>
+<dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
+<dialog id="dlgPergunta"><h3 id="pgTit"></h3><p id="pgTxt"></p><div class="row" id="pgBtns"></div></dialog>
+
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/exceljs.min.js"></script>
 <script>/*CORE*/</script>
-<script>
-{
-const $ = s => document.querySelector(s);
-const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const nf = (x, d=0) => x == null || isNaN(x) ? '–' : x.toLocaleString('pt-BR', {minimumFractionDigits:d, maximumFractionDigits:d});
-const hm = h => { if (h == null || isNaN(h)) return '–'; const m = Math.round(h*60); if (m < 60) return m + ' min'; const H = Math.floor(m/60), M = m%60; return nf(H) + ' h' + (M ? ' ' + String(M).padStart(2,'0') + ' min' : ''); };
-const fh = h => h == null ? '–' : h < 48 ? hm(h) : nf(h/24,1) + ' dias';
-const fd = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '';
-const iso = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-const store = {get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-
-let raw = [], data = [], cut = null, shown = 50, demo = false, bIni = '', bFim = '';
-const hoje = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
-function setCut(){ cut = bFim ? new Date(bFim+'T00:00') : hoje(); }
-function blBase(L){ const i = bIni ? new Date(bIni+'T00:00') : null; return i ? L.filter(o=>o.pedido && o.pedido>=i) : L; }
-function blLabel(){ const f = d => new Date(d+'T00:00').toLocaleDateString('pt-BR'); return bIni && bFim ? `de ${f(bIni)} a ${f(bFim)}` : bFim ? `até ${f(bFim)}` : bIni ? `desde ${f(bIni)} (pendente hoje)` : 'atual (todos os arquivos carregados)'; }
-let cfg = Object.assign({genericos:[], genericoNome:'LANÇAMENTOS GENÉRICOS', depara:{}, maxExec:12, cliente:'', area:'Manutenção', logo:''}, store.get('gos_cfg', {}));
-// quem já usava com o padrão antigo continua vendo o mesmo nome do lançamento genérico
-{ const sv = store.get('gos_cfg', {}); // quem já usava antes da troca de nome mantém o lançamento genérico de antes
-  if (!('genericos' in sv) && localStorage.getItem('gos_dados')) { cfg.genericos = ['WALTER ANDR']; store.set('gos_cfg', cfg); }
-  if ((cfg.genericos||[]).some(g=>/^WALTER/.test(g)) && !sv.genericoNome) cfg.genericoNome = 'WALTER / LANÇAMENTOS GENÉRICOS'; }
-const ORG = () => [cfg.area, cfg.cliente].filter(Boolean).join(' · ');
-const F = {fila:'', especialidade:'', tecnico:'', tipo:'', setor:'', criticidade:'', de:'', ate:'', q:''};
-const FL = [['fila','Fila'],['pendente','Pendente de'],['especialidade','Especialidade'],['tecnico','Técnico'],['tipo','Tipo'],['setor','Setor'],['criticidade','Criticidade']];
-
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
-function copy(text,msg){navigator.clipboard.writeText(text).then(()=>toast(msg||'Copiado. Cole no Excel.'),()=>toast('Não foi possível copiar neste aparelho.'))}
-
-function rebuild(){
-  data = Core.enrich(Core.merge(raw), cfg); relStale = true; histComplementa();
-  const dates = data.map(o => o.pedido).filter(Boolean);
-  setCut();
-  const files = [...new Set(raw.map(o=>o.file))];
-  const bad = data.filter(o=>!o.ok).length;
-  const nprov = data.filter(o=>o.provisorio).length;
-  $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s): ${nf(data.length-bad-nprov)} normais${nprov?` + ${nprov} com horário ajustado (corrigir no MV)`:''}${bad?` · ${nf(bad)} fora por erro`:''}${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
-  $('#emptyState').hidden = !!(data.length || hist.length); $('#app').hidden = !(data.length || hist.length);
-  drawFiles(); drawLayouts();
-  drawFilters(); render();
-}
-
-function drawFiles(){
-  const L = Object.values(flog);
-  if (!L.length) { $('#filesSum').textContent = 'Arquivos carregados'; $('#filesList').innerHTML = '<tr><td>Nenhum arquivo carregado ainda.</td></tr>'; return }
-  const ic = {ok:'✓', vazio:'⚠', erro:'✗'};
-  const hrs = n => nf(data.filter(o=>o.file===n && o.ok).reduce((s,o)=>s+o.horas,0),1);
-  const nok = L.filter(x=>x.st==='ok').length, ner = L.filter(x=>x.st==='erro').length;
-  $('#filesSum').textContent = `Arquivos carregados: ${L.length} · ${nok} com OS${ner?` · ${ner} com erro`:''}`;
-  $('#filesList').innerHTML = L.map(x=>`<tr class="f-${x.st}"><td class="ic">${ic[x.st]}</td><td style="overflow-wrap:anywhere"><b>${esc(x.name)}</b><br><span class="muted"><b>${nf(x.n)} OS</b> · ${x.st==='ok'?esc(x.filas)+' · '+hrs(x.name)+' h lançadas':esc(x.msg)} · ${nf(x.size/1024)} KB</span></td></tr>`).join('');
-}
-function filtered(skipFila){
-  const de = F.de ? new Date(F.de+'T00:00') : null, ate = F.ate ? new Date(F.ate+'T23:59') : null, q = F.q.toUpperCase();
-  return data.filter(o => o.ok && FL.every(([k]) => !F[k] || (skipFila && k==='fila') || (k==='tecnico' ? o.tecnicos.includes(F[k]) : o[k]===F[k]))
-    && (!de || (o.pedido && o.pedido>=de)) && (!ate || (o.pedido && o.pedido<=ate))
-    && (!q || (o.os+' '+o.desc+' '+o.localidade+' '+o.servico+' '+(o.obs||'')).toUpperCase().includes(q)));
-}
-
-function drawFilters(){
-  const opts = k => Core.count(data.filter(o=>o.ok && (k!=='pendente' || o.pendente)), o => k==='tecnico' ? o.tecnico : o[k]).map(([v,n]) => `<option value="${esc(v)}"${F[k]===v?' selected':''}>${esc(v)} (${n})</option>`).join('');
-  $('#filters').innerHTML = FL.map(([k,l]) => `<label>${l}<select id="f-${k}"><option value="">Todas</option>${opts(k)}</select></label>`).join('')
-    + `<label>Pedido de<input type="date" id="f-de" value="${F.de}"></label><label>Pedido até<input type="date" id="f-ate" value="${F.ate}"></label>`
-    + `<label>Buscar<input type="search" id="f-q" value="${esc(F.q)}" placeholder="Nº, descrição, local"></label>`
-    + `<label>&nbsp;<button id="f-reset">Limpar filtros</button></label><label>&nbsp;<a class="btn prim" href="#relatorios" style="display:inline-flex;align-items:center;justify-content:center;text-decoration:none">Gerar relatório em Excel</a></label>`;
-  FL.forEach(([k]) => $('#f-'+k).onchange = e => {F[k]=e.target.value; shown=50; render()});
-  $('#f-de').onchange = e => {F.de=e.target.value; render()}; $('#f-ate').onchange = e => {F.ate=e.target.value; render()};
-  $('#f-q').oninput = e => {F.q=e.target.value; shown=50; render()};
-  $('#f-reset').onclick = () => {Object.keys(F).forEach(k=>F[k]=''); shown=50; drawFilters(); render()};
-}
-function updSum(){const n=Object.values(F).filter(Boolean).length;$('#fsum').textContent=n?`Filtros (${n} ativo${n>1?'s':''})`:'Filtros'}
-function setF(k,v){F[k]=F[k]===v?'':v; shown=50; drawFilters(); render(); toast(F[k]?`Filtro: ${v}`:'Filtro removido')}
-
-let SETS = [], openDr = null, relStale = true;
-function bars(list, key, opt={}){
-  const rows = Core.count(list, key).slice(0, opt.top || 12), mx = Math.max(1, ...rows.map(r=>r[1])), sid = SETS.push({list, key}) - 1, ec = key === 'especialidade';
-  return `<div class="bars">${rows.map(([n,v]) => `<button class="bar${opt.acc?' acc':''}${opt.f&&F[opt.f]===n?' open':''}" data-s="${sid}" data-k="${opt.f||''}" data-v="${esc(n)}" aria-expanded="false"><span class="n" title="${esc(n)}"><span class="chev" aria-hidden="true">▸</span>${esc(n)}</span><span class="t"><i style="width:${v/mx*100}%${ec&&espCor(n)?';background:'+espCor(n):''}"></i></span><span class="v">${nf(v)}</span></button>`).join('') || '<p class="muted">Sem dados.</p>'}</div>`;
-}
-// cor de cada especialidade (bolinhas e barras)
-const ESPCOR = {CIVIL:'#f07c1b', MARCENARIA:'#1f9d55', ELETRICA:'#e6b800', HIDRAULICA:'#2f6fe0', PINTURA:'#8e44ad', CABISTA:'#00a3a3', TRANSPORTE:'#7f8c8d', 'ENGENHARIA CLINICA':'#c0392b', REFRIGERACAO:'#5dade2', SERRALHERIA:'#6d4c41'};
-const espCor = k => { const n = String(k||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); for (const c in ESPCOR) if (n.startsWith(c)) return ESPCOR[c]; return null; };
-const MGF = {'Especialidade': o => o.especialidade, 'Setor': o => o.setor, 'Técnico': o => o.exec.length ? o.tecnico : '', 'Fila': o => o.fila, 'Pendente de': o => o.pendente};
-function selBar(sel, n){
-  const on = Object.entries(sel).flatMap(([g,set]) => [...set].map(k => `${g}: ${esc(k)}`));
-  return `<div class="selbar">${on.length ? `<b>${nf(n)} OS</b> com ${on.map(t=>`<span class="tag on">${t}</span>`).join(' ')} <button class="sellimpa">Limpar seleção</button>` : '<span class="muted">Toque nas bolinhas acima para filtrar a lista de OS desta janela (pode marcar várias).</span>'}</div>`;
-}
-function miniDash(items, sel){
-  const grp = (t, f, top=8) => { const c = Core.count(items.filter(o => f(o)), f).slice(0, top); return c.length ? `<div class="mg"><span class="mt">${t}</span><div class="chips">${c.map(([k,n])=>{ const cor = t==='Especialidade' && espCor(k), on = sel && sel[t] && sel[t].has(k); return `<span class="chip${sel?' fc':''}${on?' on':''}" data-g="${t}" data-k="${esc(k)}"${sel?' role="button" tabindex="0"':''}${cor?` style="background:${cor}26;box-shadow:inset 0 0 0 1.5px ${cor}"`:''}>${esc(k)}<b${cor?` style="background:${cor};color:${cor==='#e6b800'?'#1a1a1a':'#fff'}"`:''}>${nf(n)}</b></span>`; }).join('')}</div></div>` : ''; };
-  return `<div class="mini"><div class="mh"><b>${nf(items.length)} OS</b>${items.some(o=>o.horas)?` · ${hm(items.reduce((s,o)=>s+o.horas,0))} lançadas`:''}</div>
-    ${Object.entries(MGF).map(([t,f]) => grp(t, f, t==='Especialidade'||t==='Fila'||t==='Pendente de' ? 20 : 12)).join('')}</div>`;
-}
-function drillHTML(items, lim, asc, sel, all){
-  const it = items.slice().sort((a,b)=> asc ? (a.pedido||0)-(b.pedido||0) : (b.pedido||0)-(a.pedido||0));
-  return `<div class="drill">${miniDash(all || items, sel)}${sel ? selBar(sel, items.length) : ''}${it.slice(0,lim).map(o=>`<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.especialidade)} · ${esc(o.setor)}${o.localidade?' · '+esc(o.localidade):''}</div><div>Técnico: <b>${o.exec.length?esc(o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', ')):'ainda sem execução'}</b></div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.terceiros?`<div class="muted">Com terceiros (${o.fila}): não é pendência nossa</div>`:o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`).join('')}${it.length>lim?`<button class="drmore" data-lim="${lim+30}">Mostrar mais ${Math.min(30,it.length-lim)} de ${it.length}</button>`:''}</div>`;
-}
-function openDrill(b){
-  const S = SETS[+b.dataset.s]; if (!S) return;
-  const kf = typeof S.key === 'function' ? S.key : (o => o[S.key]);
-  const items = S.list.filter(o => String(kf(o)) === b.dataset.v);
-  const show = lim => { const old = b.nextElementSibling; if (old && old.classList.contains('drill')) old.remove(); b.insertAdjacentHTML('afterend', drillHTML(items, lim)); const m = b.nextElementSibling.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
-  show(30); b.setAttribute('aria-expanded','true'); b.classList.add('open');
-}
-function wireBars(root){ /* cliques tratados por openWin (janelas) */ }
-
-function osTable(list){
-  const rows = list.slice().sort((a,b)=>(b.pedido||0)-(a.pedido||0));
-  return `<div class="row"><h3>Ordens de serviço (${nf(rows.length)})</h3><button id="cpList">Copiar lista para o Excel</button></div>
-  <div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor</th><th>Descrição</th><th>Observação</th><th>Pendente de</th><th>Técnico</th><th class="num">Espera</th><th class="num">Idade</th></tr></thead><tbody>
-  ${rows.slice(0,shown).map(o=>`<tr><td><b>${o.os}</b></td><td>${fd(o.pedido)}</td><td><span class="tag${o.backlog?' bk':''}">${o.fila}</span></td><td>${esc(o.especialidade)}</td><td>${esc(o.setor)}</td><td>${esc(o.desc)}</td><td>${esc(o.obs||'')}</td><td>${o.pendente?`<b>${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}`:''}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td class="num">${fh(o.espera)}</td><td class="num">${o.pedido&&!o.termino?nf(Math.max(0,(cut.getTime()+864e5-o.pedido)/864e5))+' d':''}</td></tr>`).join('')}
-  </tbody></table></div>${rows.length>shown?`<p><button id="more">Mostrar mais ${Math.min(100,rows.length-shown)}</button></p>`:''}`;
-}
-function tsv(list){
-  const h=['OS','Descrição','Observações','Pendente de','Encaminhado em','Parado (dias)','Fila','Tipo','Especialidade','Criticidade','Solicitante','Setor','Localidade','Pedido','Término','Serviço','Técnico','Início atend.','Fim atend.','Espera','Execução','Pedido → término','Inconsistência'];
-  return [h.join('\t')].concat(list.map(o=>[o.os,o.desc,o.obs||'',o.pendente||'',o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'',o.parado??'',o.fila,o.tipo,o.especialidade,o.criticidade,o.solicitante,o.setor,o.localidade,fd(o.pedido),fd(o.termino),o.servico,o.exec.length?o.tecnico:'',fd(o.inicio),fd(o.fim),o.espera==null?'':hm(o.espera),hm(o.horas),o.total==null?'':hm(o.total),o.arrumar.join('; ')].map(x=>String(x??'').replace(/[\t\n]/g,' ')).join('\t'))).join('\n');
-}
-
-function pendCard(L){
-  const P = L.filter(o=>o.backlog && o.pendente), g = {}; // só o que é nosso (backlog); terceiros ficam fora
-  P.forEach(o => { const r = g[o.pendente] = g[o.pendente] || {n:0, d:[]}; r.n++; if (o.parado!=null) r.d.push(o.parado); });
-  const rows = Object.entries(g).sort((a,b)=>b[1].n-a[1].n), mx = Math.max(1,...rows.map(r=>r[1].n));
-  const sid = SETS.push({list:P, key:'pendente'}) - 1;
-  return rows.length ? `<div class="bars">${rows.map(([k,r])=>`<button class="bar acc${F.pendente===k?' open':''}" data-s="${sid}" data-k="pendente" data-v="${esc(k)}" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${esc(k)}</span><span class="t"><i style="width:${r.n/mx*100}%"></i></span><span class="v">${nf(r.n)}${r.d.length?` · ${nf(Core.median(r.d))} d`:''}</span></button>`).join('')}</div><p class="note">OS pendentes, pelo campo Observação (trecho mais recente). "· X d" = mediana de dias parada com o responsável. Toque numa barra para abrir as OS numa janela.</p>` : '<p class="muted">Sem OS pendentes no filtro.</p>';
-}
-function blStats(list, c){
-  const bl = Core.backlogAt(list, c), terc = Core.terceirosAt(list, c);
-  const by = f => bl.filter(o=>o.fila===f).length;
-  return {bl, terc, aberta:by('aberta'), nao:by('não atendida'), agendar:by('agendar'), depois:bl.filter(o=>!o.backlog).length};
-}
-function monthEnds(n){const out=[];for(let i=n-1;i>=0;i--)out.push(new Date(cut.getFullYear(),cut.getMonth()-i+1,0));return out}
-
-function render(){
-  if (!data.length) { SETS = []; renderHist(); if (hist.length && location.hash !== '#historico' && location.hash !== '#arquivos' && location.hash !== '#config') location.hash = 'historico'; return; }
-  SETS = [];
-  setCut();
-  updSum();
-  const L = filtered(), V = $('#v-dashboard');
-  const nConc = L.filter(o=>o.fila==='concluída').length, nTer = L.filter(o=>o.terceiros).length, nCanc = L.filter(o=>o.fila==='cancelada').length;
-  const done = nConc + nTer + nCanc, base = L.length, pend = L.filter(o=>o.backlog).length;
-  const esp = L.map(o=>o.espera).filter(x=>x!=null), hh = L.reduce((s,o)=>s+o.horas,0);
-  const B = blStats(blBase(L), cut), prev = blStats(blBase(L), new Date(cut.getFullYear(), cut.getMonth(), 0));
-  const diff = B.bl.length - prev.bl.length, pm0 = new Date(cut.getFullYear(), cut.getMonth()-1, 1), pm1 = new Date(cut.getFullYear(), cut.getMonth(), 1);
-  const hasPrev = !!bFim && L.filter(o=>o.pedido>=pm0 && o.pedido<pm1 && (o.fila==='concluída'||o.fila==='cancelada')).length >= 20;
-  const bad = data.filter(o=>!o.ok), prov = data.filter(o=>o.provisorio);
-  V.innerHTML = `
-  <div class="card" style="margin-bottom:16px"><b>Relatório importado:</b> ${nf(data.length)} OS${(() => { const ds = data.map(o=>o.pedido).filter(Boolean).sort((a,b)=>a-b); return ds.length ? ` (abertas de <b>${ds[0].toLocaleDateString('pt-BR')}</b> a <b>${ds[ds.length-1].toLocaleDateString('pt-BR')}</b>)` : ''; })()} · <b>${nf(data.length-bad.length-prov.length)}</b> normais${prov.length?` + <a href="#inconsistencias" class="warn"><b>${nf(prov.length)}</b> com horário ajustado (contadas com 1 h; corrigir no MV)</a>`:''}${bad.length?` · <a href="#inconsistencias" class="warn"><b>${nf(bad.length)}</b> fora por erro de data</a>`:''}</div>
-  <div class="kpis kmain">
-    <div class="kpi" data-s="${SETS.push({list:L, key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="Total de OS"><span>Total de OS</span><div class="frac"><div class="fr"><em>${nf(L.length)}</em><i></i><em>${nf(done)}</em></div><div class="pcw">${(() => { const B_ = L.filter(o=>o.backlog && !['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))), n = B_.length, g = base ? (done+n)/base : 0;
-      if (!n) return '';
-      const det = Core.count(B_, trat).map(([k,v]) => `${k}: +${nf(v/base*100,1)} (${v})`).join(' · ');
-      return `<div class="fant" title="Se resolvermos as ${n} OS do backlog que já têm tratativa. ${det}"><b>${nf(g*100,1)}% <small style="font-size:13px">(+${nf(n/base*100,1)})</small></b><span>se resolver as ${nf(n)} com tratativa</span></div>`; })()}<div class="pcr"><div class="pc${base&&done/base>=.9?' good':''}">${nf(base?done/base*100:0)}%</div>${(() => { const f = Math.ceil(base*0.9 - 1e-9) - done; return base ? (f > 0 ? `<div class="meta90"><b>${nf(f)}</b><span>OS faltam<br>para 90%</span></div>` : `<div class="meta90 ok"><b>✓</b><span>meta de<br>90% batida</span></div>`) : ''; })()}</div></div></div><span>${nf(nConc)} concluídas + ${nf(L.filter(o=>o.fila==='aguardando material').length)} aguardando material + ${nf(L.filter(o=>o.fila==='conserto externo').length)} conserto externo + ${nf(nCanc)} canceladas · ${nf(pend)} pendentes nossas</span></div>
-    <div class="kpi kdup"><span>Com terceiros (fora do backlog)</span><div class="kd">${[['aguardando material','Aguardando material'],['conserto externo','Conserto externo']].map(([f,t]) => `<div class="kdi" data-s="${SETS.push({list:B.terc.filter(o=>o.fila===f), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="${t}"><b>${nf(B.terc.filter(o=>o.fila===f).length)}</b><span>${t}</span></div>`).join('')}</div></div>
-    <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.espera!=null), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com 1º atendimento"><span>Espera até o 1º atendimento</span><b>${fh(Core.median(esp))}</b><span>mediana · média ${fh(Core.mean(esp))}</span></div>
-    <div class="kpi" data-s="${SETS.push({list:L.filter(o=>o.horas>0), key:()=>'m'})-1}" data-v="m" data-w="Dashboard" data-t="OS com execução"><span>Homem-hora lançado</span><b>${hm(hh)}</b><span>${nf(L.filter(o=>o.horas>0).length)} OS com execução</span></div>
-  </div>
-  ${espTiles(L)}
-  <div class="grid2">
-    <div class="card"><h3>OS por fila</h3>${bars(filtered(true),'fila',{f:'fila'})}</div>
-    <div class="card"><h3>OS por tipo</h3>${bars(L,'tipo',{f:'tipo',top:8})}</div>
-    ${tempoCard(L, true)}
-    <div class="card"><h3>Setores que mais abrem OS</h3>${bars(L,'setor',{f:'setor',top:10})}</div>
-  </div>
-  <p class="note">Toque em qualquer número ou barra para abrir numa janela, com o resumo e as OS daquele grupo. Dá para abrir várias, arrastar para o lado e minimizar. Para filtrar a página toda, use Filtros.</p>
-  <div class="card">${osTable(L)}</div>`;
-  wireBars(V);
-  $('#cpList').onclick = () => copy(tsv(L));
-  const m = $('#more'); if (m) m.onclick = () => {shown+=100; render()};
-  if (!$('#v-relatorios').childElementCount || relStale) { drawRel(); relStale = false; }
-  renderBacklog(L); renderTempos(L); renderEquipe(L); renderSetores(L); renderInc(); renderRep(); renderHist();
-}
-
-function renderBacklog(L){
-  const B = blStats(blBase(L), cut), V = $('#v-backlog');
-  const bands = ['0–7 dias','8–15 dias','16–30 dias','Mais de 30 dias'];
-  const age = o => Core.ageBand(Math.max(0,(cut.getTime()+864e5-1 - o.pedido)/864e5));
-  const filas = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
-  const rowsF = filas.map(([f,l]) => {const s=B.bl.filter(o=>o.fila===f);return `<tr><td>${l}</td>${bands.map(b=>`<td class="num">${nf(s.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(s.length)}</b></td></tr>`}).join('');
-  const dep = B.bl.filter(o=>!o.backlog);
-  const ord = B.bl.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido), velha = ord[0], nova = ord[ord.length-1];
-  const diasV = velha ? Math.floor((Math.min(Date.now(), cut.getTime()+864e5) - velha.pedido)/864e5) : 0;
-  const faixa = velha ? `Pendentes de ${velha.pedido.toLocaleDateString('pt-BR')} até ${nova.pedido.toLocaleDateString('pt-BR')}` : '';
-  const hist = monthEnds(6).map(d => { const l = blStats(L,d).bl; return [d, l.length, SETS.push({list:l, key:()=>'m'}) - 1]; }), mx = Math.max(1,...hist.map(h=>h[1]));
-  V.innerHTML = `
-  <h2>Backlog ${blLabel()}</h2>
-  <div class="filters" style="margin-bottom:16px"><label>Data início<input type="date" id="bIni" value="${bIni}"></label><label>Data fim<input type="date" id="bFim" value="${bFim}"></label><label>&nbsp;<button class="prim" id="bBusca">Buscar backlog</button></label><label>&nbsp;<button id="bLimpa">Sem datas (tudo)</button></label></div>
-  <p class="note" style="margin-top:-8px;margin-bottom:16px">Sem datas: tudo o que foi carregado, pendente hoje. Com datas: OS abertas no período que estavam pendentes na data fim.</p>
-  ${velha?`<div class="card" style="margin-bottom:16px"><h3>${faixa}</h3><p>Mais antiga: <b>OS ${velha.os}</b> de ${fd(velha.pedido)} (${nf(diasV)} dias) · ${esc(velha.especialidade)} · ${esc(velha.setor)}<br>Mais nova: <b>OS ${nova.os}</b> de ${fd(nova.pedido)} · ${esc(nova.especialidade)} · ${esc(nova.setor)}</p></div>`:''}
-  <div class="kpis">
-    <div class="kpi hot" data-s="${SETS.push({list:B.bl, key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Backlog total"><span>Backlog total</span><b>${nf(B.bl.length)}</b><span>aberta + não atendida + agendar</span></div>
-    <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='aberta'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Aguardando triagem"><span>Aguardando triagem</span><b>${nf(B.aberta)}</b><span>abertas</span></div>
-    <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='não atendida'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Não atendidas"><span>Triadas, aguardando execução</span><b>${nf(B.nao)}</b><span>não atendidas</span></div>
-    <div class="kpi" data-s="${SETS.push({list:B.bl.filter(o=>o.fila==='agendar'), key:()=>'m'})-1}" data-v="m" data-w="Backlog" data-t="Agendar"><span>Agendar</span><b>${nf(B.agendar)}</b><span>aguardando data</span></div>
-  </div>
-  <h3 style="margin:8px 0">Tratativas do backlog <span class="muted" style="font-weight:400;font-size:13px">(situação atual)</span></h3>
-  <div class="kpis">${tratKpis(L)}</div>
-  ${tratCard(L, L.filter(o=>!o.backlog).length)}
-  <div class="card" style="margin-bottom:16px"><h3>Backlog por fila e idade</h3><div class="scroll"><table><thead><tr><th>Fila</th>${bands.map(b=>`<th class="num">${b}</th>`).join('')}<th class="num">Total</th></tr></thead><tbody>${rowsF}
-  ${dep.length?`<tr><td>Pendentes no corte, resolvidas depois</td>${bands.map(b=>`<td class="num">${nf(dep.filter(o=>age(o)===b).length)}</td>`).join('')}<td class="num"><b>${nf(dep.length)}</b></td></tr>`:''}
-  <tr><td><b>Total</b></td>${bands.map(b=>`<td class="num"><b>${nf(B.bl.filter(o=>age(o)===b).length)}</b></td>`).join('')}<td class="num"><b>${nf(B.bl.length)}</b></td></tr></tbody></table></div></div>
-  <div class="grid2">
-    <div class="card"><h3>Backlog por especialidade</h3>${bars(B.bl,'especialidade',{acc:1})}</div>
-    <div class="card"><h3>Evolução do backlog (fim de cada mês)</h3><div class="bars">${hist.map(([d,v,sid])=>`<button class="bar acc" data-s="${sid}" data-k="" data-v="m" aria-expanded="false"><span class="n"><span class="chev" aria-hidden="true">▸</span>${d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><span class="t"><i style="width:${v/mx*100}%"></i></span><span class="v">${nf(v)}</span></button>`).join('')}</div><p class="note">Toque no mês para abrir numa janela as OS que estavam pendentes no fim dele. Calculado com os arquivos carregados: meses sem arquivos aparecem incompletos.</p></div>
-  </div>
-  <p><button class="prim" id="cpBl">Copiar resumo para o gerente</button> <button id="cpBlList">Copiar lista do backlog</button></p>`;
-  wireBars(V);
-  $('#bBusca').onclick = () => {
-    const i = $('#bIni').value, f = $('#bFim').value;
-    if (i && f && i > f) { toast('A data início está depois da data fim.'); return; }
-    bIni = i; bFim = f; render(); $('#v-backlog').scrollIntoView({block:'start'});
-    toast(`Backlog ${blLabel()}`);
-  };
-  $('#bLimpa').onclick = () => { bIni = ''; bFim = ''; render(); toast('Backlog atual (todos os arquivos)'); };
-  const txt = `Backlog da manutenção ${blLabel()}\nBacklog total: ${B.bl.length}${velha?`\n${faixa} (mais antiga: OS ${velha.os}, ${diasV} dias; mais nova: OS ${nova.os})`:''}\n- Aguardando triagem (aberta): ${B.aberta}\n- Triadas, aguardando execução (não atendida): ${B.nao}\n- Agendar: ${B.agendar}${dep.length?`\n- Pendentes no corte e resolvidas depois: ${dep.length}`:''}\nPor idade: ${bands.map(b=>`${b}: ${B.bl.filter(o=>age(o)===b).length}`).join(' | ')}\nPor tratativa: ${Core.count(B.bl, trat).map(([k,n])=>`${k}: ${n}`).join(' | ')}\nAguardando terceiros (fora do backlog): ${B.terc.length} (material ${B.terc.filter(o=>o.fila==='aguardando material').length}, externo ${B.terc.filter(o=>o.fila==='conserto externo').length})`;
-  $('#cpBl').onclick = () => copy(txt, 'Resumo copiado.');
-  $('#cpBlList').onclick = () => copy(tsv(B.bl));
-}
-
-function groupTable(L, key, title){
-  const g = {}; L.forEach(o => (key==='tecnico'?o.tecnicos.slice(0,1):[o[key]]).forEach(k => (g[k]=g[k]||[]).push(o)));
-  const rows = Object.entries(g).map(([k,a]) => {const e=a.map(o=>o.espera).filter(x=>x!=null), x=a.filter(o=>o.horas>0).map(o=>o.horas), t=a.map(o=>o.total).filter(v=>v!=null);return [k,a.length,Core.median(e),Core.mean(e),Core.mean(x),Core.mean(t)]}).sort((a,b)=>b[1]-a[1]);
-  return `<div class="card" style="margin-bottom:16px"><h3>${title}</h3><div class="scroll"><table class="stack"><thead><tr><th></th><th class="num">OS</th><th class="num">Espera mediana</th><th class="num">Espera média</th><th class="num">Execução média</th><th class="num">Pedido → término</th></tr></thead><tbody>${rows.map(r=>`<tr><td><b>${esc(r[0])}</b></td><td class="num">${nf(r[1])}</td><td class="num">${fh(r[2])}</td><td class="num">${fh(r[3])}</td><td class="num">${fh(r[4])}</td><td class="num">${fh(r[5])}</td></tr>`).join('')}</tbody></table></div></div>`;
-}
-// faixas do tempo entre abrir a OS e o técnico lançar a hora inicial do 1º atendimento
-const FX = [['Até 1 h',1],['1 a 4 h',4],['4 a 24 h',24],['1 a 3 dias',72],['3 a 7 dias',168],['Mais de 7 dias',Infinity]];
-const faixa = h => (FX.find(([t,lim]) => h <= lim) || FX[FX.length-1])[0];
-function espTiles(L){
-  const sid = SETS.push({list:L, key:'especialidade'}) - 1;
-  return `<div class="esp">${Core.count(L,'especialidade').map(([k,n]) => { const c = espCor(k) || '#7f8c8d', a = L.filter(o=>o.especialidade===k), d = a.filter(o=>!o.backlog).length, p = a.filter(o=>o.backlog).length, pc = n ? d/n : 0;
-    return `<button class="et" data-s="${sid}" data-v="${esc(k)}" data-t="${esc(k)}" data-w="Dashboard › Especialidades" style="--c:${c}"><span class="en">${esc(k)}</span><b>${nf(n)}</b><span class="eb"><i style="width:${pc*100}%"></i></span><span class="es"><em class="${pc>=.9?'good':''}">${nf(pc*100)}%</em> realizadas · ${nf(p)} pendentes</span></button>`; }).join('')}</div>`;
-}
-function tempoCard(L, semMediana){
-  const A = L.filter(o=>o.espera!=null), sid = SETS.push({list:A, key:o=>faixa(o.espera)}) - 1, mx = Math.max(1, ...FX.map(([t])=>A.filter(o=>faixa(o.espera)===t).length));
-  const ate24 = A.filter(o=>o.espera<=24).length, sem = L.filter(o=>o.espera==null && (o.backlog));
-  const cor = ['#1f9d55','#58b368','#e6b800','#f07c1b','#e0115f','#8e1b3f'];
-  return `<div class="card"><h3>Tempo até o 1º atendimento</h3><p class="note" style="margin-top:-4px">Da abertura da OS até o técnico lançar a hora inicial no MV. Toque na faixa para abrir as OS.</p>
-    <div class="kpis wk" style="margin-bottom:10px">
-      ${semMediana ? '' : `<div class="kpi"><span>Mediana</span><b>${fh(Core.median(A.map(o=>o.espera)))}</b><span>metade atendida até esse tempo</span></div>`}
-      <div class="kpi"><span>Atendidas em até 24 h</span><b class="${A.length&&ate24/A.length>=.9?'good':''}">${nf(A.length?ate24/A.length*100:0)}%</b><span>${nf(ate24)} de ${nf(A.length)} OS</span></div>
-      <div class="kpi" data-s="${SETS.push({list:sem, key:()=>'m', asc:1})-1}" data-v="m" data-w="Dashboard › Tempo até o 1º atendimento" data-t="Ainda sem atendimento"><span>Ainda sem atendimento</span><b>${nf(sem.length)}</b><span>no backlog, sem hora inicial</span></div>
-    </div>
-    <div class="bars">${FX.map(([t],i) => { const n = A.filter(o=>faixa(o.espera)===t).length; return `<button class="bar" data-s="${sid}" data-k="" data-v="${t}"><span class="n"><span class="chev">▸</span>${t}</span><span class="t"><i style="width:${n/mx*100}%;background:${cor[i]}"></i></span><span class="v">${nf(n)} <small class="muted">${nf(A.length?n/A.length*100:0)}%</small></span></button>`; }).join('')}</div></div>`;
-}
-function renderTempos(L){
-  $('#v-tempos').innerHTML = `<h2>Tempos de atendimento</h2><div style="margin-bottom:16px">${tempoCard(L)}</div><p class="muted">Espera = início do 1º atendimento − pedido. Execução = fim − início lançados no MV. OS inconsistentes ficam fora.</p>`
-    + groupTable(L,'especialidade','Por especialidade') + groupTable(L,'tipo','Por tipo de OS') + groupTable(L,'criticidade','Por criticidade');
-}
-function renderEquipe(L){
-  const g = {}; L.forEach(o => o.exec.forEach((x,i) => {const n=o.tecnicos[i]; const r=g[n]=g[n]||{os:new Set(),h:0,esp:{}}; r.os.add(o.os); let hh = 0; if(x.ini&&x.fim&&x.fim>=x.ini){ hh=(x.fim-x.ini)/36e5; if(hh>(cfg.maxExec||12)) hh=1; } else if(x.ini&&!x.fim&&o.fila==='concluída') hh=1; r.h+=hh; r.esp[o.especialidade]=(r.esp[o.especialidade]||0)+1}));
-  const rows = Object.entries(g).sort((a,b)=>b[1].h-a[1].h);
-  $('#v-equipe').innerHTML = `<h2>Homem-hora por técnico</h2><p class="muted">Toque no técnico (▸) para abrir as OS dele numa janela. Horas = soma de fim − início das execuções lançadas (horário ajustado conta 1 h). "Walter / lançamentos genéricos" reúne lançamentos de quem não tem nome cadastrado.</p>
-  <div class="card"><div class="row"><span></span><button id="cpEq">Copiar para o Excel</button></div><div class="scroll"><table class="stack"><thead><tr><th>Técnico</th><th class="num">OS</th><th class="num">Horas</th><th class="num">Média por OS</th><th>Especialidade principal</th></tr></thead><tbody>
-  ${rows.map(([n,r])=>`<tr class="eq" data-t="${esc(n)}" tabindex="0" role="button" aria-expanded="false"><td><span class="chev" aria-hidden="true">▸</span><b>${esc(n)}</b></td><td class="num">${nf(r.os.size)}</td><td class="num">${hm(r.h)}</td><td class="num">${hm(r.h/r.os.size)}</td><td>${esc(Object.entries(r.esp).sort((a,b)=>b[1]-a[1])[0][0])}</td></tr>`).join('')}</tbody></table></div></div>`;
-  document.querySelectorAll('#v-equipe tr.eq').forEach(tr => { const tog = () => openWin('Equipe › Homem-hora por técnico', tr.dataset.t, L.filter(o => o.tecnicos.includes(tr.dataset.t))); tr.onclick = tog; tr.onkeydown = e => { if (e.key==='Enter'||e.key===' ') { e.preventDefault(); tog(); } }; });
-  $('#cpEq').onclick = () => copy(['Técnico\tOS\tHoras'].concat(rows.map(([n,r])=>`${n}\t${r.os.size}\t${hm(r.h)}`)).join('\n'));
-}
-function renderSetores(L){
-  const V = $('#v-setores');
-  V.innerHTML = `<h2>Setores, serviços e solicitantes</h2><div class="grid2">
-  <div class="card"><h3>Setores</h3>${bars(L,'setor',{f:'setor',top:15})}</div>
-  <div class="card"><h3>Localidades</h3>${bars(L.filter(o=>o.localidade),'localidade',{top:15})}</div>
-  <div class="card"><h3>Serviços mais executados</h3>${bars(L.filter(o=>o.servico),'servico',{top:15})}</div>
-  <div class="card"><h3>Solicitantes que mais abrem OS</h3>${bars(L.filter(o=>o.solicitante),'solicitante',{top:15})}</div></div>`;
-  wireBars(V);
-}
-function renderInc(){
-  const I = data.filter(o=>o.arrumar.length);
-  $('#v-inconsistencias').innerHTML = `<div class="chips" style="margin-bottom:12px"><a class="chip" href="#" onclick="document.getElementById('incTopo').scrollIntoView({behavior:'smooth'});return false">Erros de data/hora<b>${nf(I.length)}</b></a><a class="chip" href="#" onclick="document.getElementById('v-repetidas').scrollIntoView({behavior:'smooth'});return false">OS repetidas em aberto<b id="repN">…</b></a></div><h2 id="incTopo">Para arrumar no MV (${nf(I.length)})</h2><p class="muted">Nada é alterado no MV por aqui: corrija lá e importe o relatório de novo. Execução acima de ${cfg.maxExec} h (muda em Config) ou sem hora de fim <b>entra nos cálculos com 1 h provisória</b> até ser corrigida. Os demais erros ficam fora dos relatórios.</p><p><button id="cpInc">Copiar lista para o Excel</button></p>
-  <div class="card"><div class="scroll"><table class="stack"><thead><tr><th>OS</th><th>Problema</th><th>Pedido</th><th>Início atend.</th><th>Fim atend.</th><th>Término</th><th>Técnico</th><th>Fila</th><th>Descrição</th></tr></thead><tbody>
-  ${I.map(o=>`<tr><td><b>${o.os}</b></td><td class="warn">${esc(o.arrumar.join('; '))}${o.provisorio?'':' (fora dos relatórios)'}</td><td>${fd(o.pedido)}</td><td>${fd(o.inicio)}</td><td>${fd(o.fim)}</td><td>${fd(o.termino)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td>${o.fila}</td><td>${esc(o.desc)}</td></tr>`).join('') || '<tr><td colspan="9">Nenhuma inconsistência.</td></tr>'}</tbody></table></div></div>`;
-  $('#v-inconsistencias').insertAdjacentHTML('beforeend', '<div id="v-repetidas" style="margin-top:28px"></div>');
-  const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
-}
-
-// ===================== HISTÓRICO (relatório detalhado do MV, guardado e somado no navegador) =====================
-let hist = [], histMap = new Map();
-const IDB = {
-  open(){ return new Promise((ok, no) => { const r = indexedDB.open('gos_hist', 1); r.onupgradeneeded = () => r.result.createObjectStore('os', {keyPath:'os'}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); },
-  async all(){ const db = await IDB.open(); return new Promise((ok, no) => { const q = db.transaction('os').objectStore('os').getAll(); q.onsuccess = () => ok(q.result || []); q.onerror = () => no(q.error); }); },
-  async put(list){ const db = await IDB.open(); return new Promise((ok, no) => { const tx = db.transaction('os', 'readwrite'), st = tx.objectStore('os'); list.forEach(x => st.put(x)); tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); }); },
-  async clearAll(){ return IDB.clear(); },
-  async clear(){ const db = await IDB.open(); return new Promise((ok, no) => { const tx = db.transaction('os', 'readwrite'); tx.objectStore('os').clear(); tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); }); }
-};
-async function histLoad(){ try { const a = await IDB.all(); histRaw = new Map(a.map(x => [x.os, x])); hist = a.filter(x => x.p).map(Core.histView); histMap = new Map(hist.map(o => [o.os, o])); } catch(e) { hist = []; histMap = new Map(); } }
-// OS que estão nos dois relatórios: o R_ORDEM_SERVICO manda (tem horas e observação); do detalhado vem o equipamento
-function histComplementa(){ data.forEach(o => { const h = histRaw.get(o.os); if (!h) return; if (h.b && !o.bem) o.bem = h.b; if (h.pl && !o.plaqueta) o.plaqueta = h.pl; if (h.pv && !o.prevExec) o.prevExec = new Date(h.pv); if (h.cr && (!o.criticidade || o.criticidade === 'Não informada')) o.criticidade = h.cr; if (h.e && (!o.especialidade || o.especialidade === 'Sem especialidade')) o.especialidade = h.e; if (h.lo && !o.localidade) o.localidade = h.lo; }); }
-// visão única do histórico: o detalhado + as OS do R_ORDEM_SERVICO; vale a situação do arquivo carregado por último
-function histTudo(){
-  const m = new Map(histMap);
-  data.forEach(o => { const h = m.get(o.os), tR = (flog[o.file] && flog[o.file].t) || 0; if (!h || tR >= (h.carregado || 0)) m.set(o.os, o); });
-  return [...m.values()].filter(o => o.pedido);
-}
-function renderHist(){
-  const V = $('#v-historico'); if (!V) return;
-  const H = histTudo();
-  const bt = `<p class="hb"><button id="hBkp">Baixar backup do histórico</button> <label class="btn">Restaurar backup<input type="file" id="hRes" accept=".json,application/json" hidden></label> <button id="hLimpa">Apagar histórico</button></p>`;
-  if (!hist.length) { V.innerHTML = `<h2>Histórico</h2><div class="card"><p>Carregue o <b>relatório detalhado</b> do MV (Nr.OS, Dt. Pedido, Situação, Funcionário da Oficina...) pelo mesmo botão de carregar arquivos. Ele fica guardado neste aparelho e vai sendo atualizado a cada arquivo novo: OS nova entra, OS que já existe é atualizada.</p><p class="muted">O Dashboard e o Backlog continuam usando o R_ORDEM_SERVICO, que é o único com as horas dos técnicos e as observações.</p></div>${bt}`; histBotoes(); return; }
-  const ds = H.map(o=>o.pedido).sort((a,b)=>a-b), ini = ds[0], fim = ds[ds.length-1];
-  const ano = fim.getFullYear(), mes = fim.getMonth(), dia = fim.getDate();
-  const ateHoje = (o, y) => o.pedido.getFullYear() === y && (o.pedido.getMonth() < mes || (o.pedido.getMonth() === mes && o.pedido.getDate() <= dia));
-  const esteAno = H.filter(o=>ateHoje(o, ano)), anoPass = H.filter(o=>ateHoje(o, ano-1)), varAno = anoPass.length ? (esteAno.length/anoPass.length-1)*100 : null;
-  const pend = H.filter(o=>o.backlog), d12 = new Date(fim); d12.setFullYear(d12.getFullYear()-1); const d24 = new Date(d12); d24.setFullYear(d24.getFullYear()-1);
-  const u12 = H.filter(o=>o.pedido > d12), a12 = H.filter(o=>o.pedido > d24 && o.pedido <= d12);
-  const fech12 = u12.map(o=>o.total).filter(x=>x!=null);
-  const S = (list, key, w, t) => SETS.push({list, key, asc: false}) - 1;
-  const kp = (t, v, sub, list) => `<div class="kpi"${list?` data-s="${SETS.push({list, key:()=>'m', asc:1})-1}" data-v="m" data-w="Histórico" data-t="${esc(t)}"`:''}><span>${t}</span><b>${v}</b><span>${sub}</span></div>`;
-  // por ano
-  const anos = Core.count(H, o=>String(o.pedido.getFullYear())).sort((a,b)=>a[0]-b[0]), mxA = Math.max(1,...anos.map(a=>a[1])), sidA = SETS.push({list:H, key:o=>String(o.pedido.getFullYear())}) - 1;
-  // mês a mês: este ano x ano anterior
-  const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-  const doAno = y => H.filter(o=>o.pedido.getFullYear()===y), A1 = doAno(ano), A0 = doAno(ano-1);
-  const sid1 = SETS.push({list:A1, key:o=>MESES[o.pedido.getMonth()]}) - 1, sid0 = SETS.push({list:A0, key:o=>MESES[o.pedido.getMonth()]}) - 1;
-  const mxM = Math.max(1, ...MESES.map((m,i)=>Math.max(A1.filter(o=>o.pedido.getMonth()===i).length, A0.filter(o=>o.pedido.getMonth()===i).length)));
-  const mm = MESES.map((m,i) => { const n1 = A1.filter(o=>o.pedido.getMonth()===i).length, n0 = A0.filter(o=>o.pedido.getMonth()===i).length;
-    return `<div class="mm"><span class="n">${m}</span><div class="mb"><button class="bar" data-s="${sid1}" data-k="" data-v="${m}" data-t="${m}/${ano}" style="grid-template-columns:minmax(0,1fr) 3.5em"><span class="t"><i style="width:${n1/mxM*100}%"></i></span><span class="v">${nf(n1)}</span></button><button class="bar ant" data-s="${sid0}" data-k="" data-v="${m}" data-t="${m}/${ano-1}" style="grid-template-columns:minmax(0,1fr) 3.5em"><span class="t"><i style="width:${n0/mxM*100}%"></i></span><span class="v">${nf(n0)}</span></button></div></div>`; }).join('');
-  // setores que mais cresceram (12 meses x 12 anteriores)
-  const cs1 = new Map(Core.count(u12,'setor')), cs0 = new Map(Core.count(a12,'setor'));
-  const cres = [...new Set([...cs1.keys(), ...cs0.keys()])].map(k => [k, cs1.get(k)||0, cs0.get(k)||0]).filter(r=>r[1]+r[2]>=20).map(r => [...r, r[1]-r[2]]).sort((a,b)=>b[3]-a[3]);
-  const sidS = SETS.push({list:u12, key:'setor'}) - 1;
-  const linhaS = r => `<tr data-s="${sidS}" data-v="${esc(r[0])}" data-t="${esc(r[0])} (últimos 12 meses)" style="cursor:pointer"><td>${esc(r[0])}</td><td class="num">${nf(r[1])}</td><td class="num">${nf(r[2])}</td><td class="num ${r[3]>0?'warn':'good'}">${r[3]>0?'+':''}${nf(r[3])}${r[2]?` (${r[3]>0?'+':''}${nf(r[3]/r[2]*100)}%)`:''}</td></tr>`;
-  // fechamento por ano (mediana pedido -> término)
-  const fx = anos.map(([y]) => [y, Core.median(H.filter(o=>String(o.pedido.getFullYear())===y && o.total!=null).map(o=>o.total))]), mxF = Math.max(1, ...fx.map(f=>f[1]||0));
-  // equipamentos que mais voltam
-  const eq = H.filter(o=>o.plaqueta), sidE = SETS.push({list:eq, key:o=>`${o.bem} · plaqueta ${o.plaqueta}`}) - 1;
-  V.innerHTML = `<h2>Histórico</h2><p class="muted">${nf(H.length)} OS abertas de <b>${ini.toLocaleDateString('pt-BR')}</b> a <b>${fim.toLocaleDateString('pt-BR')}</b> · ${nf(hist.length)} vindas do relatório detalhado, guardadas neste aparelho. Cada arquivo novo atualiza as OS que já existem e acrescenta as novas.</p>
-  <div class="kpis kmain">
-    ${kp('OS no histórico', nf(H.length), `desde ${ini.toLocaleDateString('pt-BR')}`)}
-    ${kp(`${ano} até ${dia}/${mes+1}`, nf(esteAno.length), varAno==null?'':`<b class="${varAno>0?'warn':'good'}">${varAno>0?'+':''}${nf(varAno)}%</b> contra ${nf(anoPass.length)} no mesmo período de ${ano-1}`, esteAno)}
-    ${kp('Pendentes hoje no MV', nf(pend.length), 'aberta + não atendida + agendar, pelo arquivo mais novo', pend)}
-    ${kp('Do pedido ao fechamento', fh(Core.median(fech12)), 'mediana dos últimos 12 meses')}
-  </div>
-  <div class="grid2">
-    <div class="card"><h3>OS por ano</h3><div class="bars">${anos.map(([y,n])=>`<button class="bar" data-s="${sidA}" data-k="" data-v="${y}" data-t="${y}"><span class="n"><span class="chev">▸</span>${y}${+y===ano?' (até agora)':''}</span><span class="t"><i style="width:${n/mxA*100}%"></i></span><span class="v">${nf(n)}</span></button>`).join('')}</div></div>
-    <div class="card"><h3>Mês a mês: ${ano} x ${ano-1}</h3><p class="note" style="margin-top:-4px"><span class="lg a"></span>${ano} <span class="lg b"></span>${ano-1} · toque na barra para abrir as OS</p><div class="mmw">${mm}</div></div>
-    <div class="card"><h3>Setores que mais cresceram</h3><p class="note" style="margin-top:-4px">Últimos 12 meses contra os 12 anteriores (setores com 20 OS ou mais). Toque para abrir.</p><div class="scroll"><table><thead><tr><th>Setor</th><th class="num">12 meses</th><th class="num">Anteriores</th><th class="num">Diferença</th></tr></thead><tbody>${cres.slice(0,10).map(linhaS).join('')}</tbody></table></div>
-      <p class="note">Os que mais caíram: ${cres.slice(-3).reverse().map(r=>`${esc(r[0])} (${nf(r[3])})`).join(' · ')}</p></div>
-    <div class="card"><h3>Do pedido ao fechamento, por ano</h3><p class="note" style="margin-top:-4px">Mediana do tempo entre abrir e fechar a OS no MV.</p><div class="bars">${fx.map(([y,v])=>`<div class="bar" style="cursor:default"><span class="n">${y}</span><span class="t"><i style="width:${(v||0)/mxF*100}%"></i></span><span class="v">${fh(v)}</span></div>`).join('')}</div></div>
-    <div class="card wl"><h3>Técnicos: últimos 12 meses</h3>${bars(u12.filter(o=>o.tecnico), o=>o.tecnico, {top:12})}</div>
-    <div class="card wl"><h3>Equipamentos que mais voltam</h3>${eq.length?`<div class="bars">${Core.count(eq, o=>`${o.bem} · plaqueta ${o.plaqueta}`).filter(r=>r[1]>1).slice(0,10).map(([k,n])=>`<button class="bar" data-s="${sidE}" data-k="" data-v="${esc(k)}" data-t="${esc(k)}"><span class="n"><span class="chev">▸</span>${esc(k)}</span><span class="t"><i style="width:${n/Math.max(...Core.count(eq,o=>o.plaqueta).map(x=>x[1]))*100}%"></i></span><span class="v">${nf(n)}</span></button>`).join('')||'<p class="muted">Nenhum equipamento com mais de uma OS.</p>'}</div>`:'<p class="muted">Sem equipamentos ligados às OS.</p>'}<p class="note">Só as OS que têm equipamento cadastrado no MV (bem e plaqueta).</p></div>
-  </div>${bt}`;
-  histBotoes();
-}
-function histBotoes(){
-  const b = $('#hBkp'); if (b) b.onclick = async () => { const a = await IDB.all(); const blob = new Blob([JSON.stringify({tipo:'gos_hist', v:1, gerado:new Date().toISOString(), os:a})], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = `historico_RaioX_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(l); l.click(); setTimeout(()=>{URL.revokeObjectURL(l.href); l.remove();}, 4000); toast(`Backup com ${nf(a.length)} OS baixado.`); };
-  const r = $('#hRes'); if (r) r.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { await prog('Restaurando backup...', f.name, .3); const j = JSON.parse(await f.text()); if (j.tipo !== 'gos_hist' || !Array.isArray(j.os)) throw 0; await IDB.put(j.os); await histLoad(); rebuild(); toast(`Backup restaurado: ${nf(j.os.length)} OS.`); } catch(x) { toast('Esse arquivo não é um backup do histórico.'); } finally { progEnd(); } };
-  const c = $('#hLimpa'); if (c) c.onclick = async () => { if (!confirm('Apagar todo o histórico guardado neste aparelho? (o backup baixado continua valendo)')) return; await IDB.clear(); histRaw = new Map(); await histLoad(); rebuild(); toast('Histórico apagado.'); };
-}
-
-// ---- banco de OS: junta campo a campo (o que vier vazio não apaga o que já existe)
-let histRaw = new Map();
-const vazio = v => v == null || v === '' || (Array.isArray(v) && !v.length);
-async function histPut(list){
-  const out = list.map(r => { const old = histRaw.get(r.os) || {}, m = {...old}; Object.keys(r).forEach(k => { if (!vazio(r[k])) m[k] = r[k]; }); histRaw.set(r.os, m); return m; });
-  await IDB.put(out);
-}
-// ---- "esta coluna é o quê?": pergunta uma vez por formato e lembra
-const LAYOUTS = () => store.get('gos_layouts', {});
-function perguntarColunas(nome, hdr, ex){
-  return new Promise(ok => {
-    const w = document.createElement('div'); w.className = 'win cols'; w.style.zIndex = ++WZ;
-    if (innerWidth > 700) { w.style.left = '6vw'; w.style.top = '6vh'; w.style.width = '88vw'; w.style.height = '86vh'; }
-    const opts = sel => `<option value="">— ignorar —</option>${Core.CAMPOS.map(([k,t])=>`<option value="${k}"${k===sel?' selected':''}>${t}</option>`).join('')}`;
-    w.innerHTML = `<div class="wh"><div class="wt"><span>Formato novo de relatório</span><b>${esc(nome)}</b></div><button class="wx" title="Cancelar">✕</button></div>
-      <div class="wb"><p><b>Esta coluna é o quê?</b> Já deixei marcado o que eu reconheci pelo nome. Confira, ajuste se precisar e importe. Na próxima vez que vier um arquivo com essas mesmas colunas, ele entra sozinho.</p>
-      <p class="note">Só o <b>Nº da OS</b> é obrigatório. As OS se juntam às que já existem pelo número: o que esta planilha trouxer completa ou atualiza o que já está guardado (ex.: a criticidade).</p>
-      <div class="scroll"><table class="colmap"><thead><tr><th>Coluna no arquivo</th><th>Exemplos</th><th>É o quê?</th></tr></thead><tbody>
-      ${hdr.map((h,i) => t_(h) ? `<tr><td><b>${esc(h)}</b></td><td class="muted">${ex.map(r=>esc(t_(r[i])||'')).filter(Boolean).slice(0,3).join(' · ')}</td><td><select data-i="${i}">${opts(Core.chuteCampo(h))}</select></td></tr>` : '').join('')}
-      </tbody></table></div><p class="note" id="cmMsg"></p><p><button class="prim" id="cmOk">Importar e lembrar este formato</button> <button id="cmNo">Cancelar</button></p></div>`;
-    document.body.appendChild(w);
-    const fim = v => { w.remove(); ok(v); };
-    w.querySelector('.wx').onclick = () => fim(null); w.querySelector('#cmNo').onclick = () => fim(null);
-    w.querySelector('#cmOk').onclick = () => {
-      const mapa = {}; w.querySelectorAll('select[data-i]').forEach(s => { if (s.value) mapa[s.dataset.i] = s.value; });
-      if (!Object.values(mapa).includes('os')) { w.querySelector('#cmMsg').textContent = 'Marque qual coluna é o Nº da OS.'; return; }
-      fim(mapa);
-    };
-  });
-}
-const t_ = x => String(x == null ? '' : x).replace(/\s+/g, ' ').trim();
-async function lerPlanilha(f, txt, k, n){
-  const rows = Core.parseCSV(txt), hi = Core.acharCabecalho(rows);
-  if (hi < 0) return {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'não achei uma linha de títulos das colunas'};
-  const hdr = rows[hi], sig = Core.assinatura(hdr), L = LAYOUTS();
-  let mapa = L[sig] && L[sig].mapa, aprendido = !!mapa;
-  if (!mapa) { progEnd(); mapa = await perguntarColunas(f.name, hdr, rows.slice(hi+1, hi+6)); if (!mapa) return {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'importação cancelada'};
-    L[sig] = {mapa, nome:f.name, colunas:hdr.filter(t_).length, em:new Date().toISOString()}; store.set('gos_layouts', L);
-    await prog(`Lendo arquivo ${k} de ${n}`, f.name, k/(n+1)); }
-  const recs = Core.lerGenerico(rows, hi, mapa), agora = Date.now(); recs.forEach(r => r.t = agora);
-  const novas = recs.filter(r => !histRaw.has(r.os)).length;
-  await histPut(recs); histNovo = true;
-  const campos = [...new Set(Object.values(mapa))].map(c => (Core.CAMPOS.find(x=>x[0]===c)||[0,c])[1]).join(', ');
-  return {name:f.name, size:f.size, n:recs.length, t:agora, tipo:'Planilha', filas:`${nf(novas)} novas · ${nf(recs.length-novas)} atualizadas · ${aprendido?'formato já conhecido':'formato novo, aprendido'} · campos: ${campos}`, st: recs.length ? 'ok' : 'vazio', msg: recs.length ? '' : 'nenhuma linha com Nº de OS'};
-}
-function drawLayouts(){
-  const box = $('#cfgLayouts'); if (!box) return; const L = LAYOUTS(), ks = Object.keys(L);
-  box.innerHTML = ks.length ? `<table><thead><tr><th>Primeiro arquivo</th><th>Colunas usadas</th><th></th></tr></thead><tbody>${ks.map(k => `<tr><td>${esc(L[k].nome)}<br><span class="muted">${new Date(L[k].em).toLocaleDateString('pt-BR')}</span></td><td>${Object.entries(L[k].mapa).map(([i,c])=>esc((Core.CAMPOS.find(x=>x[0]===c)||[0,c])[1])).join(', ')}</td><td><button data-lay="${esc(k)}">Esquecer</button></td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nenhum formato aprendido ainda. Quando você carregar uma planilha que o app não conhece, ele pergunta o que é cada coluna e guarda aqui.</p>';
-  box.querySelectorAll('[data-lay]').forEach(b => b.onclick = () => { const L2 = LAYOUTS(); delete L2[b.dataset.lay]; store.set('gos_layouts', L2); drawLayouts(); toast('Formato esquecido: na próxima vez o app pergunta de novo.'); });
-}
-
-// ===================== PENDENTES POR TRATATIVA =====================
-const TRAT = {'Supervisão':'Supervisão','Planejador':'Planejamento','Programado':'Programado','Em execução':'Em execução','Comprador':'Comprador','Gestor':'Gestor','Externo':'Conserto externo (na obs.)','Material':'Aguardando material (na obs.)','Outro':'Outro (recado, sem tratativa)','Sem observação':'Sem tratativa','Feito, falta fechar':'Feito, falta fechar'};
-const trat = o => TRAT[o.pendente] || 'Outro';
-function tratKpis(L){
-  const B = L.filter(o=>o.backlog), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'], comL = B.filter(o=>!SEMT.includes(trat(o))), semL = B.filter(o=>SEMT.includes(trat(o))), com = comL.length;
-  const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
-  return `<div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Backlog com tratativa"><span>Backlog com tratativa</span><b class="${B.length&&com/B.length>=.9?'good':''}">${nf(B.length?com/B.length*100:0)}%</b><span>${nf(com)} de ${nf(B.length)} OS do backlog</span></div>
-          <div class="kpi" data-s="${SETS.push({list:comL, key:()=>'m', asc:1})-1}" data-v="m" data-w="Backlog" data-t="Cobrar primeiro (mais antigas com tratativa)"><span>Cobrar primeiro</span><b>${velha?nf(Math.floor((Date.now()-velha.pedido)/864e5))+' dias':'–'}</b><span>${velha?`mais antiga com tratativa: OS ${velha.os} · ${esc(trat(velha))}`:'nenhuma com tratativa'}</span></div>`;
-}
-function tratCard(L, done){
-  const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), base = L.length || 1;
-  const nB = k => B.filter(o=>trat(o)===k).length, nA = k => A.filter(o=>trat(o)===k).length;
-  const kp = (k, sub) => { const sid = SETS.push({list:B.filter(o=>trat(o)===k), key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Backlog › Pendentes por tratativa" data-t="${k}"><span>${k}</span><b>${nf(nB(k))}</b>${nB(k)?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(nB(k)/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${sub || ({'Supervisão':'aguardando a supervisão','Comprador':'aguardando o comprador','Planejamento':'aguardando o planejamento'})[k] || 'no backlog'}${(() => { const m = Core.median(B.filter(o=>trat(o)===k).map(o=>o.parado).filter(x=>x!=null)); return m!=null ? ` · parada há ${nf(m)} d (mediana)` : ''; })()}</span></div>`; };
-  // escada: quanto sobe o % realizado resolvendo cada grupo do backlog
-  const ord = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Aguardando material (na obs.)','Conserto externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
-  let acc = done; const steps = [['Hoje', done]];
-  ord.forEach(k => { const n = nB(k); if (n) { acc += n; steps.push(['+ '+k+' ('+nf(n)+')', acc]); } });
-  const pc = v => v/base*100, bar = ([t,v],i) => `<div class="bar acc" style="cursor:default;grid-template-columns:minmax(0,12.5em) minmax(0,1fr) auto"><span class="n" style="white-space:nowrap">${t}</span><span class="t"><i style="width:${pc(v)}%;${pc(v)>=90?'background:light-dark(#127a3a,#3ddc84)':''}"></i></span><span class="v ${pc(v)>=90?'good':''}">${nf(pc(v),1)}%</span></div>`;
-  const com = B.filter(o=>!['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))).length; // recado do solicitante (URGENTE, brevidade…) não é tratativa
-  return `<div class="card" style="margin-bottom:16px"><h3>Pendentes por tratativa</h3><p class="note" style="margin-top:-4px">Só o backlog (aberta, não atendida, agendar). Em aguardando material ou conserto externo a tratativa já foi feita: a OS está com terceiros.</p>
-    <div class="kpis wk" style="margin-bottom:12px">${kp('Feito, falta fechar','observação diz que foi feito')}${kp('Supervisão')}${kp('Comprador')}${kp('Planejamento')}${kp('Programado','fim de semana / data marcada')}${kp('Em execução','com os técnicos')}${(() => { const l = B.filter(o=>['Sem tratativa','Outro (recado, sem tratativa)'].includes(trat(o))), r = l.filter(o=>trat(o)!=='Sem tratativa').length, sid = SETS.push({list:l, key:()=>'m', asc:1}) - 1; return `<div class="kpi" data-s="${sid}" data-v="m" data-w="Backlog › Pendentes por tratativa" data-t="Sem tratativa"><span>Sem tratativa</span><b>${nf(l.length)}</b>${l.length?`<span class="fant" style="display:block"><b style="font-size:15px">+${nf(l.length/base*100,1)}%</b> <span>no total se resolver</span></span>`:''}<span>${nf(l.length-r)} sem nada escrito · ${nf(r)} só com recado do solicitante</span></div>`; })()}</div>
-    </div>`;
-}
-
-// ===================== JANELAS (abrem por cima, arrastáveis, várias ao mesmo tempo) =====================
-let WZ = 60, WN = 0;
-function winDash(items){
-  const nC = items.filter(o=>o.fila==='concluída').length, nT = items.filter(o=>o.terceiros).length, nX = items.filter(o=>o.fila==='cancelada').length, done = nC+nT+nX;
-  const esp = items.map(o=>o.espera).filter(x=>x!=null), hh = items.reduce((s,o)=>s+o.horas,0);
-  const k = (t,v,s='') => `<div class="kpi"><span>${t}</span><b>${v}</b>${s?`<span>${s}</span>`:''}</div>`;
-  return `<div class="kpis wk">${k('OS', nf(items.length))}${k('Realizadas', nf(done), items.length?`<b class="${done/items.length>=.9?'good':''}" style="font-size:16px">${nf(done/items.length*100)}%</b>`:'')}${k('Pendentes nossas', nf(items.filter(o=>o.backlog).length), 'aberta + não atendida + agendar')}${k('Aguardando material', nf(items.filter(o=>o.fila==='aguardando material').length))}${k('Conserto externo', nf(items.filter(o=>o.fila==='conserto externo').length))}${k('Espera 1º atendimento', fh(Core.median(esp)), 'mediana')}${k('Homem-hora', hm(hh))}</div>`;
-}
-function imprimirOS(onde, oque, list, sel, total, asc){
-  const L = list.slice().sort((a,b)=> asc ? (a.pedido||0)-(b.pedido||0) : (b.pedido||0)-(a.pedido||0));
-  const selTxt = Object.entries(sel).filter(([g,set])=>set.size).map(([g,set])=>`${g}: ${[...set].join(', ')}`).join(' · ');
-  const tec = o => o.exec.length ? o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', ') : '';
-  const pend = o => o.terceiros ? 'Com terceiros' : (o.pendente||'');
-  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>OS - ${esc(oque)}</title><style>
-    @page{size:A4 landscape;margin:8mm}body{font:9px/1.25 Arial,sans-serif;color:#111;margin:0}
-    h1{font-size:16px;margin:0 0 2px}.sub{color:#444;margin:0 0 2px}.sel{margin:6px 0 8px;padding:6px 8px;border:1px solid #999;border-radius:4px;background:#f3f3f3}
-    table{width:100%;border-collapse:collapse;table-layout:fixed}td{overflow-wrap:break-word;font-size:10.5px}th,td{border:1px solid #bbb;padding:3px 4px;vertical-align:top;text-align:left}th{background:#e4e7ee;color:#000;font-size:10px;border-bottom:2px solid #000}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
-    tr{page-break-inside:avoid}tbody tr:nth-child(even){background:#f6f7fa}.n{white-space:normal}thead{display:table-header-group}</style></head><body>
-    <h1>${cfg.logo?`<img src="${cfg.logo}" style="height:28px;vertical-align:middle;margin-right:8px">`:''}Raio X do Relatório · ${esc(oque)}</h1>${ORG()?`<p class="sub">${esc(ORG())}</p>`:''}
-    <p class="sub">${esc(onde)} · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
-    <div class="sel"><b>Seleção:</b> ${selTxt ? esc(selTxt) : 'nenhuma (todas as OS da janela)'} · <b>${L.length} OS</b>${L.length!==total?` de ${total}`:''}</div>
-    <table><colgroup><col style="width:5.5%"><col style="width:7.5%"><col style="width:7%"><col style="width:9.5%"><col style="width:12%"><col style="width:25%"><col style="width:16%"><col style="width:8.5%"><col style="width:9%"></colgroup><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor / localidade</th><th>Descrição</th><th>Observação</th><th>Pendente de</th><th>Técnico</th></tr></thead><tbody>
-    ${L.map(o=>`<tr><td class="n"><b>${o.os}</b></td><td class="n">${o.pedido?o.pedido.toLocaleDateString('pt-BR')+'<br>'+o.pedido.toTimeString().slice(0,5):''}</td><td>${esc(o.fila)}</td><td>${esc(o.especialidade||'')}</td><td>${esc(o.setor||'')}${o.localidade&&o.localidade!==o.setor?'<br>'+esc(o.localidade):''}</td><td>${esc(o.desc||'')}</td><td>${esc(o.obs||'')}</td><td>${esc(pend(o))}</td><td>${esc(tec(o))}</td></tr>`).join('')}
-    </tbody></table></body></html>`;
-  const f = document.createElement('iframe'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0';
-  document.body.appendChild(f); f.contentDocument.open(); f.contentDocument.write(html); f.contentDocument.close();
-  setTimeout(() => { try { f.contentWindow.focus(); f.contentWindow.print(); } catch(e) { toast('Não foi possível abrir a impressão.'); } setTimeout(() => f.remove(), 60000); }, 300);
-}
-function openWin(onde, oque, items, asc){
-  const w = document.createElement('div'); w.className = 'win'; const n = WN++ % 6;
-  w.style.zIndex = ++WZ;
-  if (innerWidth > 700) { w.style.left = (2 + n*2) + 'vw'; w.style.top = (5 + n*3) + 'vh'; w.style.width = '92vw'; w.style.height = '86vh'; }
-  w.innerHTML = `<div class="wh"><div class="wt"><span>${esc(onde)}</span><b>${esc(oque)} · ${nf(items.length)} OS</b></div><button class="wpr" title="Imprimir as OS desta janela (com a seleção)">Imprimir</button><button class="wcp" title="Copiar lista para o Excel">Copiar</button><button class="wmin" title="Minimizar" aria-label="Minimizar">–</button><button class="wx" title="Fechar" aria-label="Fechar">✕</button></div><div class="wb"></div>`;
-  const body = w.querySelector('.wb');
-  const sel = {}; // seleção das bolinhas desta janela (fecha a janela = some a seleção)
-  const filt = () => items.filter(o => Object.entries(sel).every(([g,set]) => !set.size || set.has(String(MGF[g](o)))));
-  body.addEventListener('click', e => {
-    const c = e.target.closest('.chip.fc'); const lp = e.target.closest('.sellimpa');
-    if (lp) { Object.keys(sel).forEach(k => delete sel[k]); show(50); return; }
-    if (!c) return; const g = c.dataset.g, k = c.dataset.k; (sel[g] = sel[g] || new Set());
-    sel[g].has(k) ? sel[g].delete(k) : sel[g].add(k); show(50);
-    const lst = body.querySelector('.selbar'); if (lst) lst.scrollIntoView({block:'nearest'});
-  });
-  const show = lim => { const F_ = filt(); body.innerHTML = winDash(F_) + (asc ? '<p class="note">Da mais antiga para a mais nova: cobrar de cima para baixo.</p>' : '') + drillHTML(F_, lim, asc, sel, items); const m = body.querySelector('.drmore'); if (m) m.onclick = () => show(+m.dataset.lim); };
-  show(50);
-  document.body.appendChild(w);
-  const frente = () => { w.style.zIndex = ++WZ; };
-  w.addEventListener('pointerdown', frente);
-  let chip = null;
-  w.querySelector('.wx').onclick = () => { w.remove(); if (chip) chip.remove(); };
-  w.querySelector('.wcp').onclick = () => copy(tsv(filt()));
-  w.querySelector('.wpr').onclick = () => imprimirOS(onde, oque, filt(), sel, items.length, asc);
-  w.querySelector('.wmin').onclick = () => {
-    w.style.display = 'none';
-    chip = document.createElement('button'); chip.className = 'dk'; chip.textContent = `${oque} (${items.length})`; chip.title = onde;
-    chip.onclick = () => { w.style.display = ''; frente(); chip.remove(); chip = null; };
-    $('#dock').appendChild(chip);
-  };
-  // arrastar pela barra de cima (no computador)
-  const h = w.querySelector('.wh');
-  h.addEventListener('pointerdown', e => {
-    if (innerWidth <= 700 || e.target.closest('button')) return;
-    const r = w.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top;
-    h.setPointerCapture(e.pointerId);
-    const mv = ev => { w.style.left = Math.min(innerWidth-80, Math.max(-r.width+120, ev.clientX - dx)) + 'px'; w.style.top = Math.min(innerHeight-50, Math.max(0, ev.clientY - dy)) + 'px'; };
-    const up = () => { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', up); };
-    h.addEventListener('pointermove', mv); h.addEventListener('pointerup', up);
-  });
-  // dois toques/cliques na barra: maximiza ou volta
-  h.addEventListener('dblclick', e => { if (e.target.closest('button') || innerWidth <= 700) return; const max = w.classList.toggle('max'); });
-  if (WN === 1) toast(innerWidth > 700 ? 'Aberto numa janela. Arraste pela barra de cima; – minimiza; ✕ fecha.' : 'Aberto numa janela. – minimiza; ✕ fecha.');
-}
-function winOnde(el){
-  const tab = (document.querySelector('#tabs a.on') || {}).textContent || '';
-  const c = el.closest('.card'), h = c && c.querySelector('h3');
-  return [tab, h ? h.textContent : ''].filter(Boolean).join(' › ');
-}
-document.addEventListener('click', e => {
-  const b = e.target.closest('[data-s]'); if (!b || b.closest('.win')) return;
-  const S = SETS[+b.dataset.s]; if (!S) return;
-  const kf = typeof S.key === 'function' ? S.key : (o => o[S.key]);
-  const items = S.list.filter(o => String(kf(o)) === b.dataset.v);
-  const nome = b.dataset.t || ((b.querySelector('.n') || b).textContent.replace('▸','').trim());
-  openWin(b.dataset.w || winOnde(b), nome, items, !!S.asc);
-});
-
-// ===================== POSSÍVEIS REPETIDAS =====================
-function renderRep(){
-  const G = Core.repetidas(data);
-  const card = o => `<div class="dr"><div class="dh"><b>OS ${o.os}</b><span class="tag${o.backlog?' bk':''}">${o.fila}</span><span class="muted">${fd(o.pedido)}</span></div><div class="${o.os===o.repPrincipal?'ok':'warn'}"><b>${esc(o.repAcao)}</b></div><div>${esc(o.desc)}</div><div class="muted">${esc(o.localidade||'')}${o.solicitante?' · Solicitante: '+esc(o.solicitante):''}</div>${o.obs?`<div class="muted">Obs.: ${esc(o.obs)}</div>`:''}${o.terceiros?`<div class="muted">Com terceiros (${o.fila}): não é pendência nossa</div>`:o.pendente?`<div><b>Pendente de ${esc(o.pendente)}</b>${o.encaminhado?` desde ${o.encaminhado.toLocaleDateString('pt-BR')} (${o.parado} d)`:''}</div>`:''}</div>`;
-  const fechar = G.reduce((s,a)=>s+a.length-1,0), fAnd = G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0);
-  const rn = $('#repN'); if (rn) rn.textContent = nf(G.reduce((s,a)=>s+a.length-1,0));
-  $('#v-repetidas').innerHTML = `<h2>OS repetidas em aberto</h2>
-  <div class="kpis"><div class="kpi"><b>${fechar}</b><span>OS repetidas para tratar (fechar)</span></div><div class="kpi"><b>${fAnd}</b><span>Já tratadas em outra OS (com tratativa, material ou externo)</span></div><div class="kpi"><b>${fechar-fAnd}</b><span>Ainda sem tratativa: juntar numa OS só</span></div><div class="kpi"><b>${G.length}</b><span>Grupos</span></div></div>
-  <p class="muted">Só OS em aberto (fechadas e canceladas não entram), do mesmo setor e com descrição parecida. A primeira de cada grupo é a que fica (a mais adiantada: aguardando material, conserto externo, em execução, programado, compra, supervisão ou planejamento); as outras devem ser fechadas no MV informando a OS que já está tratando. Confira antes: é só um aviso, nada é alterado aqui.</p>
-  <p><button id="cpRep">Copiar lista para o Excel</button></p>
-  ${G.map((a,i)=>`<div class="card rq"><h3>${i+1}. ${esc(a[0].setor)}</h3><p>${a.link?'<span class="tag">observação cita outra OS</span> ':''}${a.mesmaLoc?'<span class="tag">mesma localidade</span> ':''}${a.mesmoSolic?'<span class="tag">mesmo solicitante</span> ':''}<span class="tag">${a.length} OS</span></p><div class="drill" style="margin:0">${a.map(card).join('')}</div></div>`).join('') || '<div class="card">Nenhuma OS repetida encontrada.</div>'}`;
-  const b = $('#cpRep'); if (b) b.onclick = () => copy(['Grupo\tO que fazer\tOS\tFila\tPendente de\tPedido\tSetor\tLocalidade\tSolicitante\tDescrição\tObservação', ...G.flatMap((a,i)=>a.map(o=>[i+1,o.repAcao,o.os,o.fila,o.pendente||'',fd(o.pedido),o.setor,o.localidade||'',o.solicitante||'',o.desc,o.obs||''].map(x=>String(x).replace(/[\t\n\r]+/g,' ')).join('\t')))].join('\n'));
-}
-
-// ===================== GERADOR DE RELATÓRIOS (Excel) =====================
-const REL = [
-  ['ind','Indicadores do período','Total, realizadas e %, por fila, especialidade e tipo (OS abertas no período)'],
-  ['bl','Backlog','Tudo que estava pendente até o fim do período, desde o começo: por fila, idade, especialidade e a lista'],
-  ['set','Setores','OS por setor e localidade, realizadas e pendentes'],
-  ['hh','Homem-hora por técnico','OS, horas e média por técnico'],
-  ['tp','Tempos de atendimento','Espera até o 1º atendimento, execução e pedido → término, por especialidade e tipo'],
-  ['trat','Pendentes por tratativa','Com quem as OS do backlog estão paradas (frases padrão do planejamento), dias parada, % com tratativa e a lista para cobrar'],
-  ['lista','Lista de OS','Todas as OS do período com todos os campos'],
-  ['arr','Para arrumar no MV','OS com erro de data/hora para corrigir no MV'],
-  ['rep','OS repetidas em aberto','Quais OS fechar porque já estão sendo tratadas em outra']
-];
-const MES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-function relMeses(){ const m = {}; data.forEach(o => { if (o.pedido) m[o.pedido.getFullYear()*100+o.pedido.getMonth()] = 1; }); return Object.keys(m).map(Number).sort((a,b)=>b-a); }
-function drawRel(){
-  const V = $('#v-relatorios'), sel = (k,l) => `<label>${l}<select id="r-${k}"><option value="">Todas</option>${Core.count(data.filter(o=>o.ok && (k!=='pendente'||o.pendente)), o=>k==='tecnico'?o.tecnico:o[k]).map(([v,n])=>`<option value="${esc(v)}">${esc(v)} (${n})</option>`).join('')}</select></label>`;
-  V.innerHTML = `<h2>Gerar relatório em Excel</h2>
-  <div class="card rq"><h3>1. Quais relatórios?</h3><div class="ck">${REL.map(([k,t,d])=>`<label class="ckl"><input type="checkbox" value="${k}" ${k==='ind'||k==='bl'?'checked':''}><span><b>${t}</b><br><span class="muted">${d}</span></span></label>`).join('')}</div>
-    <p><button id="r-all">Marcar todos</button> <button id="r-none">Desmarcar</button></p></div>
-  <div class="card rq"><h3>2. Qual período?</h3>
-    <div class="ck"><label class="ckl"><input type="radio" name="r-per" value="tudo" checked><span><b>Tudo</b> o que foi carregado</span></label>
-    <label class="ckl"><input type="radio" name="r-per" value="mes"><span><b>Mês</b> <select id="r-mes">${relMeses().map(v=>`<option value="${v}">${MES[v%100]}/${Math.floor(v/100)}</option>`).join('')}</select></span></label>
-    <label class="ckl"><input type="radio" name="r-per" value="de"><span><b>De</b> <input type="date" id="r-de"> <b>até</b> <input type="date" id="r-ate"></span></label></div>
-    <p class="note">Indicadores e os demais: só o que foi aberto dentro do período. Backlog: tudo que estava pendente até o fim do período, desde o começo.</p></div>
-  <div class="card rq"><h3>3. Filtrar por (opcional)</h3><div class="filters" style="margin:0">${[['especialidade','Especialidade'],['setor','Setor'],['tecnico','Técnico'],['tipo','Tipo'],['criticidade','Criticidade'],['pendente','Pendente de']].map(([k,l])=>sel(k,l)).join('')}</div></div>
-  <div class="card rq"><h3>4. Como gerar?</h3><div class="ck">
-    <label class="ckl"><input type="radio" name="r-fmt" value="abas" checked><span><b>Um arquivo, uma aba por relatório</b></span></label>
-    <label class="ckl"><input type="radio" name="r-fmt" value="uma"><span><b>Um arquivo, tudo numa aba só</b> (um embaixo do outro)</span></label>
-    <label class="ckl"><input type="radio" name="r-fmt" value="sep"><span><b>Arquivos separados</b>, um por relatório</span></label></div></div>
-  <p><button class="prim" id="r-gerar">Gerar Excel</button></p><p class="note" id="r-msg"></p>`;
-  $('#r-all').onclick = () => V.querySelectorAll('.ck input[type=checkbox]').forEach(c => c.checked = true);
-  $('#r-none').onclick = () => V.querySelectorAll('.ck input[type=checkbox]').forEach(c => c.checked = false);
-  ['r-mes','r-de','r-ate'].forEach(id => $('#'+id).addEventListener('focus', () => { V.querySelector(`input[name=r-per][value=${id==='r-mes'?'mes':'de'}]`).checked = true; }));
-  $('#r-gerar').onclick = gerarRel;
-}
-function relPeriodo(){
-  const p = document.querySelector('input[name=r-per]:checked').value;
-  if (p === 'mes') { const v = +$('#r-mes').value; if (!v) return null; const y = Math.floor(v/100), m = v%100; return {ini:new Date(y,m,1), fim:new Date(y,m+1,0), nome:`${MES[m]}-${y}`, rot:`${MES[m]}/${y}`}; }
-  if (p === 'de') { const a = $('#r-de').value, b = $('#r-ate').value; if (!a || !b || a > b) return 'erro'; const D = x => new Date(x+'T00:00'); return {ini:D(a), fim:D(b), nome:`${a}_a_${b}`, rot:`${D(a).toLocaleDateString('pt-BR')} a ${D(b).toLocaleDateString('pt-BR')}`}; }
-  return {ini:null, fim:null, nome:'tudo', rot:'tudo o que foi carregado'};
-}
-const dt = d => d ? d.toLocaleDateString('pt-BR') + ' ' + d.toTimeString().slice(0,5) : '';
-const r1 = x => x == null || isNaN(x) ? '' : Math.round(x*10)/10;
-const D = x => x == null || isNaN(x) ? '' : {D:x}; // duração em horas → vira h/min no Excel
-function tabela(t, cab, linhas){ return [{T:'sec', v:t}, {T:'head', v:cab}, ...(linhas.length ? linhas : [['Nenhuma OS', ...Array(cab.length-1).fill('')]]), {T:'blank'}]; }
-const FILAS = {'aberta':'Aberta','não atendida':'Não atendida','agendar':'Agendar','aguardando material':'Aguardando material','conserto externo':'Conserto externo','concluída':'Concluída','cancelada':'Cancelada'};
-const LONGAS = /^(Descrição|Observação|Para arrumar|Problema|Motivo|O que fazer)$/;
-// monta uma aba bonita (ExcelJS) a partir das linhas do relatório
-function abaExcel(wb, nome, linhas){
-  const ws = wb.addWorksheet(nome.slice(0,31), {views:[{showGridLines:false}], properties:{tabColor:{argb:'FFD6336C'}}});
-  const C0 = 2; // coluna A fica de margem
-  const cor = 'FF0F2A4A', acc = 'FFD6336C', cinza = 'FF667085', borda = {style:'thin', color:{argb:'FFD0D5DD'}}, B4 = {top:borda,bottom:borda,left:borda,right:borda};
-  const pctRx = /^\d+(,\d+)?%$/;
-  let maxC = 2; linhas.forEach(r => { if (r && (r.T==='head' || r.T==='kpis')) maxC = Math.max(maxC, r.v.length); else if (Array.isArray(r)) maxC = Math.max(maxC, r.length); });
-  // 1ª passada: largura de cada coluna e quais são numéricas
-  const larg = Array(maxC).fill(12), longa = Array(maxC).fill(false), num = Array(maxC).fill(true);
-  let cab = null;
-  linhas.forEach(L => {
-    if (L && L.T === 'head') { cab = L.v; L.v.forEach((h,i) => { larg[i] = Math.max(larg[i], Math.min(26, String(h).length + 4)); if (LONGAS.test(h)) longa[i] = true; }); }
-    else if (L && (L.T === 'blank' || L.T === 'sec')) cab = null;
-    else if (L && L.T === 'kpis') L.v.forEach((k,i) => { larg[i] = Math.max(larg[i], Math.min(28, String(k[0]).length + 4)); });
-    else if (Array.isArray(L) && cab) L.forEach((v,i) => { const t = v && v.D != null ? '000 h 00 min' : String(v ?? ''); if (typeof v === 'string' && v !== '' && !pctRx.test(v)) num[i] = false; larg[i] = Math.max(larg[i], Math.min(longa[i] ? 60 : (i === 0 ? 58 : 34), t.length + 3)); });
-  });
-  num[0] = false;
-  const W = i => longa[i] ? Math.max(larg[i], 45) : larg[i];
-  ws.getColumn(1).width = 2;
-  for (let i = 0; i < maxC; i++) ws.getColumn(i + C0).width = W(i);
-  const fim = C0 + Math.max(maxC, 4) - 1;
-  // 2ª passada: escreve
-  let r = 1, primeiro = true, ini = 0, maiorTab = null; cab = null;
-  { const c = ws.getCell(1, C0); c.value = ['RELATÓRIO DE ORDENS DE SERVIÇO', ...(ORG() ? [ORG().toUpperCase()] : [])].join(' · '); c.font = {bold:true, size:9, color:{argb:acc}}; ws.getRow(1).height = 20; c.alignment = {vertical:'bottom'}; }
-  const fecha = () => { if (cab && (!maiorTab || r - ini > maiorTab[2] - maiorTab[0])) maiorTab = [ini, cab.length, r]; };
-  linhas.forEach(L => {
-    if (L && L.T === 'blank') { fecha(); cab = null; r++; ws.getRow(r).height = 10; return; }
-    if (L && L.T === 'sec') { fecha(); cab = null; r++; const c = ws.getCell(r, C0); c.value = L.v; c.font = {bold:true, size:12, color:{argb:cor}}; ws.getRow(r).height = 22; c.alignment = {vertical:'bottom'}; return; }
-    if (L && L.T === 'kpis') { // faixa de cartões com os números principais
-      r++; const r2 = r + 1;
-      L.v.forEach(([t, v], i) => {
-        const a = ws.getCell(r, C0 + i), b = ws.getCell(r2, C0 + i), fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF1F4FA'}};
-        a.value = t; a.font = {size:9, color:{argb:cinza}}; a.alignment = {horizontal:'center', vertical:'bottom', wrapText:true}; a.fill = fill; a.border = {top:{style:'medium', color:{argb:acc}}, left:borda, right:borda};
-        const pc = typeof v === 'string' && pctRx.test(v), val = pc ? parseFloat(v.replace(',','.'))/100 : v;
-        if (v && v.D != null) { b.value = v.D/24; b.numFmt = '[<0.0416666666666667][m]" min";[h]" h "mm" min"'; } else { b.value = val; if (pc) b.numFmt = '0.0%'; }
-        b.font = {bold:true, size:18, color:{argb: pc ? (val >= .9 ? 'FF127A3A' : acc) : cor}}; b.alignment = {horizontal:'center', vertical:'middle'}; b.fill = fill; b.border = {bottom:borda, left:borda, right:borda};
-      });
-      ws.getRow(r).height = 28; ws.getRow(r2).height = 34; r = r2; return;
-    }
-    if (L && L.T === 'head') { r++; cab = L.v; ini = r; L.v.forEach((h,i) => { const c = ws.getCell(r, i + C0); c.value = h; c.font = {bold:true, color:{argb:'FFFFFFFF'}}; c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:acc}}; c.alignment = {vertical:'middle', horizontal: i ? 'center' : 'left', wrapText:true}; c.border = B4; }); ws.getRow(r).height = 24; return; }
-    if (!Array.isArray(L)) return;
-    r++;
-    if (!cab) { // título ou linha de informação
-      let txt = String(L[0] ?? ''); const c = ws.getCell(r, C0);
-      if (primeiro && L.length) {
-        const k = txt.indexOf(': '); if (k > 0 && txt.length > 40) txt = txt.slice(0, k); // período vai na linha de baixo
-        c.value = txt; c.font = {bold:true, size:16, color:{argb:'FFFFFFFF'}};
-        for (let j = C0; j <= fim; j++) ws.getCell(r, j).fill = {type:'pattern', pattern:'solid', fgColor:{argb:cor}};
-        ws.mergeCells(r, C0, r, fim); ws.getRow(r).height = 32; c.alignment = {vertical:'middle', indent:1}; primeiro = false;
-      } else if (L.length) { c.value = txt; c.font = {italic:true, size:9, color:{argb:cinza}}; }
-      return;
-    }
-    const zebra = (r - ini) % 2 === 0; let linhas_ = 1;
-    L.forEach((v,i) => {
-      const c = ws.getCell(r, i + C0);
-      if (v && v.D != null) { c.value = v.D/24; c.numFmt = '[<0.0416666666666667][m]" min";[h]" h "mm" min"'; }
-      else if (typeof v === 'string' && pctRx.test(v)) { c.value = parseFloat(v.replace(',','.'))/100; c.numFmt = '0.0%'; c.font = {bold:true, color:{argb: c.value >= .9 ? 'FF127A3A' : acc}}; }
-      else if (typeof v === 'string' && FILAS[v]) c.value = FILAS[v];
-      else c.value = v === '' ? null : v;
-      if (typeof c.value === 'number' && !Number.isInteger(c.value) && !(v && v.D != null) && !String(c.numFmt||'').includes('%')) c.numFmt = '0.0';
-      if (typeof c.value === 'number' && Number.isInteger(c.value) && c.value >= 1000 && !(i === 0 || /^OS$/.test(cab[i]||''))) c.numFmt = '#,##0';
-      c.border = B4;
-      const centro = i > 0 && (num[i] || (v && v.D != null)) && !longa[i];
-      const quebra = typeof c.value !== 'number' && (longa[i] || i === 0 || String(c.value ?? '').length > W(i));
-      c.alignment = {vertical:'top', horizontal: centro ? 'center' : 'left', wrapText: quebra};
-      if (quebra) linhas_ = Math.max(linhas_, Math.ceil(String(c.value ?? '').length / Math.max(8, W(i) - 2)));
-      if (zebra) c.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FFF5F7FA'}};
-      if (i === 0 && /total/i.test(String(v))) { c.font = {bold:true}; }
-    });
-    ws.getRow(r).height = Math.min(120, Math.max(18, 15 * linhas_ + 3));
-  });
-  fecha();
-  if (maiorTab && maiorTab[2] - maiorTab[0] > 15) {
-    ws.autoFilter = {from:{row:maiorTab[0], column:C0}, to:{row:maiorTab[2], column:C0 + maiorTab[1] - 1}};
-    ws.pageSetup.printTitlesRow = `${maiorTab[0]}:${maiorTab[0]}`;
-  }
-  Object.assign(ws.pageSetup, {paperSize:9, orientation: maxC > 6 ? 'landscape' : 'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true, margins:{left:0.4, right:0.4, top:0.5, bottom:0.6, header:0.2, footer:0.3}});
-  ws.headerFooter.oddFooter = '&L&8Raio X do Relatório' + (ORG() ? ' · ' + ORG().replace(/&/g,'&&') : '') + '&R&8Página &P de &N';
-  return ws;
-}
-function capaExcel(wb, ks, P, filTxt, nomeRel, fmt){
-  const ws = wb.addWorksheet('Capa', {views:[{showGridLines:false}], properties:{tabColor:{argb:'FF0F2A4A'}}});
-  const cor = 'FF0F2A4A', acc = 'FFD6336C', cinza = 'FF667085';
-  ws.getColumn(1).width = 3; ws.getColumn(2).width = 42; ws.getColumn(3).width = 80;
-  const put = (r, c, v, f, h) => { const x = ws.getCell(r, c); x.value = v; if (f) x.font = f; if (h) ws.getRow(r).height = h; return x; };
-  for (let r = 2; r <= 4; r++) for (let c = 2; c <= 3; c++) ws.getCell(r, c).fill = {type:'pattern', pattern:'solid', fgColor:{argb:cor}};
-  put(2, 2, (ORG() || 'Raio X do Relatório').toUpperCase(), {bold:true, size:10, color:{argb:'FFF7A1C4'}}, 22);
-  put(3, 2, 'Relatório de Ordens de Serviço', {bold:true, size:22, color:{argb:'FFFFFFFF'}}, 38);
-  put(4, 2, `Período: ${P.rot}`, {size:11, color:{argb:'FFDDE3F0'}}, 22);
-  put(6, 2, 'Filtros', {bold:true, color:{argb:cor}}); put(6, 3, filTxt);
-  put(7, 2, 'Gerado em', {bold:true, color:{argb:cor}}); put(7, 3, new Date().toLocaleString('pt-BR'));
-  put(8, 2, 'Fonte', {bold:true, color:{argb:cor}}); put(8, 3, 'Relatórios de OS exportados do MV (R_ORDEM_SERVICO)');
-  put(10, 2, 'O que tem neste arquivo', {bold:true, size:13, color:{argb:cor}}, 24);
-  ks.forEach((k, i) => { const d = REL.find(x=>x[0]===k); const r = 11 + i;
-    const a = put(r, 2, `${i+1}. ${d[1]}`, {bold:true, color:{argb: fmt === 'abas' ? 'FF2347C5' : cor}, underline: fmt === 'abas'});
-    if (fmt === 'abas') a.value = {text:`${i+1}. ${d[1]}`, hyperlink:`#'${d[1].slice(0,31)}'!A1`};
-    put(r, 3, d[2], {color:{argb:cinza}}).alignment = {wrapText:true, vertical:'top'}; a.alignment = {vertical:'top'}; ws.getRow(r).height = 30; });
-  const r = 12 + ks.length;
-  put(r, 2, 'Regras usadas', {bold:true, size:13, color:{argb:cor}}, 24);
-  ['Realizadas = concluídas + aguardando material + conserto externo + canceladas.',
-   'Backlog (pendentes nossas) = aberta + não atendida + agendar. Aguardando material e conserto externo ficam fora.',
-   'Tratativa = só as frases padrão do planejamento na Observação; recado do solicitante não conta.',
-   'Execução acima do limite ou sem hora de fim conta 1 h provisória e aparece em "Para arrumar no MV".'].forEach((t, i) => { const c = put(r + 1 + i, 2, '• ' + t, {color:{argb:cinza}}); ws.mergeCells(r + 1 + i, 2, r + 1 + i, 3); c.alignment = {wrapText:true}; ws.getRow(r + 1 + i).height = 18; });
-  Object.assign(ws.pageSetup, {paperSize:9, orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true});
-  ws.headerFooter.oddFooter = '&L&8Raio X do Relatório' + (ORG() ? ' · ' + ORG().replace(/&/g,'&&') : '') + '&R&8Página &P de &N';
-}
-async function baixa(wb, nome){
-  const buf = await wb.xlsx.writeBuffer();
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})); a.download = nome;
-  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
-}
-function cnt(list, f){ return Core.count(list, f); }
-function relBlocos(k, L, Lall, P){
-  const fimP = P.fim || hoje(), E = new Date(fimP.getFullYear(), fimP.getMonth(), fimP.getDate(), 23, 59, 59);
-  const linhaOS = o => [+o.os, dt(o.pedido), o.fila, o.tipo, o.especialidade, o.setor, o.localidade||'', o.desc, o.obs||'', o.pendente||'', o.encaminhado?o.encaminhado.toLocaleDateString('pt-BR'):'', o.parado??'', o.exec.length?o.tecnicos.filter((x,i,a)=>a.indexOf(x)===i).join(', '):'', dt(o.inicio), dt(o.fim), dt(o.termino), D(o.espera), D(o.horas), D(o.total), o.arrumar.join('; ')];
-  const cabOS = ['OS','Pedido','Fila','Tipo','Especialidade','Setor','Localidade','Descrição','Observação','Pendente de','Encaminhado em','Parado (dias)','Técnico','Início atend.','Fim atend.','Término','Espera','Execução','Pedido → término','Para arrumar'];
-  if (k === 'ind') {
-    const nC = L.filter(o=>o.fila==='concluída').length, nT = L.filter(o=>o.terceiros).length, nX = L.filter(o=>o.fila==='cancelada').length, done = nC+nT+nX;
-    const esp = L.map(o=>o.espera).filter(x=>x!=null);
-    const fal = Math.max(0, Math.ceil(L.length*0.9 - 1e-9) - done), pc_ = L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',')+'%' : '0%';
-    return [['Indicadores do período: '+P.rot], [], {T:'kpis', v:[['Total de OS', L.length], ['Realizadas', done], ['% realizado', pc_], ['Pendentes nossas', L.filter(o=>o.backlog).length], ['Faltam p/ 90%', fal]]}, {T:'blank'},
-      ...tabela('Resumo', ['Indicador','Valor'], [['Total de OS', L.length], ['Realizadas (concluídas + aguardando material + conserto externo + canceladas)', done], ['% realizado', L.length ? String(Math.round(done/L.length*1000)/10).replace('.',',') + '%' : '-'], ['Concluídas', nC], ['Aguardando material', L.filter(o=>o.fila==='aguardando material').length], ['Conserto externo', L.filter(o=>o.fila==='conserto externo').length], ['Canceladas', nX], ['Pendentes nossas (aberta + não atendida + agendar)', L.filter(o=>o.backlog).length], ['Espera até 1º atendimento - mediana', D(Core.median(esp))], ['Espera até 1º atendimento - média', D(Core.mean(esp))], ['Homem-hora lançado', D(L.reduce((s,o)=>s+o.horas,0))], ['OS com horário ajustado (1 h provisória)', L.filter(o=>o.provisorio).length]]),
-      ...tabela('Por fila', ['Fila','OS'], cnt(L,'fila')),
-      ...tabela('Por especialidade', ['Especialidade','OS'], cnt(L,'especialidade')),
-      ...tabela('Por tipo', ['Tipo','OS'], cnt(L,'tipo'))];
-  }
-  if (k === 'bl') {
-    const bl = Core.backlogAt(Lall, fimP), terc = Core.terceirosAt(Lall, fimP), bands = ['0–7 dias','8–15 dias','16–30 dias','Mais de 30 dias'];
-    const age = o => Core.ageBand(Math.max(0,(E - o.pedido)/864e5)), fl = [['aberta','Aberta (aguardando triagem)'],['não atendida','Não atendida (triada)'],['agendar','Agendar']];
-    const dep = bl.filter(o=>!o.backlog), rows = fl.map(([f,l]) => { const s = bl.filter(o=>o.fila===f); return [l, ...bands.map(b=>s.filter(o=>age(o)===b).length), s.length]; });
-    if (dep.length) rows.push(['Pendentes no corte, resolvidas depois', ...bands.map(b=>dep.filter(o=>age(o)===b).length), dep.length]);
-    rows.push(['Backlog total', ...bands.map(b=>bl.filter(o=>age(o)===b).length), bl.length]);
-    const ob = bl.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido), v0 = ob[0], v1 = ob[ob.length-1];
-    return [['Backlog até '+fimP.toLocaleDateString('pt-BR')+' (desde o começo)'], [], {T:'kpis', v:[['Backlog total', bl.length], ['Aberta (triagem)', bl.filter(o=>o.fila==='aberta').length], ['Não atendida', bl.filter(o=>o.fila==='não atendida').length], ['Agendar', bl.filter(o=>o.fila==='agendar').length], ['Mais antiga (dias)', v0 ? Math.floor(Math.max(0,(E-v0.pedido)/864e5)) : 0]]}, {T:'blank'},
-      ...(v0 ? tabela('Período das OS pendentes', ['','OS','Pedido','Dias','Especialidade','Setor'], [['Mais antiga', +v0.os, dt(v0.pedido), Math.floor(Math.max(0,(E-v0.pedido)/864e5)), v0.especialidade, v0.setor], ['Mais nova', +v1.os, dt(v1.pedido), Math.floor(Math.max(0,(E-v1.pedido)/864e5)), v1.especialidade, v1.setor]]) : []),
-      ...tabela('Por fila e idade', ['Fila',...bands,'Total'], rows),
-      ...tabela('Por especialidade', ['Especialidade','OS'], cnt(bl,'especialidade')),
-      ...tabela('Aguardando terceiros (fora do backlog)', ['Fila','OS'], cnt(terc,'fila')),
-      ...tabela('Lista do backlog', [...cabOS,'Idade (dias)'], bl.slice().sort((a,b)=>a.pedido-b.pedido).map(o=>[...linhaOS(o), Math.floor(Math.max(0,(E-o.pedido)/864e5))]))];
-  }
-  if (k === 'set') {
-    const g = {}; L.forEach(o => { const r = g[o.setor] = g[o.setor] || [0,0,0]; r[0]++; if (!o.backlog) r[1]++; else r[2]++; });
-    return [['Setores: '+P.rot], [], ...tabela('Por setor', ['Setor','OS','Realizadas','Pendentes nossas'], Object.entries(g).sort((a,b)=>b[1][0]-a[1][0]).map(([s,r])=>[s,...r])),
-      ...tabela('Por localidade', ['Localidade','OS'], cnt(L.filter(o=>o.localidade),'localidade'))];
-  }
-  if (k === 'hh') {
-    const g = {}; L.forEach(o => o.exec.forEach((x,i) => { const n = o.tecnicos[i], r = g[n] = g[n] || {os:new Set(), h:0}; r.os.add(o.os); let hh = 0; if (x.ini&&x.fim&&x.fim>=x.ini){ hh=(x.fim-x.ini)/36e5; if (hh>(cfg.maxExec||12)) hh=1; } else if (x.ini&&!x.fim&&o.fila==='concluída') hh=1; r.h += hh; }));
-    return [['Homem-hora por técnico: '+P.rot], [], ...tabela('Técnicos', ['Técnico','OS','Horas','Média por OS'], Object.entries(g).sort((a,b)=>b[1].h-a[1].h).map(([n,r])=>[n, r.os.size, D(r.h), D(r.h/r.os.size)]))];
-  }
-  if (k === 'tp') {
-    const grp = key => { const g = {}; L.forEach(o => (g[o[key]] = g[o[key]] || []).push(o)); return Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a]) => { const e = a.map(o=>o.espera).filter(x=>x!=null), x = a.filter(o=>o.horas>0).map(o=>o.horas), t = a.map(o=>o.total).filter(v=>v!=null); return [k2, a.length, D(Core.median(e)), D(Core.mean(e)), D(Core.mean(x)), D(Core.mean(t))]; }); };
-    const cab = ['','OS','Espera mediana','Espera média','Execução média','Pedido → término médio'];
-    const A = L.filter(o=>o.espera!=null), a24 = A.filter(o=>o.espera<=24).length;
-    return [['Tempos de atendimento: '+P.rot], [], {T:'kpis', v:[['Mediana até o 1º atendimento', D(Core.median(A.map(o=>o.espera)))], ['Atendidas em até 24 h', A.length ? String(Math.round(a24/A.length*1000)/10).replace('.',',')+'%' : '0%'], ['OS com atendimento', A.length]]}, {T:'blank'},
-      ...tabela('Tempo da abertura até a hora inicial do 1º atendimento', ['Faixa','OS','% das OS'], FX.map(([t]) => { const n = A.filter(o=>faixa(o.espera)===t).length; return [t, n, A.length ? String(Math.round(n/A.length*1000)/10).replace('.',',')+'%' : '0%']; })),
-      ...tabela('Por especialidade', cab, grp('especialidade')), ...tabela('Por tipo', cab, grp('tipo'))];
-  }
-  if (k === 'trat') {
-    const B = L.filter(o=>o.backlog), A = L.filter(o=>o.backlog||o.terceiros), SEMT = ['Sem tratativa','Outro (recado, sem tratativa)'];
-    const comL = B.filter(o=>!SEMT.includes(trat(o))), done = L.filter(o=>!o.backlog).length, base = L.length || 1;
-    const grupos = ['Feito, falta fechar','Em execução','Programado','Supervisão','Planejamento','Comprador','Gestor','Aguardando material (na obs.)','Conserto externo (na obs.)','Outro (recado, sem tratativa)','Sem tratativa'];
-    let acc = done; const esc_ = [['Hoje', done, String(Math.round(done/base*1000)/10).replace('.',',')+'%']];
-    grupos.forEach(g => { const n = B.filter(o=>trat(o)===g).length; if (n) { acc += n; esc_.push(['+ '+g+' ('+n+')', acc, String(Math.round(acc/base*1000)/10).replace('.',',')+'%']); } });
-    const velha = comL.filter(o=>o.pedido).sort((a,b)=>a.pedido-b.pedido)[0];
-    return [['Pendentes por tratativa: '+P.rot], [],
-      ...tabela('Indicadores', ['Indicador','Valor'], [['% realizado hoje', String(Math.round(done/base*1000)/10).replace('.',',')+'%'], ['% realizado se resolver as com tratativa', String(Math.round((done+comL.length)/base*1000)/10).replace('.',',')+'%'], ['Backlog com tratativa', B.length ? String(Math.round(comL.length/B.length*1000)/10).replace('.',',')+'%' : '-'], ['OS do backlog com tratativa', comL.length], ['OS do backlog sem tratativa (nada escrito ou só recado do solicitante)', B.length-comL.length], ['Cobrar primeiro: mais antiga com tratativa', velha ? `OS ${velha.os} · ${trat(velha)} · ${Math.floor((Date.now()-velha.pedido)/864e5)} dias` : '-']]),
-      ...tabela('Por tratativa', ['Tratativa','OS em aberto','No backlog','Mediana de dias parada'], grupos.map(g => { const a = A.filter(o=>trat(o)===g); return [g, a.length, B.filter(o=>trat(o)===g).length, r1(Core.median(a.map(o=>o.parado).filter(x=>x!=null)))]; }).filter(r=>r[1])),
-      ...tabela('Cobrar primeiro (backlog com tratativa, da mais antiga para a mais nova)', ['Tratativa',...cabOS], comL.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(o=>[trat(o), ...linhaOS(o)]))];
-  }
-  if (k === 'pend') {
-    const Pn = L.filter(o=>o.backlog && o.pendente), g = {}; Pn.forEach(o => { const r = g[o.pendente] = g[o.pendente] || []; r.push(o); });
-    return [['Pendências nossas por responsável: '+P.rot], [], ...tabela('Resumo', ['Pendente de','OS','Mediana de dias parada'], Object.entries(g).sort((a,b)=>b[1].length-a[1].length).map(([k2,a])=>[k2, a.length, r1(Core.median(a.map(o=>o.parado).filter(x=>x!=null)))])),
-      ...tabela('Lista', cabOS, Pn.sort((a,b)=>(a.pendente||'').localeCompare(b.pendente||'') || (b.parado||0)-(a.parado||0)).map(linhaOS))];
-  }
-  if (k === 'lista') return [['Lista de OS: '+P.rot], [], ...tabela('OS', cabOS, L.slice().sort((a,b)=>(a.pedido||0)-(b.pedido||0)).map(linhaOS))];
-  if (k === 'arr') { const I = P.todos.filter(o=>o.arrumar.length && (!P.ini || (o.pedido && o.pedido>=P.ini && o.pedido<=E))); return [['Para arrumar no MV: '+P.rot], [], ...tabela('OS', ['Problema',...cabOS], I.map(o=>[o.arrumar.join('; '), ...linhaOS(o)]))]; }
-  if (k === 'rep') { const G = Core.repetidas(P.todos); return [['OS repetidas em aberto (situação atual)'], [], ...tabela('Resumo', ['Indicador','OS'], [['OS repetidas para tratar (fechar)', G.reduce((s,a)=>s+a.length-1,0)], ['Já tratadas em outra OS (com tratativa, material ou externo)', G.filter(a=>a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Ainda sem tratativa (juntar numa OS só)', G.filter(a=>!a.andamento).reduce((s,a)=>s+a.length-1,0)], ['Grupos', G.length]]), ...tabela('Grupos', ['Grupo','O que fazer','Motivo',...cabOS,'Solicitante'], G.flatMap((a,i)=>a.map(o=>[i+1, o.repAcao, [a.link?'observação cita outra OS':'', a.mesmaLoc?'mesma localidade':'', a.mesmoSolic?'mesmo solicitante':''].filter(Boolean).join(', ') || 'descrição parecida', ...linhaOS(o), o.solicitante||''])))]; }
-  return [];
-}
-async function gerarRel(){
-  const msg = $('#r-msg');
-  if (!window.ExcelJS) { msg.textContent = 'Sem internet para carregar o gerador de Excel. Tente de novo com internet.'; return; }
-  const ks = [...document.querySelectorAll('#v-relatorios .ck input[type=checkbox]:checked')].map(c=>c.value);
-  if (!ks.length) { msg.textContent = 'Marque pelo menos um relatório.'; return; }
-  const P = relPeriodo(); if (!P || P === 'erro') { msg.textContent = 'Confira o período: escolha o mês, ou a data início e a data fim (início antes do fim).'; return; }
-  const fil = ['especialidade','setor','tecnico','tipo','criticidade','pendente'].map(k=>[k,$('#r-'+k).value]).filter(x=>x[1]);
-  const todos = data.filter(o => fil.every(([k,v]) => k==='tecnico' ? o.tecnicos.includes(v) : o[k]===v)), base = todos.filter(o => o.ok); P.todos = todos;
-  const E = P.fim ? new Date(P.fim.getFullYear(), P.fim.getMonth(), P.fim.getDate(), 23, 59, 59) : null;
-  const L = P.ini ? base.filter(o => o.pedido && o.pedido >= P.ini && o.pedido <= E) : base;
-  { const ds = L.map(o=>o.pedido).filter(Boolean).sort((a,b)=>a-b);
-    if (ds.length) { const a = ds[0].toLocaleDateString('pt-BR'), b = ds[ds.length-1].toLocaleDateString('pt-BR');
-      P.rot = P.ini ? `${P.rot} (OS abertas de ${a} a ${b})` : `tudo o que foi carregado: OS abertas de ${a} a ${b}`; } }
-  const filTxt = fil.length ? fil.map(([k,v])=>`${k}: ${v}`).join(' · ') : 'sem filtros';
-  const fmt = document.querySelector('input[name=r-fmt]:checked').value, nomeRel = k => REL.find(r=>r[0]===k)[1];
-  const info = `Período: ${P.rot} · Filtros: ${filTxt} · Gerado em ${new Date().toLocaleString('pt-BR')}`;
-  const blocos = ks.map(k => { const b = relBlocos(k, L, base, P); b.splice(1, 0, [info]); return [k, b]; });
-  const arq = s => `RaioX_${s}_${P.nome}.xlsx`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w.\-]+/g,'_');
-  try {
-    msg.textContent = 'Gerando…';
-    if (fmt === 'sep') {
-      for (const [k,aoa] of blocos) { const wb = new ExcelJS.Workbook(); abaExcel(wb, nomeRel(k), aoa); await baixa(wb, arq(nomeRel(k))); await new Promise(r=>setTimeout(r,900)); }
-      msg.textContent = `${blocos.length} arquivo(s) gerado(s). Se o navegador perguntar, permita baixar vários arquivos.`;
-    } else {
-      const wb = new ExcelJS.Workbook(); wb.title = 'Relatório de Ordens de Serviço' + (ORG() ? ' · ' + ORG() : ''); wb.creator = 'Raio X do Relatório';
-      capaExcel(wb, ks, P, filTxt, nomeRel, fmt);
-      if (fmt === 'uma') abaExcel(wb, 'Relatório', blocos.flatMap(([k,a],n) => n ? [{T:'blank'}, ...a.map((x,i)=> i===0 && Array.isArray(x) ? {T:'sec', v:'■ '+x[0]} : x)] : a));
-      else blocos.forEach(([k,a]) => abaExcel(wb, nomeRel(k), a));
-      await baixa(wb, arq(ks.length===1 ? nomeRel(ks[0]) : 'Relatorios'));
-      msg.textContent = `Arquivo gerado com ${blocos.length} relatório(s) · período: ${P.rot} · ${filTxt}.`;
-    }
-    toast('Excel gerado. Veja nos downloads.');
-  } catch(e) { console.error(e); msg.textContent = 'Não foi possível baixar aqui. Abra pelo site https://gsi-solucoes.github.io/raio-x-do-relatorio/ no navegador.'; }
-}
-
-function route(){
-  if (location.hash === '#repetidas') { location.replace('#inconsistencias'); return; }
-  const h = (location.hash||'#dashboard').slice(1);
-  document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id==='v-'+h));
-  document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.hash==='#'+h));
-  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos'||h==='relatorios'||h==='historico') ? 'none' : '';
-  $('#app').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
-  $('#emptyState').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
-  if (!document.querySelector('.view.on')) $('#v-dashboard').classList.add('on');
-}
-
-let empties = new Set(), flog = {}, histNovo = false;
-const tick = () => new Promise(r => setTimeout(r, 30));
-async function prog(txt, sub, frac){ $('#prog').hidden = false; $('#progTxt').textContent = txt; $('#progSub').textContent = sub || ''; $('#progBar').style.width = Math.round((frac||0)*100) + '%'; $('#progPct').textContent = Math.round((frac||0)*100) + '%'; await tick(); }
-function progEnd(){ $('#prog').hidden = true; }
-function saveState(){
-  try { localStorage.setItem('gos_dados', JSON.stringify({raw: raw.map(o => ({...o, pedido:o.pedido&&o.pedido.getTime(), termino:o.termino&&o.termino.getTime(), exec:o.exec.map(x=>({servico:x.servico,func:x.func,ini:x.ini&&x.ini.getTime(),fim:x.fim&&x.fim.getTime()}))})), flog, empties:[...empties]})) }
-  catch(e){ toast('Aviso: muitos dados para guardar no navegador; se a página recarregar, carregue de novo.') }
-}
-function loadState(){
-  try { const d = JSON.parse(localStorage.getItem('gos_dados')||'null'); if (!d) return;
-    const D = t => t ? new Date(t) : null;
-    raw = d.raw.map(o => ({...o, pedido:D(o.pedido), termino:D(o.termino), exec:o.exec.map(x=>({...x, ini:D(x.ini), fim:D(x.fim)}))}));
-    flog = d.flog || {}; empties = new Set(d.empties || []);
-  } catch(e){}
-}
-async function expandZips(list){
-  const out = [];
-  for (const f of list) {
-    if (/\.zip$/i.test(f.name)) {
-      if (!window.JSZip) { flog[f.name] = {name:f.name,size:f.size,n:0,filas:'',st:'erro',msg:'sem internet para abrir o .zip'}; continue }
-      try { await prog('Abrindo .zip...', `${f.name} · ${nf(f.size/1024)} KB`, 0.05); const z = await JSZip.loadAsync(f); for (const e of Object.values(z.files)) { if (e.dir || !/\.(csv|txt)$/i.test(e.name)) continue; const buf = await e.async('uint8array'); const nm = e.name.split('/').pop(); out.push({name:nm, size:buf.length, arrayBuffer:async()=>buf}) } }
-      catch(e){ flog[f.name] = {name:f.name,size:f.size,n:0,filas:'',st:'erro',msg:'não consegui abrir o .zip'} }
-    } else out.push(f);
-  }
-  return out;
-}
-async function readFiles(list){
-  if (!list.length) return;
-  await prog('Preparando arquivos...', `${list.length} selecionado(s)`, 0.02);
-  list = await expandZips(list);
-  let k = 0; const dups = [];
-  for (const f of list) {
-    k++; await prog(`Lendo arquivo ${k} de ${list.length}`, `${f.name} · ${nf(f.size/1024)} KB`, k/(list.length+1));
-    if (flog[f.name] && flog[f.name].size === f.size && flog[f.name].st !== 'erro') { dups.push(f.name); continue }
-    try { const txt = Core.decode(await f.arrayBuffer());
-      if (Core.isDet(txt)) { // relatório detalhado = histórico (guarda e soma)
-        await prog(`Lendo histórico ${k} de ${list.length}`, `${f.name} · ${nf(f.size/1024)} KB · pode levar alguns segundos`, k/(list.length+1));
-        const H = Core.parseDet(Core.parseCSV(txt)), agora = Date.now(); H.forEach(h => h.t = agora);
-        const novas = H.filter(h => !histMap.has(h.os)).length;
-        await prog('Guardando no histórico...', `${nf(H.length)} OS`, k/(list.length+1));
-        await histPut(H);
-        flog[f.name] = {name:f.name, size:f.size, n:H.length, t:agora, tipo:'Histórico (detalhado)', filas:`${nf(novas)} novas · ${nf(H.length-novas)} atualizadas`, st:'ok', msg:''};
-        histNovo = true; continue;
-      }
-      const os = Core.parseMV(Core.parseCSV(txt), f.name);
-      if (!os.length && !/Ordem de Servi/i.test(txt.slice(0,3000))) { flog[f.name] = await lerPlanilha(f, txt, k, list.length); continue; }
-      raw = raw.filter(o=>o.file!==f.name).concat(os);
-      if(!os.length) empties.add(f.name); else empties.delete(f.name);
-      const looksMV = /Ordem de Servi/i.test(txt.slice(0,3000));
-      flog[f.name] = {name:f.name, size:f.size, n:os.length, t:Date.now(), filas:Core.count(os,'fila').map(([k,v])=>`${k} ${v}`).join(', '), st: os.length ? 'ok' : (looksMV ? 'vazio' : 'erro'), msg: os.length ? '' : (looksMV ? 'fila vazia no MV' : 'não parece um relatório R_ORDEM_SERVICO')} }
-    catch(e){ flog[f.name] = {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'não foi possível ler o arquivo'} }
-  }
-  if (demo) { raw = raw.filter(o=>o.file!=='exemplo'); demo=false }
-  if (histNovo) { await prog('Atualizando o histórico...', '', 0.93); await histLoad(); histNovo = false; }
-  await prog('Montando relatórios...', `${nf(raw.length)} OS lidas`, 0.95);
-  try { cut = null; rebuild(); saveState(); } finally { progEnd(); }
-  const nErr = Object.values(flog).filter(x=>x.st==='erro').length;
-  if (location.hash !== '#arquivos') location.hash = 'arquivos'; else route();
-  toast((dups.length ? `${dups.length} arquivo(s) repetido(s) ignorado(s). ` : '') + `Pronto: ${nf(data.length)} OS.` + (nErr ? ` ${nErr} arquivo(s) com erro: veja a aba Arquivos.` : ''));
-}
-$('#files').onchange = e => { readFiles([...e.target.files]); e.target.value=''; };
-document.addEventListener('dragover', e => e.preventDefault());
-document.addEventListener('drop', e => { e.preventDefault(); readFiles([...e.dataTransfer.files]); });
-$('#clear').onclick = () => { raw=[]; empties=new Set(); flog={}; try{localStorage.removeItem('gos_dados')}catch(e){} demo=false; cut=null; rebuild(); };
-
-$('#cfgGen').value = cfg.genericos.join('\n');
-$('#cfgGenNome').value = cfg.genericoNome || '';
-$('#cfgCli').value = cfg.cliente || ''; $('#cfgArea').value = cfg.area || '';
-function topoCliente(){ $('#clienteTopo').textContent = ORG() ? '· ' + ORG() : ''; $('#logoTopo').innerHTML = cfg.logo ? `<img src="${cfg.logo}" alt="">` : ''; $('#cfgLogoPrev').innerHTML = cfg.logo ? `<img src="${cfg.logo}" style="max-height:60px">` : '<span class="muted">Sem logo.</span>'; document.title = 'Raio X do Relatório' + (cfg.cliente ? ' · ' + cfg.cliente : ''); }
-$('#cfgLogo').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { const k = Math.min(1, 240/Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cfg.logo = c.toDataURL('image/png'); store.set('gos_cfg', cfg); topoCliente(); toast('Logo salvo.'); }; img.src = URL.createObjectURL(f); };
-$('#cfgLogoX').onclick = () => { cfg.logo = ''; store.set('gos_cfg', cfg); topoCliente(); };
-topoCliente();
-$('#cfgMax').value = cfg.maxExec;
-$('#cfgRegras').value = (cfg.regrasObs || Core.REGRAS_PADRAO).map(([r,ks])=>r+' = '+ks.join('; ')).join('\n');
-$('#cfgDepara').value = Object.entries(cfg.depara).map(([a,b])=>a+' = '+b).join('\n');
-$('#cfgSave').onclick = () => {
-  cfg.genericos = $('#cfgGen').value.split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);
-  cfg.genericoNome = $('#cfgGenNome').value.trim().toUpperCase() || 'LANÇAMENTOS GENÉRICOS';
-  cfg.cliente = $('#cfgCli').value.trim(); cfg.area = $('#cfgArea').value.trim(); topoCliente();
-  cfg.maxExec = Math.max(1, +$('#cfgMax').value || 12);
-  const rg = $('#cfgRegras').value.split('\n').map(l=>l.split('=')).filter(x=>x.length>1&&x[0].trim()).map(([r,k])=>[r.trim(), k.split(';').map(t=>t.trim()).filter(Boolean)]);
-  cfg.regrasObs = rg.length ? rg : null;
-  cfg.depara = {}; $('#cfgDepara').value.split('\n').forEach(l => {const [a,b]=l.split('='); if(a&&b) cfg.depara[a.trim().toUpperCase()]=b.trim().toUpperCase()});
-  store.set('gos_cfg', cfg); rebuild(); toast('Configurações salvas.');
-};
-
-// Filtros começa fechado (abre ao tocar)
-loadState();
-window.addEventListener('hashchange', () => { route(); const t = $('#tabs'); window.scrollTo({top: t.offsetTop, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'}); }); route(); rebuild();
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
-histLoad().then(() => { if (hist.length) rebuild(); });
-}
-</script>
-<div id="dock"></div>
 </body>
 </html>

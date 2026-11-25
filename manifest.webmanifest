@@ -1,7 +1,7 @@
 {
   "name": "Raio X do Relatório",
   "short_name": "Raio X",
-  "description": "Lê relatórios de ordens de serviço e monta painéis e KPIs no próprio aparelho.",
+  "description": "Lê relatórios de qualquer sistema (CSV) e monta painéis, números e Excel no próprio aparelho.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
