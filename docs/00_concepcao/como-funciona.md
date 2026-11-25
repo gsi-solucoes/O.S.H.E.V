@@ -3,7 +3,7 @@
 *Resumo para mostrar ao cliente · atualizado em 25/11/2026 14h20*
 Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 
-**Em uma frase:** O Raio X do Relatório lê os relatórios gerados por qualquer sistema (CSV, Excel e PDF), como os de ordens de serviço, e monta sozinho o painel e os relatórios que a pessoa escolher. Funciona no navegador, sem API e sem custo por uso, e serve para qualquer cliente.
+**Em uma frase:** O Raio X do Relatório lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel e PDF, como os de ordens de serviço) e monta sozinho o painel e os relatórios que a pessoa escolher. Funciona no navegador, sem API e sem custo por uso, e serve para qualquer cliente.
 
 ## Como funciona, em 5 passos
 1. **Abra o link** no celular ou no computador (dá para instalar como app e usar sem internet).
