@@ -4,7 +4,7 @@ Projeto da Fábrica GSI (dono: Galindo). Falar sempre em português do Brasil.
 Repositório: `gsi-solucoes/raio-x-do-relatorio` (antes O.S.H.E.V). Link do app: https://gsi-solucoes.github.io/raio-x-do-relatorio/
 
 ## O que é
-App web **estático e offline** (GitHub Pages + PWA) que lê os dados extraídos de qualquer sistema (CSV, Excel, JSON/XML, PDF e imagem), guarda no navegador e monta dashboards, KPIs e relatórios em Excel. Mais a macro Excel `excel/GeradorOS_HEV.bas` para o computador do hospital.
+App web **estático e offline** (GitHub Pages + PWA) que lê os dados extraídos de qualquer sistema (CSV, Excel, JSON/XML, PDF e imagem), guarda no navegador e monta dashboards, KPIs e relatórios em Excel. Mais a macro Excel `excel/RaioX_Relatorio.bas` para o computador do hospital.
 
 ## Regras deste projeto (Galindo, 25/11/2026)
 - **Sem dublês e sem esqueleto simulado:** não há serviço externo. Os dados de teste são CSVs reais do MV anonimizados em `tests/dados/` (nunca dados de paciente).

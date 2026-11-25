@@ -10,9 +10,11 @@ Lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel, PDF e im
 - [Concepção](docs/00_concepcao/concepcao.md) · [Como funciona](docs/00_concepcao/como-funciona.md) · [Diário](docs/00_concepcao/diario.md)
 - [Especificação](docs/01_especificacao/especificacao.md) · [Caminho das estrelas](docs/caminho-das-estrelas.md)
 
-## Versão em macro do Excel (modelo de ordens de serviço)
+## Versão Excel para baixar e usar no PC
 
-Arquivo: `excel/GeradorOS_HEV.bas` (Excel 2016 ou mais novo).
+**Baixar:** https://github.com/gsi-solucoes/raio-x-do-relatorio/raw/main/excel/RaioX_Relatorio.bas
+
+Arquivo: `excel/RaioX_Relatorio.bas` (Excel 2016 ou mais novo).
 
 1. Abra uma pasta de trabalho nova no Excel e aperte **Alt + F11**.
 2. **Arquivo → Importar arquivo** → escolha o `.bas` e feche o editor.

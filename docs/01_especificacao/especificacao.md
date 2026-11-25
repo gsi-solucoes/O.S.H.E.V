@@ -31,6 +31,7 @@ Status: **esperando Galindo (portão 2)**.
 **O que quero**
 - Título e cabeçalho "Raio X do Relatório". Config → "Empresa / cliente": nome do cliente, área, logo (imagem reduzida e guardada no aparelho). Esses dados aparecem no cabeçalho, na capa do Excel e na impressão.
 - Manifesto e service worker: instalável ("Adicionar à tela inicial" / "Instalar"); depois da 1ª abertura funciona sem internet; versão nova é baixada na próxima vez com internet e ativada ao reabrir, com aviso "Versão nova instalada".
+- **Versão Excel para baixar:** botão "Baixar versão Excel para o PC" na Config e no rodapé, que baixa `excel/RaioX_Relatorio.bas` com as instruções de instalação (passo a passo curto na própria tela). Sem nome de hospital no arquivo nem na macro.
 - Nomes de arquivo gerados: `RaioX_<relatório>_<data>.xlsx`; backup `historico_RaioX_<data>.json`.
 
 **O que NÃO quero**
@@ -43,6 +44,7 @@ Status: **esperando Galindo (portão 2)**.
 - CA-13: o manifesto é válido (nome, ícones 192 e 512, `display: standalone`) e o service worker fica ativo após o 1º carregamento.
 - CA-14: com configuração antiga salva (formato atual do `localStorage`), o app abre, mantém nomes genéricos, de-para e limites, e o histórico do IndexedDB continua com a mesma contagem de registros.
 - CA-15: publicar versão nova → aparelho com a antiga, ao voltar a ter internet e reabrir, mostra "Versão nova instalada" e roda a nova.
+- CA-16: clicar em "Baixar versão Excel para o PC" (online ou offline) → baixa `RaioX_Relatorio.bas`; a tela mostra os 4 passos de instalação; `grep -i` por "HEV" e "Edmundo" no `.bas` = 0.
 
 ---
 
@@ -231,7 +233,7 @@ O app atual vira o 1º **modelo pronto**, num arquivo de configuração separado
 - CA-99: Excel com as 6 opções atuais de relatório e os 3 formatos, valores iguais aos atuais para o mesmo arquivo (comparação com saída de referência gerada antes da mudança).
 - Oráculo: antes de mexer no código, gerar **saídas de referência** (números da tela e Excel) com os CSVs anonimizados; depois de cada etapa, comparar.
 
-Macro Excel (`excel/GeradorOS_HEV.bas`): continua só com o modelo de ordens de serviço; etapas 2 a 7 **não** vão para a macro nesta versão (ver P-01).
+Macro Excel (`excel/RaioX_Relatorio.bas`): versão para baixar e usar no PC (P-01); nesta versão traz o modelo de ordens de serviço; etapas 2 a 7 **não** vão para a macro nesta versão.
 
 ---
 
@@ -259,7 +261,7 @@ Macro Excel (`excel/GeradorOS_HEV.bas`): continua só com o modelo de ordens de 
 - Levar as etapas 2 a 7 para a macro Excel.
 
 ## 13. Perguntas abertas (PERGUNTAR AO GALINDO) — com decisão provisória
-- **P-01** Macro Excel acompanha o Raio X genérico? *Provisório: não; fica só com o modelo de ordens de serviço.*
+- **P-01** ✅ Decidido (Galindo, 25/11/2026 14h28): a macro Excel fica como **versão para baixar e usar no PC**, com link disponível no app e no README. Conteúdo nesta versão: o modelo de ordens de serviço (o que couber no Excel 2016).
 - **P-02** ✅ Decidido (Galindo, 25/11/2026 14h25): repositório `gsi-solucoes/raio-x-do-relatorio`, link https://gsi-solucoes.github.io/raio-x-do-relatorio/.
 - **P-03** A meta de 90% vira configurável por indicador (cada cliente tem a sua)? *Provisório: sim, na Config, padrão 90%.*
 - **P-04** O modelo pronto de ordens de serviço continua mostrando as frases e regras do hospital como padrão, ou começa vazio para cliente novo? *Provisório: frases genéricas de manutenção como padrão, editáveis.*
