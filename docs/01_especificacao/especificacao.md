@@ -194,6 +194,35 @@ Valem as mesmas regras da 0.1 (rótulos exatos; testes localizam por rótulo/tex
 - CA-28: adicionar um bloco pelo pedido escrito, tirar outro no Editar layout → o resumo mostra o novo e não mostra mais o retirado.
 - CA-29: Excel gerado → 2ª planilha "Como ler este relatório" com o mesmo texto da tela.
 
+### 0.4 Nomes na tela — etapa 3 (v1.3, 25/11/2026)
+
+Mesmas regras da 0.1 (rótulos exatos; testes localizam por rótulo/texto, nunca por id ou classe).
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-70 | `Peça um indicador` | campo de texto (rótulo) + botão `Pedir` | Painel, no topo, ao lado de `O que acompanhar`; só aparece com conjunto carregado. Enter também envia |
+| R-71 | `Entendi assim:` | texto que abre o resumo | janela/cartão de confirmação. Seguido do resumo em linguagem simples, formato `<Medida> · por <agrupar> · <filtros> · <período>`, partes ausentes omitidas. Ex.: `Quantidade de registros · por Cliente · outubro/2026` |
+| R-72 | `É isso?` | pergunta, com botões `Sim` e `Não` | abaixo do resumo e da prévia |
+| R-73 | `Prévia` | título da prévia | mostra o bloco (número ou gráfico) calculado; para número, o valor aparece em elemento com `data-testid="previa-valor"` (única exceção ao "só por rótulo", para o oráculo comparar o valor) |
+| R-74 | `Medida`, `Campo`, `Agrupar por`, `Filtro`, `Período` | botões de correção, 1 por parte, só depois de `Não` | cada um abre lista de escolha com as opções reais dos dados (rótulo da lista = nome do botão); `Aplicar` confirma e atualiza o resumo e a prévia |
+| R-75 | `não entendi: <trecho>` | texto (minúsculas, trecho exato da frase) | uma linha por parte não entendida; nunca preenche com chute |
+| R-76 | `Tente um destes:` + 3 botões com frases-exemplo montadas com os campos reais | texto e botões | só quando nada da frase foi entendido (CA-35); clicar num exemplo o preenche e envia |
+| R-77 | `Sinônimos` | título do cartão | Config |
+| R-78 | `Apelido` e `Significa` com botão `Adicionar sinônimo`; `Remover` por linha | campos e botões | Config → Sinônimos. `Significa` é lista com medidas e campos do conjunto atual (ex.: `soma`, `Valor`). Salvo em `localStorage` `raiox_sin` e incluído no backup (chave `sin`) |
+| R-79 | `Meus indicadores` | título da seção do Painel | blocos criados por pedido (depois de `Sim`); entram no `Seu painel` (R-64) e na planilha R-66, com a conta em palavras |
+
+**Estrutura (oráculo da bateria).** O app expõe `window.__entender(frase, nomeConjunto)` que devolve (sem tocar na tela) um objeto JSON:
+`{medida, campo, agrupar, filtros:[{campo, valor}], periodo, naoEntendi:[trechos]}`, onde
+- `medida`: `quantidade` | `soma` | `media` | `mediana` | `minimo` | `maximo` | `percentual` | `null`;
+- `campo`, `agrupar`: nome exato do campo no conjunto (ou `"mês"` para agrupar por mês) ou `null`;
+- `filtros`: lista com nome do campo e valor exatos como estão nos dados (ex. `{campo:"Situação", valor:"Entregue"}`);
+- `periodo`: `null` | `{tipo:"mes", mes:10, ano:2026}` | `{tipo:"ano", ano:2026}` | `{tipo:"intervalo", de:"2026-09-01", ate:"2026-09-15"}`; "este mês/ano", "mês passado" e "últimos N dias" usam como "hoje" a **maior data dos registros** (nunca o relógio), e "outubro" sem ano usa o ano mais recente dos dados com esse mês;
+- `percentual` carrega `filtros` com a situação cuja fatia se quer (CA-33: `[{campo:"Situação",valor:"Cancelado"}]`) e `agrupar:"mês"`;
+- `naoEntendi`: lista vazia quando tudo foi entendido.
+Sinônimos são lidos de `localStorage` `raiox_sin` (`{apelido: "soma"|"Valor"|...}`) pela mesma função. A sugestão `Tente um destes` e a prévia usam o mesmo motor. Semelhança ≥ 80% (razão de caracteres iguais, sem acento/minúsculas/plural).
+Bateria: `tests/pedidos.json` = lista de `{frase, conjunto, esperado}` (≥ 40 frases, ≥ 8 por variação: medida, agrupar, filtro, período, erro de digitação, não entendida); meta 100%.
+**CA-28** (pedido escrito) passa a valer nesta etapa: o `Seu painel` gerado inclui as linhas de `Meus indicadores`.
+
 ---
 
 ## 3. Etapa 3 — Pedido escrito com "É isso?"
