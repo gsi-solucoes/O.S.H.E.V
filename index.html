@@ -3,11 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Raio X do Relatório</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#0f2a4a">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Gerador de OS HEV</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@500;700&family=Red+Hat+Text:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -78,7 +74,6 @@ textarea{min-height:120px}
 .dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .drmore{justify-self:start}
 .rq{margin-bottom:14px}
-.top h1 .cli{font-weight:500;font-size:.6em;opacity:.8}#logoTopo img{height:34px;vertical-align:middle;margin-right:10px;border-radius:6px;background:#fff;padding:2px}
 .colmap select{min-width:200px}.colmap td{vertical-align:middle}
 .mmw{display:grid;gap:4px}.mm{display:grid;grid-template-columns:3em 1fr;align-items:center;gap:6px}.mm .n{font-size:13px;color:var(--muted)}.mb{display:grid;gap:2px}.mb .bar{padding:1px 0;min-height:0}.mb .bar.ant i{background:var(--line)!important;filter:brightness(.8)}.mb .bar:not(.ant) i{background:var(--accent)!important}.wl .bar{grid-template-columns:minmax(0,17em) minmax(0,1fr) auto}
 .lg{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}.lg.a{background:var(--accent)}.lg.b{background:var(--line);filter:brightness(.8)}.hb{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
@@ -157,10 +152,10 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 </head>
 <body>
 <header class="band top">
-  <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
-  <p>Escolha os relatórios de ordens de serviço em CSV (relatórios do MV ou qualquer planilha; vários de uma vez ou um .zip). Os arquivos são lidos só no seu aparelho.</p>
+  <h1>Gerador de OS – HEV</h1>
+  <p>Escolha os CSVs do relatório R_ORDEM_SERVICO do MV (um por fila, todos de uma vez). Os arquivos são lidos só no seu aparelho.</p>
   <div class="cmd">
-    <label class="btn prim pick">Escolher arquivos<input type="file" id="files" multiple accept=".csv,.zip,application/zip,application/x-zip-compressed,text/csv,text/comma-separated-values,text/plain,application/vnd.ms-excel,application/octet-stream"></label>
+    <label class="btn prim pick">Escolher CSVs do MV<input type="file" id="files" multiple accept=".csv,.zip,application/zip,application/x-zip-compressed,text/csv,text/comma-separated-values,text/plain,application/vnd.ms-excel,application/octet-stream"></label>
     <button class="ghost" id="clear">Limpar</button>
     <span class="status" id="status">Nenhum arquivo carregado.</span>
   </div>
@@ -195,10 +190,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </section>
   <section class="view" id="v-config">
     <h2>Configurações</h2>
-    <div class="card" style="margin-bottom:16px"><h3>Empresa / cliente</h3><p class="muted">Aparece no topo, nas impressões e nos relatórios em Excel. Nada disso fica no código: cada cliente configura o seu.</p><div class="filters" style="margin:0"><label>Nome do cliente<input id="cfgCli" placeholder="ex.: Hospital Exemplo"></label><label>Área<input id="cfgArea" placeholder="ex.: Manutenção"></label><label>Logo (imagem)<input type="file" id="cfgLogo" accept="image/*"></label><label>&nbsp;<button id="cfgLogoX" type="button">Tirar logo</button></label></div><p id="cfgLogoPrev"></p></div>
     <div class="card" style="margin-bottom:16px"><h3>Regras da observação (Pendente de)</h3><p class="muted">Uma linha por responsável: RESPONSÁVEL = expressão; expressão; ... Aceita erro de digitação (80% parecido) e ignora acentos. Vale o trecho mais recente da observação.</p><div class="note" style="margin-bottom:8px"><b>Frases padrão do planejamento</b> (o que não bater com nenhuma regra é recado do solicitante e não conta como tratativa):<br>TRATATIVA SUPERVISÃO 22/11/26 · TRATATIVA COMPRADOR 22/11/26 · TRATATIVA PLANEJAMENTO 22/11/26 · PROGRAMADO PARA 29/11/26 (FIM DE SEMANA) · EM EXECUÇÃO 22/11/26 · SERVIÇO REALIZADO, AGUARDANDO FECHAMENTO 22/11/26</div><textarea id="cfgRegras" style="min-height:180px"></textarea></div>
     <div class="grid2">
-      <div class="card"><h3>Nomes genéricos</h3><p class="muted">Lançamentos no nome destas pessoas (usuários genéricos do sistema) aparecem juntos com o nome abaixo. Um nome (ou começo de nome) por linha.</p><label>Nome que aparece para eles <input id="cfgGenNome" style="max-width:320px"></label><textarea id="cfgGen"></textarea></div>
+      <div class="card"><h3>Nomes genéricos</h3><p class="muted">Lançamentos no nome destas pessoas aparecem como "Walter / lançamentos genéricos". Um nome (ou começo de nome) por linha.</p><textarea id="cfgGen"></textarea></div>
       <div class="card"><h3>De-para de técnicos</h3><p class="muted">Corrige nomes. Uma linha por pessoa: NOME NO MV = NOME CORRETO</p><textarea id="cfgDepara"></textarea></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h3>Limite de horas por execução</h3><p class="muted">Execução acima deste limite é tratada como erro de lançamento e a OS vai para "Para arrumar".</p><label class="muted">Horas <input type="number" id="cfgMax" min="1" max="72" step="1" style="font-size:16px;min-height:44px;width:7em"></label></div>
@@ -210,9 +204,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
 <div id="toast"></div>
 <div id="prog" hidden role="status" aria-live="polite"><div class="pin"><div style="display:flex;justify-content:space-between;gap:12px"><b id="progTxt">Carregando...</b><b id="progPct" style="color:var(--accent);font-variant-numeric:tabular-nums">0%</b></div><span id="progSub"></span><div class="pbar"><i id="progBar"></i></div></div></div>
 <script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
-<script src="vendor/jszip.min.js"></script>
-<script src="vendor/exceljs.min.js"></script>
-<script>/* ===== Raio X do Relatório · núcleo: leitura dos relatórios (MV R_ORDEM_SERVICO, detalhado, planilhas) e cálculos ===== */
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>/* ===== Núcleo: leitura dos CSVs do MV (R_ORDEM_SERVICO) e cálculos ===== */
 var Core = (function () {
   function decode(buf) {
     try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
@@ -453,7 +447,7 @@ var Core = (function () {
       o.tecnicos = o.exec.map(function (x) {
         var n = (x.func || '').toUpperCase();
         if (depara[n]) n = depara[n];
-        if (gen.some(function (g) { return g && n.indexOf(g) === 0; })) n = cfg.genericoNome || 'LANÇAMENTOS GENÉRICOS';
+        if (gen.some(function (g) { return g && n.indexOf(g) === 0; })) n = 'WALTER / LANÇAMENTOS GENÉRICOS';
         return n || 'SEM FUNCIONÁRIO';
       });
       o.tecnico = o.tecnicos[0] || 'SEM FUNCIONÁRIO';
@@ -657,7 +651,9 @@ var Core = (function () {
 
   var Core_sim;
   return { CAMPOS: CAMPOS, chuteCampo: chuteCampo, acharCabecalho: acharCabecalho, assinatura: assinatura, lerGenerico: lerGenerico, isDet: isDet, parseDet: parseDet, histView: histView, sim: function (a, b) { return Core_sim(a, b); }, REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
-})();</script>
+})();
+
+</script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -674,12 +670,7 @@ const hoje = () => { const d = new Date(); return new Date(d.getFullYear(), d.ge
 function setCut(){ cut = bFim ? new Date(bFim+'T00:00') : hoje(); }
 function blBase(L){ const i = bIni ? new Date(bIni+'T00:00') : null; return i ? L.filter(o=>o.pedido && o.pedido>=i) : L; }
 function blLabel(){ const f = d => new Date(d+'T00:00').toLocaleDateString('pt-BR'); return bIni && bFim ? `de ${f(bIni)} a ${f(bFim)}` : bFim ? `até ${f(bFim)}` : bIni ? `desde ${f(bIni)} (pendente hoje)` : 'atual (todos os arquivos carregados)'; }
-let cfg = Object.assign({genericos:[], genericoNome:'LANÇAMENTOS GENÉRICOS', depara:{}, maxExec:12, cliente:'', area:'Manutenção', logo:''}, store.get('gos_cfg', {}));
-// quem já usava com o padrão antigo continua vendo o mesmo nome do lançamento genérico
-{ const sv = store.get('gos_cfg', {}); // quem já usava antes da troca de nome mantém o lançamento genérico de antes
-  if (!('genericos' in sv) && localStorage.getItem('gos_dados')) { cfg.genericos = ['WALTER ANDR']; store.set('gos_cfg', cfg); }
-  if ((cfg.genericos||[]).some(g=>/^WALTER/.test(g)) && !sv.genericoNome) cfg.genericoNome = 'WALTER / LANÇAMENTOS GENÉRICOS'; }
-const ORG = () => [cfg.area, cfg.cliente].filter(Boolean).join(' · ');
+let cfg = Object.assign({genericos:['WALTER ANDR'], depara:{}, maxExec:12}, store.get('gos_cfg', {}));
 const F = {fila:'', especialidade:'', tecnico:'', tipo:'', setor:'', criticidade:'', de:'', ate:'', q:''};
 const FL = [['fila','Fila'],['pendente','Pendente de'],['especialidade','Especialidade'],['tecnico','Técnico'],['tipo','Tipo'],['setor','Setor'],['criticidade','Criticidade']];
 
@@ -997,7 +988,7 @@ function renderHist(){
   histBotoes();
 }
 function histBotoes(){
-  const b = $('#hBkp'); if (b) b.onclick = async () => { const a = await IDB.all(); const blob = new Blob([JSON.stringify({tipo:'gos_hist', v:1, gerado:new Date().toISOString(), os:a})], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = `historico_RaioX_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(l); l.click(); setTimeout(()=>{URL.revokeObjectURL(l.href); l.remove();}, 4000); toast(`Backup com ${nf(a.length)} OS baixado.`); };
+  const b = $('#hBkp'); if (b) b.onclick = async () => { const a = await IDB.all(); const blob = new Blob([JSON.stringify({tipo:'gos_hist', v:1, gerado:new Date().toISOString(), os:a})], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = `historico_OS_HEV_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(l); l.click(); setTimeout(()=>{URL.revokeObjectURL(l.href); l.remove();}, 4000); toast(`Backup com ${nf(a.length)} OS baixado.`); };
   const r = $('#hRes'); if (r) r.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { await prog('Restaurando backup...', f.name, .3); const j = JSON.parse(await f.text()); if (j.tipo !== 'gos_hist' || !Array.isArray(j.os)) throw 0; await IDB.put(j.os); await histLoad(); rebuild(); toast(`Backup restaurado: ${nf(j.os.length)} OS.`); } catch(x) { toast('Esse arquivo não é um backup do histórico.'); } finally { progEnd(); } };
   const c = $('#hLimpa'); if (c) c.onclick = async () => { if (!confirm('Apagar todo o histórico guardado neste aparelho? (o backup baixado continua valendo)')) return; await IDB.clear(); histRaw = new Map(); await histLoad(); rebuild(); toast('Histórico apagado.'); };
 }
@@ -1095,7 +1086,7 @@ function imprimirOS(onde, oque, list, sel, total, asc){
     h1{font-size:16px;margin:0 0 2px}.sub{color:#444;margin:0 0 2px}.sel{margin:6px 0 8px;padding:6px 8px;border:1px solid #999;border-radius:4px;background:#f3f3f3}
     table{width:100%;border-collapse:collapse;table-layout:fixed}td{overflow-wrap:break-word;font-size:10.5px}th,td{border:1px solid #bbb;padding:3px 4px;vertical-align:top;text-align:left}th{background:#e4e7ee;color:#000;font-size:10px;border-bottom:2px solid #000}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}
     tr{page-break-inside:avoid}tbody tr:nth-child(even){background:#f6f7fa}.n{white-space:normal}thead{display:table-header-group}</style></head><body>
-    <h1>${cfg.logo?`<img src="${cfg.logo}" style="height:28px;vertical-align:middle;margin-right:8px">`:''}Raio X do Relatório · ${esc(oque)}</h1>${ORG()?`<p class="sub">${esc(ORG())}</p>`:''}
+    <h1>Gerador de OS HEV · ${esc(oque)}</h1>
     <p class="sub">${esc(onde)} · Impresso em ${new Date().toLocaleString('pt-BR')}</p>
     <div class="sel"><b>Seleção:</b> ${selTxt ? esc(selTxt) : 'nenhuma (todas as OS da janela)'} · <b>${L.length} OS</b>${L.length!==total?` de ${total}`:''}</div>
     <table><colgroup><col style="width:5.5%"><col style="width:7.5%"><col style="width:7%"><col style="width:9.5%"><col style="width:12%"><col style="width:25%"><col style="width:16%"><col style="width:8.5%"><col style="width:9%"></colgroup><thead><tr><th>OS</th><th>Pedido</th><th>Fila</th><th>Especialidade</th><th>Setor / localidade</th><th>Descrição</th><th>Observação</th><th>Pendente de</th><th>Técnico</th></tr></thead><tbody>
@@ -1247,7 +1238,7 @@ function abaExcel(wb, nome, linhas){
   const fim = C0 + Math.max(maxC, 4) - 1;
   // 2ª passada: escreve
   let r = 1, primeiro = true, ini = 0, maiorTab = null; cab = null;
-  { const c = ws.getCell(1, C0); c.value = ['RELATÓRIO DE ORDENS DE SERVIÇO', ...(ORG() ? [ORG().toUpperCase()] : [])].join(' · '); c.font = {bold:true, size:9, color:{argb:acc}}; ws.getRow(1).height = 20; c.alignment = {vertical:'bottom'}; }
+  { const c = ws.getCell(1, C0); c.value = 'RELATÓRIO DE ORDENS DE SERVIÇO · MANUTENÇÃO · HOSPITAL EDMUNDO VASCONCELOS'; c.font = {bold:true, size:9, color:{argb:acc}}; ws.getRow(1).height = 20; c.alignment = {vertical:'bottom'}; }
   const fecha = () => { if (cab && (!maiorTab || r - ini > maiorTab[2] - maiorTab[0])) maiorTab = [ini, cab.length, r]; };
   linhas.forEach(L => {
     if (L && L.T === 'blank') { fecha(); cab = null; r++; ws.getRow(r).height = 10; return; }
@@ -1301,7 +1292,7 @@ function abaExcel(wb, nome, linhas){
     ws.pageSetup.printTitlesRow = `${maiorTab[0]}:${maiorTab[0]}`;
   }
   Object.assign(ws.pageSetup, {paperSize:9, orientation: maxC > 6 ? 'landscape' : 'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true, margins:{left:0.4, right:0.4, top:0.5, bottom:0.6, header:0.2, footer:0.3}});
-  ws.headerFooter.oddFooter = '&L&8Raio X do Relatório' + (ORG() ? ' · ' + ORG().replace(/&/g,'&&') : '') + '&R&8Página &P de &N';
+  ws.headerFooter.oddFooter = '&L&8Gerador de OS HEV · Manutenção&R&8Página &P de &N';
   return ws;
 }
 function capaExcel(wb, ks, P, filTxt, nomeRel, fmt){
@@ -1310,7 +1301,7 @@ function capaExcel(wb, ks, P, filTxt, nomeRel, fmt){
   ws.getColumn(1).width = 3; ws.getColumn(2).width = 42; ws.getColumn(3).width = 80;
   const put = (r, c, v, f, h) => { const x = ws.getCell(r, c); x.value = v; if (f) x.font = f; if (h) ws.getRow(r).height = h; return x; };
   for (let r = 2; r <= 4; r++) for (let c = 2; c <= 3; c++) ws.getCell(r, c).fill = {type:'pattern', pattern:'solid', fgColor:{argb:cor}};
-  put(2, 2, (ORG() || 'Raio X do Relatório').toUpperCase(), {bold:true, size:10, color:{argb:'FFF7A1C4'}}, 22);
+  put(2, 2, 'MANUTENÇÃO · HOSPITAL EDMUNDO VASCONCELOS', {bold:true, size:10, color:{argb:'FFF7A1C4'}}, 22);
   put(3, 2, 'Relatório de Ordens de Serviço', {bold:true, size:22, color:{argb:'FFFFFFFF'}}, 38);
   put(4, 2, `Período: ${P.rot}`, {size:11, color:{argb:'FFDDE3F0'}}, 22);
   put(6, 2, 'Filtros', {bold:true, color:{argb:cor}}); put(6, 3, filTxt);
@@ -1328,7 +1319,7 @@ function capaExcel(wb, ks, P, filTxt, nomeRel, fmt){
    'Tratativa = só as frases padrão do planejamento na Observação; recado do solicitante não conta.',
    'Execução acima do limite ou sem hora de fim conta 1 h provisória e aparece em "Para arrumar no MV".'].forEach((t, i) => { const c = put(r + 1 + i, 2, '• ' + t, {color:{argb:cinza}}); ws.mergeCells(r + 1 + i, 2, r + 1 + i, 3); c.alignment = {wrapText:true}; ws.getRow(r + 1 + i).height = 18; });
   Object.assign(ws.pageSetup, {paperSize:9, orientation:'portrait', fitToPage:true, fitToWidth:1, fitToHeight:0, horizontalCentered:true});
-  ws.headerFooter.oddFooter = '&L&8Raio X do Relatório' + (ORG() ? ' · ' + ORG().replace(/&/g,'&&') : '') + '&R&8Página &P de &N';
+  ws.headerFooter.oddFooter = '&L&8Gerador de OS HEV · Manutenção&R&8Página &P de &N';
 }
 async function baixa(wb, nome){
   const buf = await wb.xlsx.writeBuffer();
@@ -1420,14 +1411,14 @@ async function gerarRel(){
   const fmt = document.querySelector('input[name=r-fmt]:checked').value, nomeRel = k => REL.find(r=>r[0]===k)[1];
   const info = `Período: ${P.rot} · Filtros: ${filTxt} · Gerado em ${new Date().toLocaleString('pt-BR')}`;
   const blocos = ks.map(k => { const b = relBlocos(k, L, base, P); b.splice(1, 0, [info]); return [k, b]; });
-  const arq = s => `RaioX_${s}_${P.nome}.xlsx`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w.\-]+/g,'_');
+  const arq = s => `OS_HEV_${s}_${P.nome}.xlsx`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w.\-]+/g,'_');
   try {
     msg.textContent = 'Gerando…';
     if (fmt === 'sep') {
       for (const [k,aoa] of blocos) { const wb = new ExcelJS.Workbook(); abaExcel(wb, nomeRel(k), aoa); await baixa(wb, arq(nomeRel(k))); await new Promise(r=>setTimeout(r,900)); }
       msg.textContent = `${blocos.length} arquivo(s) gerado(s). Se o navegador perguntar, permita baixar vários arquivos.`;
     } else {
-      const wb = new ExcelJS.Workbook(); wb.title = 'Relatório de Ordens de Serviço' + (ORG() ? ' · ' + ORG() : ''); wb.creator = 'Raio X do Relatório';
+      const wb = new ExcelJS.Workbook(); wb.title = 'Relatório de Ordens de Serviço · Manutenção HEV'; wb.creator = 'Gerador de OS HEV';
       capaExcel(wb, ks, P, filTxt, nomeRel, fmt);
       if (fmt === 'uma') abaExcel(wb, 'Relatório', blocos.flatMap(([k,a],n) => n ? [{T:'blank'}, ...a.map((x,i)=> i===0 && Array.isArray(x) ? {T:'sec', v:'■ '+x[0]} : x)] : a));
       else blocos.forEach(([k,a]) => abaExcel(wb, nomeRel(k), a));
@@ -1515,19 +1506,11 @@ document.addEventListener('drop', e => { e.preventDefault(); readFiles([...e.dat
 $('#clear').onclick = () => { raw=[]; empties=new Set(); flog={}; try{localStorage.removeItem('gos_dados')}catch(e){} demo=false; cut=null; rebuild(); };
 
 $('#cfgGen').value = cfg.genericos.join('\n');
-$('#cfgGenNome').value = cfg.genericoNome || '';
-$('#cfgCli').value = cfg.cliente || ''; $('#cfgArea').value = cfg.area || '';
-function topoCliente(){ $('#clienteTopo').textContent = ORG() ? '· ' + ORG() : ''; $('#logoTopo').innerHTML = cfg.logo ? `<img src="${cfg.logo}" alt="">` : ''; $('#cfgLogoPrev').innerHTML = cfg.logo ? `<img src="${cfg.logo}" style="max-height:60px">` : '<span class="muted">Sem logo.</span>'; document.title = 'Raio X do Relatório' + (cfg.cliente ? ' · ' + cfg.cliente : ''); }
-$('#cfgLogo').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { const k = Math.min(1, 240/Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); cfg.logo = c.toDataURL('image/png'); store.set('gos_cfg', cfg); topoCliente(); toast('Logo salvo.'); }; img.src = URL.createObjectURL(f); };
-$('#cfgLogoX').onclick = () => { cfg.logo = ''; store.set('gos_cfg', cfg); topoCliente(); };
-topoCliente();
 $('#cfgMax').value = cfg.maxExec;
 $('#cfgRegras').value = (cfg.regrasObs || Core.REGRAS_PADRAO).map(([r,ks])=>r+' = '+ks.join('; ')).join('\n');
 $('#cfgDepara').value = Object.entries(cfg.depara).map(([a,b])=>a+' = '+b).join('\n');
 $('#cfgSave').onclick = () => {
   cfg.genericos = $('#cfgGen').value.split('\n').map(s=>s.trim().toUpperCase()).filter(Boolean);
-  cfg.genericoNome = $('#cfgGenNome').value.trim().toUpperCase() || 'LANÇAMENTOS GENÉRICOS';
-  cfg.cliente = $('#cfgCli').value.trim(); cfg.area = $('#cfgArea').value.trim(); topoCliente();
   cfg.maxExec = Math.max(1, +$('#cfgMax').value || 12);
   const rg = $('#cfgRegras').value.split('\n').map(l=>l.split('=')).filter(x=>x.length>1&&x[0].trim()).map(([r,k])=>[r.trim(), k.split(';').map(t=>t.trim()).filter(Boolean)]);
   cfg.regrasObs = rg.length ? rg : null;
@@ -1538,7 +1521,6 @@ $('#cfgSave').onclick = () => {
 // Filtros começa fechado (abre ao tocar)
 loadState();
 window.addEventListener('hashchange', () => { route(); const t = $('#tabs'); window.scrollTo({top: t.offsetTop, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'}); }); route(); rebuild();
-if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
 histLoad().then(() => { if (hist.length) rebuild(); });
 }
 </script>
