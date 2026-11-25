@@ -74,6 +74,8 @@ var Core = (function () {
     });
     if (ci < 0) ci = 0;
     out[ci] = 'codigo';
+    // situação: sugestão (não palpite): campo categoria cujo nome tem situa, status ou estado; a pessoa troca na tela de colunas
+    hdr.forEach(function (h, j) { if (out[j] === 'categoria' && /(SITUA|STATUS|ESTADO)/.test(norm(h))) out[j] = 'situacao'; });
     return out;
   }
 

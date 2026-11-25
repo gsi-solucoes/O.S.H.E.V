@@ -55,6 +55,11 @@ dialog::backdrop{background:#0008}
 footer{padding:16px max(4vw,14px);color:var(--muted);font-size:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 ol.passos{margin:8px 0 0;padding-left:22px}ol.passos li{margin:4px 0}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.acBtns{margin-bottom:12px}
+ul.acomp{list-style:none;margin:10px 0;padding:0;max-height:55vh;overflow:auto}ul.acomp li{border-bottom:1px solid var(--line)}
+ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;padding:8px 2px;min-height:44px;cursor:pointer}ul.acomp input{width:22px;height:22px;flex:none}
+.acNome{font-weight:600;flex:1 1 55%;overflow-wrap:anywhere}.acEx{flex:1 1 100%;padding-left:32px;overflow-wrap:anywhere}
+#dlgPainel li{margin:8px 0;overflow-wrap:anywhere}
 .vazio{padding:24px;text-align:center;color:var(--muted)}
 </style>
 </head>
@@ -76,6 +81,7 @@ ol.passos{margin:8px 0 0;padding-left:22px}ol.passos li{margin:4px 0}
 <section id="painel" class="band">
   <div id="semDados" class="card vazio">Nenhum relatório carregado ainda. Toque em “Carregar relatório” e escolha um arquivo CSV.</div>
   <div id="comDados" hidden>
+    <div class="row acBtns"><button type="button" id="btnAcomp">O que acompanhar</button><button type="button" id="btnEntender" hidden>Entender este painel</button></div>
     <details class="fbox" id="filtros"><summary>Filtros</summary>
       <div class="filters">
         <label class="f" id="lConj">Relatório<select id="fConj"></select></label>
@@ -89,12 +95,13 @@ ol.passos{margin:8px 0 0;padding-left:22px}ol.passos li{margin:4px 0}
         <label class="f">Buscar texto<input type="search" id="fQ"></label>
       </div>
     </details>
-    <div class="kpis">
+    <div class="kpis" id="kpis">
       <button class="kpi" id="kTotal"><b>0</b><span>Total de registros</span></button>
       <div class="kpi" id="kAnt"><b>—</b><span>Mais antigo</span></div>
       <div class="kpi" id="kNov"><b>—</b><span>Mais novo</span></div>
     </div>
     <div id="blocos" class="grid2"></div>
+    <div id="blocosEsc" class="grid2" hidden></div>
     <h2>Registros</h2>
     <div class="tw" id="tabReg"></div>
     <div class="row" style="margin-top:10px"><button id="maisReg" hidden>Mostrar mais</button><span id="infoReg" class="muted"></span></div>
@@ -151,6 +158,8 @@ ol.passos{margin:8px 0 0;padding-left:22px}ol.passos li{margin:4px 0}
 <div id="dock"></div>
 <div id="toast" role="status"></div>
 <dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
+<dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
+<dialog id="dlgPainel" aria-labelledby="painelTit"><h3 id="painelTit">Seu painel</h3><ol id="painelLista" class="passos"></ol><div class="row" style="margin-top:12px"><button type="button" class="prim" id="painelFechar">Fechar</button></div></dialog>
 <dialog id="dlgPergunta"><h3 id="pgTit"></h3><p id="pgTxt"></p><div class="row" id="pgBtns"></div></dialog>
 
 <script src="vendor/jszip.min.js"></script>

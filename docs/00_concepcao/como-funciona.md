@@ -12,6 +12,14 @@ Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 4. **"O que você quer acompanhar?"** Aparece uma lista só com o que dá para calcular com os seus dados, já com o número de exemplo. Você marca, e cada item vira um quadro no painel. Em seguida o app explica, em texto simples, o que foi criado: o que cada quadro mostra, qual conta usou, o período e os filtros.
 5. **Peça por escrito** o que faltou ("pedidos entregues por vendedor em outubro"). O Raio X mostra "É isso?" com a prévia; você confirma e o quadro entra.
 
+## "O que você quer acompanhar?" na prática
+- Depois de ler um relatório novo, a janela abre sozinha. Cada item tem uma caixinha e um **exemplo já calculado com os seus números** (por exemplo, "Total de registros: 500 registros").
+- Só aparece o que dá para calcular: sem duas datas, não há "Tempo entre duas datas"; sem campo de situação, não há "% por situação".
+- Marcou e confirmou? O painel mostra só esses quadros: primeiro os números, depois os gráficos, e a lista de registros sempre no fim. A escolha fica guardada para aquele relatório e entra no backup.
+- O botão **O que acompanhar** reabre a janela quando você quiser mudar. **Cancelar** mantém o painel de antes.
+- O botão **Entender este painel** (e a planilha **Como ler este relatório**, a segunda aba do Excel) explica cada quadro em palavras: o que mostra, a conta feita, os campos, o período e os filtros no momento.
+- Na tela "Esta coluna é o quê?" há agora o tipo **Situação** (por exemplo, aberto, concluído); o app sugere quando o nome do campo lembra situação, status ou estado.
+
 ## Depois
 - **Editar layout:** arraste os quadros, crie abas, mude o tamanho e o tipo de gráfico.
 - **Relatório em Excel** do jeito que está na tela, com capa, período e filtros.

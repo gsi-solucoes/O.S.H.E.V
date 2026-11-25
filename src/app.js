@@ -280,6 +280,113 @@ function procurarRepetidos(L, c, campo) {
   abrirJanela('Possíveis repetidos (' + pares.length + ' pares)', lista, c);
 }
 
+/* ---------- etapa 2: "O que você quer acompanhar?" (catálogo de indicadores, blocos e resumo "Seu painel") ---------- */
+const fmtN = n => n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtI = n => n.toLocaleString('pt-BR');
+const fmtP = n => n.toFixed(1).replace('.', ',') + '%';
+const fmtD = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? m[3] + '/' + m[2] + '/' + m[1] : (s || ''); };
+const fmtM = k => k.slice(5) + '/' + k.slice(0, 4);
+const MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const NAO_ABERTO = ['conclu', 'finaliz', 'encerr', 'fechad', 'entreg', 'cancel', 'resolvid', 'pag'];
+const emAberto = (r, sit) => { const s = Core.norm(r.v[sit] || '').toLowerCase(); return !NAO_ABERTO.some(p => s.startsWith(p)); };
+const numeros = (L, f) => L.map(r => Core.numero(r.v[f])).filter(n => n != null);
+const ordenaGrupos = m => [...m].sort((a, b) => b[1].length - a[1].length || String(a[0]).localeCompare(String(b[0]), 'pt'));
+// top 10 + "Outros" (itens: [nome, lista])
+function top10(gr, valor) {
+  const t = gr.slice(0, 10).map(([k, l]) => [k, l]); const resto = gr.slice(10).flatMap(x => x[1]);
+  if (resto.length) t.push(['Outros', resto]); return t.map(([k, l]) => [k, valor ? valor(l) : l.length, l]);
+}
+const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'button', onclick: abrir }, pre, el('b', { text: val }), suf);
+const cartao = (b, ...kids) => el('div', { class: 'card bloco' }, el('h3', { text: b.nome }), ...kids);
+
+// catálogo de indicadores possíveis do conjunto: só entram os que dá para calcular (ex() devolve null quando não dá)
+function catalogo(c) {
+  const todos = doConj(c), campos = (conjs[c] || {}).campos || [], cs = camposDe(c, 'categoria'), ns = camposDe(c, 'numero'), ds = camposDe(c, 'data'), ss = camposDe(c, 'situacao');
+  const abrir = (t, l) => abrirJanela(t, l, c), SEP = '\u0001', out = [];
+  out.push({ id: 'total', grupo: 'num', nome: 'Total de registros', oque: 'quantos registros há', conta: 'contagem de todos os registros', campos: 'nenhum campo específico, conta os registros',
+    ex: L => L.length ? fmtI(L.length) + (L.length === 1 ? ' registro' : ' registros') : null,
+    desenha: L => cartao({ nome: 'Total de registros' }, kpiBtn('', fmtI(L.length), L.length === 1 ? ' registro' : ' registros', () => abrir('Todos os registros', L))) });
+  cs.forEach(k => out.push({ id: 'cat' + SEP + k.n, grupo: 'graf', nome: 'Por ' + k.n, oque: 'quantos registros há em cada ' + k.n + ' (os 10 maiores; o resto em Outros)', conta: 'contagem de registros por ' + k.n, campos: k.n,
+    ex: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])); return g.length ? k.n + ': ' + g[0][0] + ' lidera com ' + fmtI(g[0][1].length) : null; },
+    desenha: L => cartao({ nome: 'Por ' + k.n }, barras(top10(ordenaGrupos(agrupa(L, r => r.v[k.n]))), (n, l) => abrir(k.n + ': ' + n, l))) }));
+  ns.forEach(k => out.push({ id: 'num' + SEP + k.n, grupo: 'num', nome: k.n + ' (soma, média e mediana)', oque: 'a soma, a média e a mediana de ' + k.n, conta: 'soma, média e mediana do campo ' + k.n, campos: k.n,
+    ex: L => { const v = numeros(L, k.n); return v.length ? 'Soma: ' + fmtN(v.reduce((a, b) => a + b, 0)) + ' · Média: ' + fmtN(v.reduce((a, b) => a + b, 0) / v.length) + ' · Mediana: ' + fmtN(Core.mediana(v)) : null; },
+    desenha: L => { const v = numeros(L, k.n), com = L.filter(r => Core.numero(r.v[k.n]) != null), soma = v.reduce((a, b) => a + b, 0), ab = () => abrir(k.n, com);
+      return cartao({ nome: k.n + ' (soma, média e mediana)' }, kpiBtn('Soma: ', v.length ? fmtN(soma) : '—', '', ab), kpiBtn('Média: ', v.length ? fmtN(soma / v.length) : '—', '', ab), kpiBtn('Mediana: ', v.length ? fmtN(Core.mediana(v)) : '—', '', ab)); } }));
+  ns.forEach(k => cs.forEach(g => out.push({ id: 'numcat' + SEP + k.n + SEP + g.n, grupo: 'graf', nome: k.n + ' por ' + g.n, oque: 'quanto ' + k.n + ' soma em cada ' + g.n + ' (os 10 maiores; o resto em Outros)', conta: 'soma do campo ' + k.n + ', separada por ' + g.n, campos: k.n + ', ' + g.n,
+    ex: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]); return m.length ? 'Maior soma: ' + m[0][0] + ' (' + fmtN(m[0][2]) + ')' : null; },
+    desenha: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]);
+      return cartao({ nome: k.n + ' por ' + g.n }, barras(top10(m.map(x => [x[0], x[1]]), l => numeros(l, k.n).reduce((a, b) => a + b, 0)).map(x => [x[0], x[1], x[2], fmtN(x[1])]), (n, l) => abrir(k.n + ' por ' + g.n + ': ' + n, l))); } })));
+  ds.forEach(k => out.push({ id: 'mes' + SEP + k.n, grupo: 'graf', nome: 'Evolução por mês (' + k.n + ')', oque: 'quantos registros há em cada mês', conta: 'registros por mês do campo ' + k.n, campos: k.n, dataCampo: k.n,
+    ex: L => { const g = [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1)); return g.length ? 'Mês com mais registros: ' + fmtM(g[0][0]) + ' (' + fmtI(g[0][1].length) + ')' : null; },
+    desenha: L => { const g = [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).map(([m, l]) => [fmtM(m), l.length, l]);
+      return cartao({ nome: 'Evolução por mês (' + k.n + ')' }, barras(g, (m, l) => abrir('Mês ' + m, l))); } }));
+  if (ds.length >= 2) out.push({ id: 'tempo', grupo: 'num', nome: 'Tempo entre duas datas', get oque() { const p = parTempo(ds); return 'o tempo que passa entre ' + p[0] + ' e ' + p[1] + ', em faixas e dentro do prazo'; }, get conta() { const p = parTempo(ds); return 'mediana do tempo entre ' + p[0] + ' e ' + p[1]; }, get campos() { return parTempo(ds).join(', '); }, get dataCampo() { return parTempo(ds)[0]; },
+    ex: L => { const p = parTempo(ds), it = paresTempo(L, p[0], p[1]); return it.length ? 'Mediana: ' + Core.hm(Core.mediana(it.map(x => x[1]))) : null; },
+    desenha: L => cartaoTempo(L, c, ds, 'Tempo entre duas datas') });
+  ss.forEach(k => out.push({ id: 'sit' + SEP + k.n, grupo: 'num', nome: '% por ' + k.n, oque: 'a parte de cada ' + k.n + ' no total', conta: 'percentual de registros por ' + k.n, campos: k.n,
+    ex: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0); return g.length ? g[0][0] + ': ' + fmtP(100 * g[0][1].length / n) : null; },
+    desenha: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0);
+      return cartao({ nome: '% por ' + k.n }, barras(g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), (v, l) => abrir(k.n + ': ' + v, l))); } }));
+  campos.filter(k => k.t !== 'codigo' && k.t !== 'ignorar').forEach(k => out.push({ id: 'vazio' + SEP + k.n, grupo: 'num', nome: 'Sem valor em ' + k.n, oque: 'quantos registros estão sem ' + k.n, conta: 'registros com o campo ' + k.n + ' vazio', campos: k.n,
+    ex: L => { const n = L.filter(r => !r.v[k.n]).length; return n ? fmtI(n) + ' sem valor em ' + k.n : null; },
+    desenha: L => { const l = L.filter(r => !r.v[k.n]); return cartao({ nome: 'Sem valor em ' + k.n }, kpiBtn('', fmtI(l.length), ' sem valor em ' + k.n, () => abrir('Sem valor em ' + k.n, l))); } }));
+  if (ds.length && ss.length) {
+    const sit = ss[0].n, dat = () => campoData(c);
+    const lista = L => L.filter(r => r.v[dat()] && emAberto(r, sit)).sort((a, b) => a.v[dat()] < b.v[dat()] ? -1 : 1);
+    out.push({ id: 'aberto', grupo: 'num', nome: 'Mais antigos em aberto', oque: 'o registro em aberto mais antigo e quantos estão em aberto', get conta() { return 'registros em aberto mais antigos pela data ' + dat(); }, get campos() { return dat() + ', ' + sit; }, get dataCampo() { return dat(); },
+      ex: L => { const l = lista(L); return l.length ? 'Mais antigo: ' + fmtData(l[0].v[dat()]) : null; },
+      desenha: L => { const l = lista(L); return cartao({ nome: 'Mais antigos em aberto' }, kpiBtn('Mais antigo: ', l.length ? fmtData(l[0].v[dat()]) : '—', '', () => abrir('Mais antigos em aberto', l)), el('p', { class: 'muted', text: fmtI(l.length) + ' em aberto' })); } });
+  }
+  return out.filter(x => x.ex(todos) != null);
+}
+// blocos escolhidos do conjunto, na ordem da especificação: números, gráficos (cada grupo na ordem em que foram marcados); [] = painel da etapa 1
+function blocosEscolhidos(c) {
+  const ids = Array.isArray(acomp[c]) ? acomp[c] : []; if (!ids.length || !conjs[c]) return [];
+  const cat = catalogo(c), lista = ids.map(i => cat.find(x => x.id === i)).filter(Boolean);
+  return lista.filter(b => b.grupo === 'num').concat(lista.filter(b => b.grupo !== 'num'));
+}
+
+/* resumo em texto ("Seu painel"): gerado a partir de uma lista de blocos; as etapas 3 e 6 só passam a lista nova */
+function filtrosResumo() {
+  const p = [];
+  if (F.cat && F.val) p.push('só ' + F.cat.toLowerCase() + ' ' + F.val);
+  if (F.per === 'mes' && F.mes) p.push(MESES[+F.mes.slice(5, 7) - 1] + '/' + F.mes.slice(0, 4));
+  if (F.per === 'de' && (F.de || F.ate)) p.push(F.de && F.ate ? 'de ' + fmtD(F.de) + ' a ' + fmtD(F.ate) : F.de ? 'a partir de ' + fmtD(F.de) : 'até ' + fmtD(F.ate));
+  if (F.q) p.push('busca “' + F.q + '”');
+  return p.length ? p.join('; ') : 'sem filtros';
+}
+function resumoBlocos(c, blocos, L) {
+  const fl = filtrosResumo();
+  return blocos.map(b => {
+    const cd = b.dataCampo || campoData(c), datas = cd ? L.map(r => r.v[cd]).filter(Boolean).sort() : [];
+    const per = datas.length ? 'de ' + fmtD(datas[0]) + ' a ' + fmtD(datas[datas.length - 1]) : 'sem datas';
+    return { nome: b.nome, texto: b.nome + ' — ' + b.oque + '. Conta: ' + b.conta + '. Campos: ' + b.campos + '. Período: ' + per + '. Filtros: ' + fl + '.' };
+  });
+}
+function abrirPainel(c) {
+  const bl = blocosEscolhidos(c); if (!bl.length) return;
+  const d = $('#dlgPainel'), ol = $('#painelLista'); ol.textContent = '';
+  resumoBlocos(c, bl, filtrar(c)).forEach(x => ol.append(el('li', null, x.texto)));
+  d.showModal();
+}
+// janela "O que você quer acompanhar?"; resolve ao fechar (Confirmar salva; Cancelar não salva nada)
+function janelaAcomp(c) {
+  return new Promise(ok => {
+    const d = $('#dlgAcomp'), ul = $('#acompLista'), erro = $('#acompErro'); ul.textContent = ''; erro.textContent = '';
+    const cat = catalogo(c), todos = doConj(c), ja = (Array.isArray(acomp[c]) ? acomp[c] : []).filter(i => cat.some(x => x.id === i)), sel = ja.slice();
+    cat.forEach(b => {
+      const cx = el('input', { type: 'checkbox', 'aria-label': b.nome }); cx.checked = sel.indexOf(b.id) >= 0;
+      cx.onchange = () => { const i = sel.indexOf(b.id); if (cx.checked && i < 0) sel.push(b.id); if (!cx.checked && i >= 0) sel.splice(i, 1); erro.textContent = ''; };
+      ul.append(el('li', null, el('label', null, cx, el('span', { class: 'acNome', text: b.nome }), el('span', { class: 'acEx muted', text: b.ex(todos) }))));
+    });
+    $('#acompOk').onclick = () => { if (!sel.length) { erro.textContent = 'Marque pelo menos um indicador.'; return; } acomp[c] = sel.slice(); salvaAcomp(); d.close('ok'); };
+    $('#acompCancela').onclick = () => d.close('cancela');
+    d.onclose = () => { const salvou = d.returnValue === 'ok'; d.returnValue = ''; if (salvou) { render(); abrirPainel(c); } ok(salvou); };
+    d.showModal();
+  });
+}
+
 /* ---------- janelas flutuantes ---------- */
 let nJan = 0;
 function abrirJanela(titulo, lista, c) {
@@ -429,6 +536,9 @@ $('#fMes').oninput = e => { F.mes = e.target.value; render(); }; $('#fDe').oninp
 $('#fCD').onchange = e => { F.cd = e.target.value; render(); }; $('#fCat').onchange = e => { F.cat = e.target.value; F.val = ''; render(); }; $('#fVal').onchange = e => { F.val = e.target.value; render(); };
 $('#fQ').oninput = e => { F.q = e.target.value; mostrar = 50; render(); };
 $('#gerarXlsx').onclick = gerarExcel;
+$('#btnAcomp').onclick = () => { if (F.conjunto) janelaAcomp(F.conjunto); };
+$('#btnEntender').onclick = () => abrirPainel(F.conjunto);
+$('#painelFechar').onclick = () => $('#dlgPainel').close();
 $('#versao').textContent = 'Versão ' + VERSAO;
 
 (async function iniciar() {
