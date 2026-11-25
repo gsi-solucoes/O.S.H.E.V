@@ -7,3 +7,4 @@
 - **25/11/2026 14h18** · ✋ Portão 1 aprovado pelo Galindo. Especificação v1.0 escrita (`docs/01_especificacao/especificacao.md`, CA-01 a CA-100, perguntas P-01 a P-05); esperando portão 2.
 - **25/11/2026 14h34** · Galindo: nada do caso de origem no produto nem na macro; do protótipo vem só a estrutura. Dados de teste só fictícios. Macro = versão Excel para baixar, com a mesma estrutura genérica.
 - **25/11/2026 14h43** · ✋ Portão 2 aprovado (especificação v1.0; P-01 a P-05 decididas). Próximo: etapa 1 com Construtor + Testador.
+- **25/11/2026 14h45** · Ideia do Galindo (entra na etapa 2): depois da escolha, mostrar em texto o que foi criado ("Seu painel" / "Entender este painel") e a mesma explicação no Excel (CA-26 a CA-29).

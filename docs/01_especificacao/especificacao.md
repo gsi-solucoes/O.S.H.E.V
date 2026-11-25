@@ -69,6 +69,9 @@ Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05
 
 - O que for marcado vira **bloco** no painel: números em cima, gráficos no meio, **tabela de registros sempre embaixo**. A escolha fica salva por conjunto; o botão "O que acompanhar" reabre a tela.
 
+- **Resumo em texto do que foi criado (Galindo, 25/11/2026 14h45):** ao confirmar a escolha, o app mostra **"Seu painel"**, um texto simples que explica cada bloco criado: o nome, o que ele mostra, a conta em palavras (ex.: "soma do campo Valor, separada por Cliente"), os campos usados, o período e os filtros. O resumo fica disponível pelo botão **"Entender este painel"** e é atualizado sempre que um bloco entra, sai ou muda (pedido escrito, contas personalizadas, Editar layout).
+- O mesmo texto vai no Excel, numa planilha **"Como ler este relatório"** logo depois da capa.
+
 **O que NÃO quero**
 - Indicador que não dá para calcular aparecer (ex.: tempo entre datas sem 2 datas).
 - Exemplo inventado: todo exemplo é calculado dos dados carregados.
@@ -80,6 +83,10 @@ Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05
 - CA-23: recarregar → mesmos 3 blocos; reabrir "O que acompanhar" → os 3 continuam marcados.
 - CA-24: campo com ≤ 30 valores distintos e ≥ 50% de repetição é sugerido como categoria; a pessoa pode trocar o tipo do campo na tela de colunas.
 - CA-25: `tests/dados/chamados.csv` (código, abertura, conclusão, categoria, responsável, situação) → lista também "Tempo entre duas datas" e "Mais antigos em aberto", com valores iguais ao oráculo.
+- CA-26: marcar "Total", "Por cliente" e "Valor por região" e confirmar → aparece "Seu painel" com 3 itens; o item de "Valor por região" diz "soma do campo Valor, separada por Região", o período dos dados e "sem filtros".
+- CA-27: aplicar filtro região = Sul e período outubro → "Entender este painel" passa a dizer "só região Sul" e "outubro/2026" em cada item afetado.
+- CA-28: adicionar um bloco pelo pedido escrito, tirar outro no Editar layout → o resumo mostra o novo e não mostra mais o retirado.
+- CA-29: Excel gerado → 2ª planilha "Como ler este relatório" com o mesmo texto da tela.
 
 ---
 
