@@ -38,3 +38,9 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 - **Conferido** (Playwright próprio, 390 px, sem rolagem horizontal, 0 erros no console): vendas e chamados, exemplos, Seu painel com filtros (`só região Sul; outubro/2026`), Excel com a 2ª aba, backup com `acomp`.
 - **Decisões/riscos:** (1) mediana do tempo no formato da etapa 1 (`11 h 50 min`), não `1 d 4 h` do exemplo da especificação (os dois textos da 0.3 divergem); (2) indicadores `Por`/`<Número> por` também para o campo Situação (superset do CA-20); (3) o tipo `Data e hora` da R-65 não existe separado (`Data` cobre as duas); (4) `Mais antigo` mostra a hora quando a data tem hora; (5) em aberto: situação vazia conta como em aberto (regra literal da 0.3); (6) conjuntos já guardados mantêm os tipos antigos (Situação só em formato novo ou após `Esquecer`).
 - **Falta:** testes de aceite do Testador; CA-28 adiado (etapas 3 e 6).
+
+## Etapa 2 (F-46, 25/11/2026) — pronta, esperando publicar
+- Branch `etapa-2`. Suíte: etapa 2 = 10 verdes + CA-28 adiado (etapas 3 e 6); suíte inteira sem a macro: 47 verdes, 3 skip (2 testes de teste corrigidos depois).
+- Revisão de segurança: liberada, 0 Crítico/Alto/Médio; 4 Baixos (B-1 a B-4) na fila, ver `docs/04_seguranca/revisao-etapa2.md`. Falta teste de regressão de segurança da etapa 2.
+- Divergências decididas: mediana no formato da etapa 1 (não "1 d 4 h"); tipo `Data e hora` não criado (Data cobre).
+- Falta: Galindo dizer "pode publicar no main". Próximo: etapa 3 (pedido escrito).
