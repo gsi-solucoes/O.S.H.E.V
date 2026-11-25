@@ -1,6 +1,6 @@
 # Raio X do Relatório — como funciona
 
-*Resumo para mostrar ao cliente · atualizado em 25/11/2026 14h25*
+*Resumo para mostrar ao cliente · atualizado em 25/11/2026 14h47*
 Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 
 **Em uma frase:** O Raio X do Relatório lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel, PDF e imagem) e monta sozinho o painel e os relatórios que a pessoa escolher. Funciona no navegador, sem API e sem custo por uso, e serve para qualquer cliente.
@@ -9,7 +9,7 @@ Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 1. **Abra o link** no celular ou no computador (dá para instalar como app e usar sem internet).
 2. **Escolha os arquivos** (CSV, Excel, PDF, foto ou print do relatório, ou um .zip com tudo). Pode mandar vários de uma vez.
 3. **O Raio X reconhece o relatório.** Se for um formato novo, pergunta uma vez "esta coluna é o quê?" e aprende.
-4. **"O que você quer acompanhar?"** Aparece uma lista só com o que dá para calcular com os seus dados, já com o número de exemplo. Você marca, e cada item vira um quadro no painel.
+4. **"O que você quer acompanhar?"** Aparece uma lista só com o que dá para calcular com os seus dados, já com o número de exemplo. Você marca, e cada item vira um quadro no painel. Em seguida o app explica, em texto simples, o que foi criado: o que cada quadro mostra, qual conta usou, o período e os filtros.
 5. **Peça por escrito** o que faltou ("pedidos entregues por vendedor em outubro"). O Raio X mostra "É isso?" com a prévia; você confirma e o quadro entra.
 
 ## Depois
