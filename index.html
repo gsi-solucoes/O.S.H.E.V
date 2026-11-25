@@ -74,6 +74,7 @@ textarea{min-height:120px}
 .dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .drmore{justify-self:start}
 .rq{margin-bottom:14px}
+.colmap select{min-width:200px}.colmap td{vertical-align:middle}
 .mmw{display:grid;gap:4px}.mm{display:grid;grid-template-columns:3em 1fr;align-items:center;gap:6px}.mm .n{font-size:13px;color:var(--muted)}.mb{display:grid;gap:2px}.mb .bar{padding:1px 0;min-height:0}.mb .bar.ant i{background:var(--line)!important;filter:brightness(.8)}.mb .bar:not(.ant) i{background:var(--accent)!important}.wl .bar{grid-template-columns:minmax(0,17em) minmax(0,1fr) auto}
 .lg{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}.lg.a{background:var(--accent)}.lg.b{background:var(--line);filter:brightness(.8)}.hb{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
 .win{position:fixed;inset:0;z-index:60;background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45)}
@@ -195,6 +196,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
       <div class="card"><h3>De-para de técnicos</h3><p class="muted">Corrige nomes. Uma linha por pessoa: NOME NO MV = NOME CORRETO</p><textarea id="cfgDepara"></textarea></div>
     </div>
     <div class="card" style="margin-bottom:16px"><h3>Limite de horas por execução</h3><p class="muted">Execução acima deste limite é tratada como erro de lançamento e a OS vai para "Para arrumar".</p><label class="muted">Horas <input type="number" id="cfgMax" min="1" max="72" step="1" style="font-size:16px;min-height:44px;width:7em"></label></div>
+    <div class="card" style="margin-bottom:16px"><h3>Formatos de planilha aprendidos</h3><p class="muted">Planilhas CSV que não são do formato do MV: o app pergunta uma vez o que é cada coluna e lembra. Aqui você vê os formatos e pode esquecer um para ele perguntar de novo.</p><div id="cfgLayouts"></div></div>
     <button class="prim" id="cfgSave">Salvar e recalcular</button>
     <p class="note">As configurações ficam guardadas só neste navegador.</p>
   </section>
@@ -347,13 +349,79 @@ var Core = (function () {
         ti: o.tipo || 'Sem tipo', se: o.setor || 'Sem setor', so: o.solicitante || '', d: o.desc || '', b: o.bem || '', pl: o.plaqueta || '', tc: o.tecnicos };
     });
   }
+  // ---- qualquer CSV em forma de tabela: acha o cabeçalho, chuta o que é cada coluna e lê com o mapa confirmado
+  var CAMPOS = [['os', 'Nº da OS'], ['pedido', 'Data do pedido / abertura'], ['termino', 'Data de término / fechamento'], ['situacao', 'Situação / fila / status'],
+    ['tipo', 'Tipo de OS'], ['especialidade', 'Especialidade'], ['setor', 'Setor'], ['localidade', 'Localidade / local'], ['solicitante', 'Solicitante'],
+    ['desc', 'Descrição / serviço'], ['obs', 'Observações / tratativa'], ['tecnico', 'Técnico / funcionário'], ['criticidade', 'Criticidade / prioridade'],
+    ['bem', 'Equipamento / bem'], ['plaqueta', 'Plaqueta / patrimônio'], ['prev', 'Data prevista / programada']];
+  var PISTAS = { os: ['NR OS', 'NR.OS', 'N OS', 'NO OS', 'NUMERO OS', 'NUMERO DA OS', 'ORDEM SERVICO', 'ORDEM DE SERVICO', 'ORD SERVICO', 'OS', 'O.S', 'O.S.'],
+    pedido: ['DT PEDIDO', 'DT. PEDIDO', 'DATA PEDIDO', 'DATA DO PEDIDO', 'ABERTURA', 'DATA ABERTURA', 'DT ABERTURA', 'SOLICITADO EM', 'CRIADO EM', 'DATA SOLICITACAO'],
+    termino: ['TERMINO', 'DATA TERMINO', 'FECHAMENTO', 'CONCLUSAO', 'DT EXECUCAO', 'DT. EXECUCAO', 'ENCERRAMENTO', 'FINALIZACAO', 'DATA FIM'],
+    situacao: ['SITUACAO', 'STATUS', 'FILA', 'ESTADO'], tipo: ['TIPO', 'TIPO DE OS', 'TIPO OS'], especialidade: ['ESPECIALIDADE', 'OFICINA', 'AREA', 'DISCIPLINA'],
+    setor: ['SETOR', 'DEPARTAMENTO', 'CENTRO DE CUSTO', 'UNIDADE'], localidade: ['LOCALIDADE', 'LOCAL', 'AMBIENTE', 'QUARTO', 'SALA'],
+    solicitante: ['SOLICITANTE', 'REQUISITANTE', 'USUARIO', 'SOLICITADO POR'], desc: ['DESCRICAO', 'SERVICO', 'PROBLEMA', 'DEFEITO', 'SOLICITACAO', 'DESCRICAO DO SERVICO'],
+    obs: ['OBSERVACAO', 'OBSERVACOES', 'OBS', 'OBS.', 'COMENTARIO', 'COMENTARIOS', 'TRATATIVA'], tecnico: ['TECNICO', 'FUNCIONARIO', 'FUNCIONARIO DA OFICINA', 'RESPONSAVEL', 'EXECUTANTE', 'COLABORADOR'],
+    criticidade: ['CRITICIDADE', 'PRIORIDADE', 'URGENCIA', 'CLASSIFICACAO', 'RISCO', 'GRAU'], bem: ['BEM', 'EQUIPAMENTO', 'ATIVO'], plaqueta: ['PLAQUETA', 'NR. DA PLAQUETA', 'PATRIMONIO', 'TAG'],
+    prev: ['DT PREV', 'DT. PREV. EXEC.', 'PREVISTA', 'PREVISAO', 'PROGRAMADA', 'DT PROGRAMADA', 'PRAZO'] };
+  function chuteCampo(h) {
+    var n = norm(h).replace(/\./g, ' ').replace(/\s+/g, ' ').trim(), melhor = '', nota = 0;
+    if (!n) return '';
+    Object.keys(PISTAS).forEach(function (c) {
+      PISTAS[c].forEach(function (p) {
+        var q = norm(p).replace(/\./g, ' ').replace(/\s+/g, ' ').trim(), sc = 0;
+        if (n === q) sc = 3 + q.length / 100;
+        else if (q.length >= 4 && (' ' + n + ' ').indexOf(' ' + q + ' ') >= 0) sc = 2 + q.length / 100;
+        else if (q.length >= 5 && n.indexOf(q) >= 0) sc = 1 + q.length / 100;
+        if (sc > nota) { nota = sc; melhor = c; }
+      });
+    });
+    return melhor;
+  }
+  function acharCabecalho(rows) {
+    var cheio = function (r) { return (r || []).filter(function (x) { return t(x); }).length; };
+    for (var i = 0; i < Math.min(40, rows.length - 1); i++) {
+      var r = rows[i], n = cheio(r);
+      if (n < 2) continue;
+      var texto = r.filter(function (x) { x = t(x); return x && !/^[\d\s\/:.,-]+$/.test(x); }).length;
+      if (texto >= Math.max(2, n * 0.7) && cheio(rows[i + 1]) >= 2) return i;
+    }
+    return -1;
+  }
+  function assinatura(hdr) { return hdr.map(function (h) { return norm(h); }).filter(Boolean).join('|'); }
+  function dataQualquer(v) {
+    var d = toDateD(v); if (d) return d;
+    var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(t(v)); if (m) return new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0));
+    m = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?/.exec(t(v)); if (m) { var y = +m[3]; if (y < 100) y += 2000; return new Date(y, +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)); }
+    return null;
+  }
+  function lerGenerico(rows, hi, mapa) {
+    var by = {};
+    for (var i = hi + 1; i < rows.length; i++) {
+      var r = rows[i], x = {};
+      Object.keys(mapa).forEach(function (col) { var c = mapa[col], v = t(r[+col]); if (c && v) x[c] = x[c] ? x[c] + ' ' + v : v; });
+      var os = (x.os || '').replace(/\D/g, ''); if (!os) continue;
+      var o = by[os] || { os: os }, d;
+      if (x.pedido && (d = dataQualquer(x.pedido))) o.p = d.getTime();
+      if (x.termino && (d = dataQualquer(x.termino))) o.te = d.getTime();
+      if (x.prev && (d = dataQualquer(x.prev))) o.pv = d.getTime();
+      if (x.situacao) o.f = filaFrom(x.situacao) || x.situacao.toLowerCase();
+      if (x.tipo) o.ti = x.tipo; if (x.setor) o.se = x.setor; if (x.solicitante) o.so = x.solicitante; if (x.desc) o.d = x.desc;
+      if (x.bem) o.b = x.bem; if (x.plaqueta) o.pl = x.plaqueta; if (x.especialidade) o.e = x.especialidade; if (x.localidade) o.lo = x.localidade;
+      if (x.obs) o.ob = x.obs; if (x.criticidade) o.cr = x.criticidade;
+      if (x.tecnico) { o.tc = o.tc || []; x.tecnico.split(/\s*[;|]\s*/).forEach(function (n) { if (n && o.tc.indexOf(n) < 0) o.tc.push(n); }); }
+      by[os] = o;
+    }
+    return Object.keys(by).map(function (k) { return by[k]; });
+  }
+
   // registro guardado do histórico -> formato que as telas usam
   function histView(h) {
+    h.f = h.f || 'sem fila'; h.ti = h.ti || 'Sem tipo'; h.se = h.se || 'Sem setor';
     var pend = h.f === 'aberta' || h.f === 'não atendida' || h.f === 'agendar', terc = h.f === 'aguardando material' || h.f === 'conserto externo';
     var p = h.p ? new Date(h.p) : null, te = h.te ? new Date(h.te) : null, tc = h.tc || [];
     return { os: h.os, pedido: p, termino: te, prevExec: h.pv ? new Date(h.pv) : null, fila: h.f, tipo: h.ti, setor: h.se, solicitante: h.so, desc: h.d, bem: h.b, plaqueta: h.pl,
       tecnicos: tc, tecnico: tc[0] || '', exec: tc.map(function (n) { return { servico: '', func: n, ini: null, fim: null }; }),
-      especialidade: '—', localidade: '', obs: '', pendente: '', criticidade: '', arrumar: [], ok: true, provisorio: false,
+      especialidade: h.e || '—', localidade: h.lo || '', obs: h.ob || '', pendente: '', criticidade: h.cr || '', arrumar: [], ok: true, provisorio: false,
       backlog: pend, terceiros: terc, horas: 0, espera: null, total: p && te && te >= p ? (te - p) / 36e5 : null, carregado: h.t || 0, hist: true };
   }
 
@@ -582,7 +650,7 @@ var Core = (function () {
   }
 
   var Core_sim;
-  return { isDet: isDet, parseDet: parseDet, histView: histView, sim: function (a, b) { return Core_sim(a, b); }, REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
+  return { CAMPOS: CAMPOS, chuteCampo: chuteCampo, acharCabecalho: acharCabecalho, assinatura: assinatura, lerGenerico: lerGenerico, isDet: isDet, parseDet: parseDet, histView: histView, sim: function (a, b) { return Core_sim(a, b); }, REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
 })();
 
 </script>
@@ -618,7 +686,7 @@ function rebuild(){
   const nprov = data.filter(o=>o.provisorio).length;
   $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s): ${nf(data.length-bad-nprov)} normais${nprov?` + ${nprov} com horário ajustado (corrigir no MV)`:''}${bad?` · ${nf(bad)} fora por erro`:''}${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
   $('#emptyState').hidden = !!(data.length || hist.length); $('#app').hidden = !(data.length || hist.length);
-  drawFiles();
+  drawFiles(); drawLayouts();
   drawFilters(); render();
 }
 
@@ -857,11 +925,12 @@ const IDB = {
   open(){ return new Promise((ok, no) => { const r = indexedDB.open('gos_hist', 1); r.onupgradeneeded = () => r.result.createObjectStore('os', {keyPath:'os'}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); },
   async all(){ const db = await IDB.open(); return new Promise((ok, no) => { const q = db.transaction('os').objectStore('os').getAll(); q.onsuccess = () => ok(q.result || []); q.onerror = () => no(q.error); }); },
   async put(list){ const db = await IDB.open(); return new Promise((ok, no) => { const tx = db.transaction('os', 'readwrite'), st = tx.objectStore('os'); list.forEach(x => st.put(x)); tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); }); },
+  async clearAll(){ return IDB.clear(); },
   async clear(){ const db = await IDB.open(); return new Promise((ok, no) => { const tx = db.transaction('os', 'readwrite'); tx.objectStore('os').clear(); tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); }); }
 };
-async function histLoad(){ try { const a = await IDB.all(); hist = a.map(Core.histView); histMap = new Map(hist.map(o => [o.os, o])); } catch(e) { hist = []; histMap = new Map(); } }
+async function histLoad(){ try { const a = await IDB.all(); histRaw = new Map(a.map(x => [x.os, x])); hist = a.filter(x => x.p).map(Core.histView); histMap = new Map(hist.map(o => [o.os, o])); } catch(e) { hist = []; histMap = new Map(); } }
 // OS que estão nos dois relatórios: o R_ORDEM_SERVICO manda (tem horas e observação); do detalhado vem o equipamento
-function histComplementa(){ data.forEach(o => { const h = histMap.get(o.os); if (h) { if (h.bem && !o.bem) o.bem = h.bem; if (h.plaqueta && !o.plaqueta) o.plaqueta = h.plaqueta; if (h.prevExec && !o.prevExec) o.prevExec = h.prevExec; } }); }
+function histComplementa(){ data.forEach(o => { const h = histRaw.get(o.os); if (!h) return; if (h.b && !o.bem) o.bem = h.b; if (h.pl && !o.plaqueta) o.plaqueta = h.pl; if (h.pv && !o.prevExec) o.prevExec = new Date(h.pv); if (h.cr && (!o.criticidade || o.criticidade === 'Não informada')) o.criticidade = h.cr; if (h.e && (!o.especialidade || o.especialidade === 'Sem especialidade')) o.especialidade = h.e; if (h.lo && !o.localidade) o.localidade = h.lo; }); }
 // visão única do histórico: o detalhado + as OS do R_ORDEM_SERVICO; vale a situação do arquivo carregado por último
 function histTudo(){
   const m = new Map(histMap);
@@ -921,7 +990,58 @@ function renderHist(){
 function histBotoes(){
   const b = $('#hBkp'); if (b) b.onclick = async () => { const a = await IDB.all(); const blob = new Blob([JSON.stringify({tipo:'gos_hist', v:1, gerado:new Date().toISOString(), os:a})], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = `historico_OS_HEV_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(l); l.click(); setTimeout(()=>{URL.revokeObjectURL(l.href); l.remove();}, 4000); toast(`Backup com ${nf(a.length)} OS baixado.`); };
   const r = $('#hRes'); if (r) r.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { await prog('Restaurando backup...', f.name, .3); const j = JSON.parse(await f.text()); if (j.tipo !== 'gos_hist' || !Array.isArray(j.os)) throw 0; await IDB.put(j.os); await histLoad(); rebuild(); toast(`Backup restaurado: ${nf(j.os.length)} OS.`); } catch(x) { toast('Esse arquivo não é um backup do histórico.'); } finally { progEnd(); } };
-  const c = $('#hLimpa'); if (c) c.onclick = async () => { if (!confirm('Apagar todo o histórico guardado neste aparelho? (o backup baixado continua valendo)')) return; await IDB.clear(); await histLoad(); rebuild(); toast('Histórico apagado.'); };
+  const c = $('#hLimpa'); if (c) c.onclick = async () => { if (!confirm('Apagar todo o histórico guardado neste aparelho? (o backup baixado continua valendo)')) return; await IDB.clear(); histRaw = new Map(); await histLoad(); rebuild(); toast('Histórico apagado.'); };
+}
+
+// ---- banco de OS: junta campo a campo (o que vier vazio não apaga o que já existe)
+let histRaw = new Map();
+const vazio = v => v == null || v === '' || (Array.isArray(v) && !v.length);
+async function histPut(list){
+  const out = list.map(r => { const old = histRaw.get(r.os) || {}, m = {...old}; Object.keys(r).forEach(k => { if (!vazio(r[k])) m[k] = r[k]; }); histRaw.set(r.os, m); return m; });
+  await IDB.put(out);
+}
+// ---- "esta coluna é o quê?": pergunta uma vez por formato e lembra
+const LAYOUTS = () => store.get('gos_layouts', {});
+function perguntarColunas(nome, hdr, ex){
+  return new Promise(ok => {
+    const w = document.createElement('div'); w.className = 'win cols'; w.style.zIndex = ++WZ;
+    if (innerWidth > 700) { w.style.left = '6vw'; w.style.top = '6vh'; w.style.width = '88vw'; w.style.height = '86vh'; }
+    const opts = sel => `<option value="">— ignorar —</option>${Core.CAMPOS.map(([k,t])=>`<option value="${k}"${k===sel?' selected':''}>${t}</option>`).join('')}`;
+    w.innerHTML = `<div class="wh"><div class="wt"><span>Formato novo de relatório</span><b>${esc(nome)}</b></div><button class="wx" title="Cancelar">✕</button></div>
+      <div class="wb"><p><b>Esta coluna é o quê?</b> Já deixei marcado o que eu reconheci pelo nome. Confira, ajuste se precisar e importe. Na próxima vez que vier um arquivo com essas mesmas colunas, ele entra sozinho.</p>
+      <p class="note">Só o <b>Nº da OS</b> é obrigatório. As OS se juntam às que já existem pelo número: o que esta planilha trouxer completa ou atualiza o que já está guardado (ex.: a criticidade).</p>
+      <div class="scroll"><table class="colmap"><thead><tr><th>Coluna no arquivo</th><th>Exemplos</th><th>É o quê?</th></tr></thead><tbody>
+      ${hdr.map((h,i) => t_(h) ? `<tr><td><b>${esc(h)}</b></td><td class="muted">${ex.map(r=>esc(t_(r[i])||'')).filter(Boolean).slice(0,3).join(' · ')}</td><td><select data-i="${i}">${opts(Core.chuteCampo(h))}</select></td></tr>` : '').join('')}
+      </tbody></table></div><p class="note" id="cmMsg"></p><p><button class="prim" id="cmOk">Importar e lembrar este formato</button> <button id="cmNo">Cancelar</button></p></div>`;
+    document.body.appendChild(w);
+    const fim = v => { w.remove(); ok(v); };
+    w.querySelector('.wx').onclick = () => fim(null); w.querySelector('#cmNo').onclick = () => fim(null);
+    w.querySelector('#cmOk').onclick = () => {
+      const mapa = {}; w.querySelectorAll('select[data-i]').forEach(s => { if (s.value) mapa[s.dataset.i] = s.value; });
+      if (!Object.values(mapa).includes('os')) { w.querySelector('#cmMsg').textContent = 'Marque qual coluna é o Nº da OS.'; return; }
+      fim(mapa);
+    };
+  });
+}
+const t_ = x => String(x == null ? '' : x).replace(/\s+/g, ' ').trim();
+async function lerPlanilha(f, txt, k, n){
+  const rows = Core.parseCSV(txt), hi = Core.acharCabecalho(rows);
+  if (hi < 0) return {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'não achei uma linha de títulos das colunas'};
+  const hdr = rows[hi], sig = Core.assinatura(hdr), L = LAYOUTS();
+  let mapa = L[sig] && L[sig].mapa, aprendido = !!mapa;
+  if (!mapa) { progEnd(); mapa = await perguntarColunas(f.name, hdr, rows.slice(hi+1, hi+6)); if (!mapa) return {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'importação cancelada'};
+    L[sig] = {mapa, nome:f.name, colunas:hdr.filter(t_).length, em:new Date().toISOString()}; store.set('gos_layouts', L);
+    await prog(`Lendo arquivo ${k} de ${n}`, f.name, k/(n+1)); }
+  const recs = Core.lerGenerico(rows, hi, mapa), agora = Date.now(); recs.forEach(r => r.t = agora);
+  const novas = recs.filter(r => !histRaw.has(r.os)).length;
+  await histPut(recs); histNovo = true;
+  const campos = [...new Set(Object.values(mapa))].map(c => (Core.CAMPOS.find(x=>x[0]===c)||[0,c])[1]).join(', ');
+  return {name:f.name, size:f.size, n:recs.length, t:agora, tipo:'Planilha', filas:`${nf(novas)} novas · ${nf(recs.length-novas)} atualizadas · ${aprendido?'formato já conhecido':'formato novo, aprendido'} · campos: ${campos}`, st: recs.length ? 'ok' : 'vazio', msg: recs.length ? '' : 'nenhuma linha com Nº de OS'};
+}
+function drawLayouts(){
+  const box = $('#cfgLayouts'); if (!box) return; const L = LAYOUTS(), ks = Object.keys(L);
+  box.innerHTML = ks.length ? `<table><thead><tr><th>Primeiro arquivo</th><th>Colunas usadas</th><th></th></tr></thead><tbody>${ks.map(k => `<tr><td>${esc(L[k].nome)}<br><span class="muted">${new Date(L[k].em).toLocaleDateString('pt-BR')}</span></td><td>${Object.entries(L[k].mapa).map(([i,c])=>esc((Core.CAMPOS.find(x=>x[0]===c)||[0,c])[1])).join(', ')}</td><td><button data-lay="${esc(k)}">Esquecer</button></td></tr>`).join('')}</tbody></table>` : '<p class="muted">Nenhum formato aprendido ainda. Quando você carregar uma planilha que o app não conhece, ele pergunta o que é cada coluna e guarda aqui.</p>';
+  box.querySelectorAll('[data-lay]').forEach(b => b.onclick = () => { const L2 = LAYOUTS(); delete L2[b.dataset.lay]; store.set('gos_layouts', L2); drawLayouts(); toast('Formato esquecido: na próxima vez o app pergunta de novo.'); });
 }
 
 // ===================== PENDENTES POR TRATATIVA =====================
@@ -1360,11 +1480,13 @@ async function readFiles(list){
         const H = Core.parseDet(Core.parseCSV(txt)), agora = Date.now(); H.forEach(h => h.t = agora);
         const novas = H.filter(h => !histMap.has(h.os)).length;
         await prog('Guardando no histórico...', `${nf(H.length)} OS`, k/(list.length+1));
-        await IDB.put(H);
+        await histPut(H);
         flog[f.name] = {name:f.name, size:f.size, n:H.length, t:agora, tipo:'Histórico (detalhado)', filas:`${nf(novas)} novas · ${nf(H.length-novas)} atualizadas`, st:'ok', msg:''};
         histNovo = true; continue;
       }
-      const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os);
+      const os = Core.parseMV(Core.parseCSV(txt), f.name);
+      if (!os.length && !/Ordem de Servi/i.test(txt.slice(0,3000))) { flog[f.name] = await lerPlanilha(f, txt, k, list.length); continue; }
+      raw = raw.filter(o=>o.file!==f.name).concat(os);
       if(!os.length) empties.add(f.name); else empties.delete(f.name);
       const looksMV = /Ordem de Servi/i.test(txt.slice(0,3000));
       flog[f.name] = {name:f.name, size:f.size, n:os.length, t:Date.now(), filas:Core.count(os,'fila').map(([k,v])=>`${k} ${v}`).join(', '), st: os.length ? 'ok' : (looksMV ? 'vazio' : 'erro'), msg: os.length ? '' : (looksMV ? 'fila vazia no MV' : 'não parece um relatório R_ORDEM_SERVICO')} }
