@@ -41,8 +41,9 @@ def carregar(page, *arquivos):
 
 
 def backup(page):
+    abrir_config(page)
     with page.expect_download() as d:
-        page.get_by_text(re.compile(r"backup", re.I)).first.click()
+        page.get_by_role("button", name="Baixar backup").click()
     caminho = d.value.path()
     return d.value.suggested_filename, open(caminho, encoding="utf-8").read()
 
@@ -56,6 +57,26 @@ def abrir_config(page):
     page.wait_for_timeout(300)
 
 
+def abrir_painel(page):
+    page.get_by_text("Painel", exact=True).first.click()
+    page.wait_for_timeout(300)
+
+
+def gerar_excel(page):
+    abrir_painel(page)
+    with page.expect_download() as d:
+        page.get_by_role("button", name="Gerar Excel").click()
+    return d.value
+
+
+def abrir_xlsx(download, tmp_path):
+    """O arquivo temporario do Playwright nao tem extensao; salva com o nome sugerido."""
+    from openpyxl import load_workbook
+    destino = tmp_path / download.suggested_filename
+    download.save_as(str(destino))
+    return load_workbook(destino)
+
+
 # ---------- seção 0 ----------
 def test_CA01_offline_le_csv_e_gera_excel(ctx, page):
     page.evaluate("navigator.serviceWorker && navigator.serviceWorker.ready")
@@ -64,9 +85,7 @@ def test_CA01_offline_le_csv_e_gera_excel(ctx, page):
     page.reload(); page.wait_for_timeout(1000)
     assert page.title()
     carregar(page, "vendas.csv")
-    with page.expect_download() as d:
-        page.get_by_role("button", name=re.compile(r"excel|xlsx", re.I)).first.click()
-    assert d.value.suggested_filename.endswith(".xlsx")
+    assert gerar_excel(page).suggested_filename.endswith(".xlsx")
 
 
 def test_CA02_sem_requisicao_externa(ctx, page):
@@ -108,15 +127,15 @@ def logo_png(tmp_path):
 
 def preencher_empresa(page, tmp_path):
     abrir_config(page)
-    page.get_by_label(re.compile(r"cliente", re.I)).first.fill("Empresa Teste")
-    page.get_by_label(re.compile(r"[áa]rea", re.I)).first.fill("Operações")
-    page.locator("input[type=file][accept*=image]").first.set_input_files(str(logo_png(tmp_path)))
-    page.get_by_role("button", name=re.compile(r"salvar", re.I)).first.click()
-    page.wait_for_timeout(600)
+    page.get_by_label("Cliente", exact=True).fill("Empresa Teste")
+    page.get_by_label("Área", exact=True).fill("Operações")
+    with page.expect_file_chooser() as fc:
+        page.get_by_role("button", name="Escolher logo").click()
+    fc.value.set_files(str(logo_png(tmp_path)))
+    page.wait_for_timeout(600)  # D-01: sem botão Salvar; a Config salva sozinha
 
 
 def test_CA11_empresa_no_cabecalho_persistente_e_capa_excel(page, tmp_path):
-    from openpyxl import load_workbook
     preencher_empresa(page, tmp_path)
     cab = page.locator("header").first
     assert "Empresa Teste" in cab.inner_text() and "Operações" in cab.inner_text()
@@ -124,19 +143,23 @@ def test_CA11_empresa_no_cabecalho_persistente_e_capa_excel(page, tmp_path):
     page.reload(); page.wait_for_timeout(800)
     assert "Empresa Teste" in page.locator("header").first.inner_text()
     carregar(page, "vendas.csv")
-    with page.expect_download() as d:
-        page.get_by_role("button", name=re.compile(r"excel|xlsx", re.I)).first.click()
-    wb = load_workbook(d.value.path())
+    dl = gerar_excel(page)
+    wb = abrir_xlsx(dl, tmp_path)
+    nomes_zip = zipfile.ZipFile(tmp_path / dl.suggested_filename).namelist()
+    assert any(n.startswith("xl/media/") for n in nomes_zip), "logo ausente no arquivo"
     capa = wb.worksheets[0]
     textos = " ".join(str(c.value) for row in capa.iter_rows() for c in row if c.value)
     assert "Operações · Empresa Teste" in textos
-    assert len(capa._images) >= 1
+    # logo na capa (1a planilha): confere no zip (openpyxl nao carrega PNG minimo de 1 pixel)
+    z = zipfile.ZipFile(tmp_path / dl.suggested_filename)
+    assert "drawing" in z.read("xl/worksheets/_rels/sheet1.xml.rels").decode()
+    assert "<xdr:pic>" in z.read("xl/drawings/drawing1.xml").decode()
 
 
 def test_CA12_apagar_logo(page, tmp_path):
     preencher_empresa(page, tmp_path)
     abrir_config(page)
-    page.get_by_role("button", name=re.compile(r"(apagar|remover|excluir) logo", re.I)).first.click()
+    page.get_by_role("button", name="Apagar logo").click()
     page.wait_for_timeout(400)
     assert page.locator("header").first.locator("img").count() == 0
 
@@ -175,12 +198,15 @@ def test_CA15_versao_nova():
 def test_CA16_baixar_excel_para_o_pc(page):
     abrir_config(page)
     with page.expect_download() as d:
-        page.get_by_text("Baixar versão Excel para o PC").first.click()
+        page.get_by_role("link", name="Baixar versão Excel para o PC").first.click()
     assert d.value.suggested_filename == "RaioX_Relatorio.bas"
     bas = open(d.value.path(), encoding="utf-8", errors="ignore").read().lower()
     assert "hev" not in bas and "edmundo" not in bas
-    corpo = page.inner_text("body")
-    assert all(re.search(rf"(^|\n)\s*{n}[.)]?\s", corpo) for n in "1234"), "4 passos de instalação"
+    # D-06: a lista (abre sozinha ao clicar em R-25) tem 4 itens
+    titulo = page.get_by_text("Como instalar a versão Excel (4 passos)").first
+    itens = titulo.locator("xpath=following::ol[1]/li")
+    assert itens.count() == 4, "4 passos de instalação"
+    assert itens.first.is_visible()
 
 
 def test_CA16_baixar_offline(ctx, page):
@@ -189,7 +215,7 @@ def test_CA16_baixar_offline(ctx, page):
     page.reload(); page.wait_for_timeout(800)
     abrir_config(page)
     with page.expect_download() as d:
-        page.get_by_text("Baixar versão Excel para o PC").first.click()
+        page.get_by_role("link", name="Baixar versão Excel para o PC").first.click()
     assert d.value.suggested_filename == "RaioX_Relatorio.bas"
 
 
@@ -219,16 +245,22 @@ def test_CA81_juncao_campo_a_campo(page):
         elif isinstance(o, list):
             for v in o:
                 yield from registros(v)
-    regs = {next(v for v in r.values() if isinstance(v, str) and re.fullmatch(r"V\d{5}", v)): r for r in registros(dados)}
-    com_prio = [r for r in p2 if r["Prioridade"] and r["Código"] in regs]
+    por_cod = {}
+    for r in registros(dados):
+        cod = next(v for v in r.values() if isinstance(v, str) and re.fullmatch(r"V\d{5}", v))
+        por_cod.setdefault(cod, []).append(" ".join(json.dumps(v, ensure_ascii=False) for v in r.values()))
+    com_prio = [r for r in p2 if r["Prioridade"]]
     assert com_prio
+    orig_de = {v["Código"]: v for v in VENDAS}
+    # registro UNICO por codigo, com os campos dos dois arquivos (junção)
     for r in com_prio[:20]:
-        vals = " ".join(str(v) for v in regs[r["Código"]].values())
-        assert r["Prioridade"] in vals
+        assert len(por_cod[r["Código"]]) == 1, f"{r['Código']}: registro duplicado, sem junção"
+        t = por_cod[r["Código"]][0]
+        assert r["Prioridade"] in t and orig_de[r["Código"]]["Cliente"] in t
     vazio = next(r for r in p2 if not r["Prioridade"])
-    orig = next(v for v in VENDAS if v["Código"] == vazio["Código"])
-    vals = " ".join(str(v) for v in regs[vazio["Código"]].values())
-    assert orig["Cliente"] in vals and orig["Vendedor"] in vals  # nada apagado
+    orig = orig_de[vazio["Código"]]
+    t = " ".join(por_cod[vazio["Código"]])
+    assert orig["Cliente"] in t and orig["Vendedor"] in t  # nada apagado
 
 
 @pytest.mark.skip(reason="CA-82: desempenho com 72 mil registros, a medir na máquina de CI")
@@ -271,28 +303,26 @@ def test_CA91_importador_aprende(page):
     enviar(page, "chamados.csv")
     assert not page.get_by_text("Esta coluna é o quê?").first.is_visible(), "formato deveria estar lembrado"
     abrir_config(page)
-    assert page.get_by_text("Esquecer").first.is_visible()
+    assert page.get_by_role("button", name="Esquecer").first.is_visible()
 
 
 def test_CA92_backup_restaurar_apagar(page):
     carregar(page, "vendas.csv")
     nome, b = backup(page)
-    assert re.fullmatch(r"historico_RaioX_.+\.json", nome)
-    page.get_by_role("button", name=re.compile(r"apagar hist", re.I)).first.click()
-    try:
-        page.get_by_role("button", name=re.compile(r"sim|confirmar|apagar", re.I)).last.click(timeout=1000)
-    except Exception:
-        pass
+    assert re.fullmatch(r"historico_RaioX_\d{4}-\d{2}-\d{2}\.json", nome)
+    # D-02: "Apagar todos os dados" + confirmar com "Apagar"
+    page.get_by_role("button", name="Apagar todos os dados").click()
+    page.get_by_role("button", name="Apagar", exact=True).click()
     page.wait_for_timeout(500)
     _, vazio = backup(page)
     assert len(set(codigos_no_backup(vazio))) == 0
-    page.locator("input[type=file]").nth(1).set_input_files(
-        files=[{"name": nome, "mimeType": "application/json", "buffer": b.encode()}])
-    page.wait_for_timeout(800)
-    try:
-        page.get_by_role("button", name=re.compile(r"substituir", re.I)).first.click(timeout=1500)
-    except Exception:
-        pass
+    # D-03: restaurar pelo controle "Restaurar backup" da Config
+    abrir_config(page)
+    with page.expect_file_chooser() as fc:
+        page.get_by_role("button", name="Restaurar backup").click()
+    fc.value.set_files([{"name": nome, "mimeType": "application/json", "buffer": b.encode()}])
+    page.wait_for_timeout(500)
+    page.get_by_role("button", name="Substituir", exact=True).click()
     page.wait_for_timeout(800)
     _, volta = backup(page)
     assert len(set(codigos_no_backup(volta))) == len(VENDAS)
@@ -300,13 +330,14 @@ def test_CA92_backup_restaurar_apagar(page):
 
 def test_CA93_janela_flutuante_ao_clicar_numero(page):
     carregar(page, "vendas.csv")
-    page.get_by_text(str(len(VENDAS)), exact=True).first.click()
+    abrir_painel(page)
+    page.get_by_text("Total de registros").first.click()
     page.wait_for_timeout(500)
-    janela = page.locator("[class*=jan], [class*=win], [role=dialog]").first
-    assert janela.is_visible()
-    assert page.get_by_text("Limpar seleção").first.count() >= 0
-    assert page.get_by_text(re.compile(r"imprimir", re.I)).first.is_visible()
-    assert page.get_by_text(re.compile(r"copiar", re.I)).first.is_visible()
+    for nome in ["Limpar seleção", "Imprimir", "Copiar", "Minimizar", "Fechar"]:
+        assert page.get_by_role("button", name=nome).first.is_visible(), nome
+    page.get_by_role("button", name="Fechar").first.click()
+    page.wait_for_timeout(300)
+    assert not page.get_by_role("button", name="Limpar seleção").first.is_visible()
 
 
 def test_CA96_faixas_mediana_e_formato_h_min(page):
@@ -315,24 +346,24 @@ def test_CA96_faixas_mediana_e_formato_h_min(page):
     mins = [(datetime.datetime.strptime(r["Conclusão"], f) - datetime.datetime.strptime(r["Abertura"], f)).total_seconds() / 60
             for r in ch if r["Conclusão"]]
     med = statistics.median(mins)
-    h, m = divmod(int(round(med)), 60)
+    h, m = divmod(int(med + 0.5), 60)  # D-08: meio minuto para cima
     esperado = f"{h} h {m:02d} min" if h else f"{m} min"
     carregar(page, "chamados.csv")
     corpo = page.inner_text("body")
     assert re.search(r"mediana", corpo, re.I)
-    assert re.sub(r"\s+", "", esperado).lower() in re.sub(r"\s+", "", corpo).lower() or f"{h}h" in corpo.replace(" ", ""), \
-        f"mediana esperada ~{esperado}"
-    assert re.search(r"at[ée] 1 ?h", corpo, re.I) and re.search(r"mais de 7 dias", corpo, re.I)
+    plano = re.sub(r"\s+", " ", corpo)
+    assert re.search(r"Mediana:\s*" + re.escape(esperado) + r"(?!\d)", plano), f"mediana esperada {esperado}"
+    for faixa in ["Até 1 h", "De 1 a 4 h", "De 4 a 24 h", "De 1 a 3 dias", "De 3 a 7 dias", "Mais de 7 dias"]:
+        assert faixa in plano, faixa
 
 
-def test_CA98_excel_capa_periodo_filtros_rodape_impressao(page):
-    from openpyxl import load_workbook
+def test_CA98_excel_capa_periodo_filtros_rodape_impressao(page, tmp_path):
     carregar(page, "vendas.csv")
-    with page.expect_download() as d:
-        page.get_by_role("button", name=re.compile(r"excel|xlsx", re.I)).first.click()
-    nome = d.value.suggested_filename
-    assert re.fullmatch(r"RaioX_.+_\d{4}-?\d{2}-?\d{2}\.xlsx|RaioX_.+_\d{2}-\d{2}-\d{4}\.xlsx", nome), nome
-    wb = load_workbook(d.value.path())
+    d = gerar_excel(page)
+    nome = d.suggested_filename
+    assert re.fullmatch(r"^RaioX_[A-Z0-9_]+_\d{4}-\d{2}-\d{2}\.xlsx$", nome), nome
+    assert nome.endswith(datetime.date.today().isoformat() + ".xlsx"), nome
+    wb = abrir_xlsx(d, tmp_path)
     ws = wb.worksheets[0]
     assert ws.page_setup.orientation or ws.page_setup.paperSize
     assert ws.oddFooter.center.text or ws.oddFooter.left.text or ws.oddFooter.right.text
@@ -343,21 +374,18 @@ def test_CA98_excel_capa_periodo_filtros_rodape_impressao(page):
 
 def test_CA99_filtros_fechados_e_valem_para_tudo(page):
     carregar(page, "vendas.csv")
-    assert not page.locator("#f-q").is_visible() or True  # fechado por padrão
-    painel = page.locator("details:has-text('Filtros')").first
-    if painel.count():
-        assert painel.get_attribute("open") is None
-    # período mensal reduz o total mostrado
-    de, ate = page.locator("#f-de"), page.locator("#f-ate")
-    if de.count():
-        try:
-            if not de.is_visible():
-                painel.locator("summary").click()
-            de.fill("2026-01-01"); ate.fill("2026-01-31"); page.wait_for_timeout(500)
-        except Exception:
-            pytest.fail("não consegui abrir/usar o filtro de período")
-        esperado = sum(1 for r in VENDAS if r["Data"].endswith("/01/2026"))
-        assert str(esperado) in page.inner_text("body")
+    abrir_painel(page)
+    assert not page.get_by_label("Período").is_visible(), "Filtros deve começar fechado"
+    page.get_by_text("Filtros", exact=True).locator("visible=true").first.click()
+    page.get_by_role("combobox", name="Período").select_option(label="De–até")
+    page.get_by_label("De", exact=True).fill("2026-01-01")
+    page.get_by_label("Até", exact=True).fill("2026-01-31")
+    page.wait_for_timeout(500)
+    esperado = sum(1 for r in VENDAS if r["Data"].endswith("/01/2026"))
+    assert 0 < esperado < len(VENDAS)
+    cartao = page.get_by_text("Total de registros").first.locator("xpath=..").inner_text()
+    primeiro = re.match(r"\s*(\d+)", cartao)
+    assert primeiro and int(primeiro.group(1)) == esperado, f"total filtrado deveria ser {esperado}: {cartao!r}"
 
 
 # ---------- seção 10 ----------
@@ -367,8 +395,10 @@ def test_CA100_html_em_campo_vira_texto(page, tmp_path):
     p = tmp_path / "x.csv"
     p.write_text("Código;Cliente;Valor\nV00001;<img src=x onerror=alert(1)>;10,00\nV00002;Normal;20,00\n", encoding="utf-8")
     carregar(page, p)
-    page.get_by_text("Histórico", exact=True).first.click(); page.wait_for_timeout(500)
+    abrir_painel(page)  # D-04: sem aba Histórico; lista "Registros" no Painel
+    assert page.get_by_text("Registros", exact=True).first.is_visible()
     page.wait_for_timeout(500)
+    assert "<img src=x onerror=alert(1)>" in page.inner_text("body")
     assert dialogos == []
     assert page.locator("img[src=x]").count() == 0
 
