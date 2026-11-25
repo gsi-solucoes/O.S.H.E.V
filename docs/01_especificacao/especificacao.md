@@ -3,6 +3,7 @@
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v1.2 (25/11/2026, tarefa F-46, coordenador): seção 0.3 "Nomes na tela — etapa 2" (rótulos, formatos de exemplo, regra de "em aberto", texto do "Seu painel"); CA-28 só vale quando existirem pedido escrito (etapa 3) e Editar layout (etapa 6): na etapa 2 fica marcado como adiado. Nenhuma regra de negócio mudou.
 - v1.0 (25/11/2026 14h18): primeira versão; portão 2 em 14h43.
 - v1.1 (25/11/2026 15h10, tarefa F-43): seção 0.1 "Nomes na tela (rótulos exatos)"; CAs das seções 1, 8 e 9 apontam para os rótulos; dúvidas do Testador decididas no próprio critério (CA-96 formato da mediana, CA-98 data no nome do arquivo, D-01 a D-08 na seção 0.2). Nenhuma regra de negócio mudou.
 Caminho direto (Método 5.5, 1.8.4): **sem encaixes e sem dublês**. Critérios rodam contra dados reais anonimizados em `tests/dados/`, sem rede.
@@ -88,6 +89,46 @@ Divergências entre `tests/test_etapa1.py` e o app, decididas aqui. "Muda" diz q
 - **D-06 (CA-16, R-26):** os 4 passos são uma lista numerada (`<ol>`) com 4 itens; o teste conta os 4 itens sob `Como instalar a versão Excel (4 passos)` em vez de procurar "1." no texto. **Muda: Testador.**
 - **D-07 (CA-93, R-37):** o teste precisa conferir que `Limpar seleção` está **visível** (hoje a conferência sempre passa). **Muda: Testador.**
 - **D-08 (CA-96):** formato e arredondamento da mediana, ver o próprio CA-96. **Muda: Construtor** (formato) e **Testador** (arredondamento).
+
+### 0.3 Nomes na tela — etapa 2 (v1.2)
+
+Valem as mesmas regras da 0.1 (rótulos exatos; testes localizam por rótulo/texto, nunca por id ou classe). Números em pt-BR: milhar com ponto, decimal com vírgula; valores monetários/numéricos com 2 casas.
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-50 | `O que acompanhar` | botão | Painel, no topo, ao lado de `Filtros`; reabre a tela R-51 |
+| R-51 | `O que você quer acompanhar?` | título da janela (dialog) | abre **sozinha** depois que um conjunto novo é lido (após a tela R-21, se houver) e quando o conjunto ainda não tem escolha salva. `Cancelar` mantém o painel padrão da etapa 1 (todos os blocos automáticos) e não salva nada |
+| R-52 | uma caixa de marcar (checkbox) por indicador, com o nome exato da linha R-53 a R-61 | checkbox | cada linha da janela = a caixa + o texto de exemplo na mesma linha (elemento `li`/`label` que contém os dois) |
+| R-53 | `Total de registros` | indicador | exemplo: `1.284 registros` |
+| R-54 | `Por <campo>` (campo categoria; ex. `Por Cliente`, `Por Região`) | indicador | exemplo: `<Campo>: <valor líder> lidera com <n>` (top 10 + `Outros` no gráfico) |
+| R-55 | `<Campo> (soma, média e mediana)` (campo número; ex. `Valor (soma, média e mediana)`) | indicador | exemplo: `Soma: 48.210,35 · Média: 123,45 · Mediana: 100,00` |
+| R-56 | `<Número> por <categoria>` (ex. `Valor por Região`) | indicador | exemplo: `Maior soma: <valor da categoria líder> (<soma>)` |
+| R-57 | `Evolução por mês (<campo data>)` (ex. `Evolução por mês (Data)`) | indicador | exemplo: `Mês com mais registros: 10/2026 (212)` |
+| R-58 | `Tempo entre duas datas` | indicador (só com 2 campos de data ou data e hora) | exemplo: `Mediana: 1 d 4 h` (mesmo formato do bloco da etapa 1, R-40) |
+| R-59 | `% por <campo situação>` (ex. `% por Situação`) | indicador (só com campo do tipo situação) | exemplo: `<valor mais frequente>: 87,4%` |
+| R-60 | `Sem valor em <campo>` | indicador (só para campo com ≥ 1 registro vazio) | exemplo: `38 sem valor em Responsável` |
+| R-61 | `Mais antigos em aberto` | indicador (data + situação) | exemplo: `Mais antigo: 12/03/2026` |
+| R-62 | `Confirmar` / `Cancelar` | botões | da janela R-51 |
+| R-63 | `Entender este painel` | botão | Painel, no topo (só com escolha confirmada) |
+| R-64 | `Seu painel` | título da janela (dialog) | aparece sozinha ao `Confirmar` e ao clicar R-63; botão `Fechar` |
+| R-65 | `Situação` | opção da lista de tipo na tela R-21 (junto de Texto, Categoria, Número, Data, Data e hora, Código) | CA-24 |
+| R-66 | `Como ler este relatório` | nome da 2ª planilha do Excel | CA-29 |
+
+**Regras de conta (valem para exemplos e blocos)**
+- Categoria sugerida (CA-24): ≤ 30 valores distintos e ≥ 50% de repetição (já existe). Situação **não** é palpite do app: vem como sugestão quando o campo é categoria e o nome contém `situa`, `status` ou `estado` (sem acento, minúsculas); a pessoa troca na tela R-21.
+- Indicador só aparece se os campos existem e têm valor em ≥ 1 registro. Todos os exemplos são calculados dos registros do conjunto (sem filtros).
+- **Em aberto (R-61):** registro cuja situação, sem acento e em minúsculas, **não** começa com nenhum de: `conclu`, `finaliz`, `encerr`, `fechad`, `entreg`, `cancel`, `resolvid`, `pag`. O campo de data usado é o primeiro campo de data (ou o escolhido em `Campo de data`).
+- **Tempo entre duas datas:** mesma conta da etapa 1 (primeiro campo de data → segundo; só pares com fim ≥ início).
+- Blocos no painel (CA-22): cada bloco é um cartão com título (heading) igual ao nome R-53 a R-61. Ordem: primeiro os de número (Total, soma/média/mediana, sem valor, % situação, mais antigos em aberto, tempo entre datas), depois os gráficos (por categoria, por categoria com soma, evolução por mês), por fim a lista `Registros`. Dentro de cada grupo vale a ordem em que foram marcados na janela. Escolha salva por conjunto no navegador.
+- Os indicadores continuam clicáveis (abrem a janela de registros), como na etapa 1. Sem escolha salva, o painel é o da etapa 1.
+
+**Texto do "Seu painel" (R-64) e da planilha R-66**
+- Uma linha por bloco, no formato: `<nome do bloco> — <o que mostra>. Conta: <conta em palavras>. Campos: <campos usados>. Período: <de dd/mm/aaaa a dd/mm/aaaa>. Filtros: <sem filtros | só região Sul; outubro/2026>.`
+- Conta em palavras, exemplos exatos: `contagem de todos os registros`; `contagem de registros por Cliente`; `soma do campo Valor, separada por Região`; `soma, média e mediana do campo Valor`; `registros por mês do campo Data`; `mediana do tempo entre Abertura e Conclusão`; `percentual de registros por Situação`; `registros com o campo Responsável vazio`; `registros em aberto mais antigos pela data Abertura`.
+- Período = menor e maior data do campo de data dos registros considerados. Filtro com campo categoria: `só <campo em minúsculas> <valor>` (ex. `só região Sul`); mês: `<mês por extenso em minúsculas>/<aaaa>` (ex. `outubro/2026`); De–até: `de dd/mm/aaaa a dd/mm/aaaa`; busca: `busca “texto”`; unidos por `; `.
+- Excel: 2ª planilha `Como ler este relatório`, logo depois da capa; célula A1 `Seu painel`; da A2 em diante uma linha por bloco, com o mesmo texto da tela. Sem escolha confirmada a planilha não é criada.
+- **CA-28** (pedido escrito e Editar layout) fica **adiado** para as etapas 3 e 6: na etapa 2 o teste existe marcado `skip` e o resumo já é gerado a partir da lista de blocos, para entrar de graça depois.
+- **D-09:** a janela R-51 abre sozinha; os testes da etapa 1 que carregam arquivo passam a fechá-la com `Cancelar` (painel padrão, comportamento da etapa 1 inalterado). **Muda: Testador** (ajuste do auxiliar `carregar`).
 
 ---
 
