@@ -1,4 +1,4 @@
-import subprocess, time, pathlib, urllib.request, pytest, shutil, sys
+import subprocess, time, pathlib, urllib.request, urllib.error, pytest, shutil, sys
 from playwright.sync_api import sync_playwright
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
@@ -9,13 +9,14 @@ DADOS = RAIZ / "tests" / "dados"
 @pytest.fixture(scope="session", autouse=True)
 def servidor():
     subprocess.run([sys.executable, str(RAIZ / "tests" / "gerar_dados.py")], check=True)
+    # Nunca reaproveitar um servidor já aberto: ele pode servir outra pasta (outra versão do app)
+    # e os testes passariam contra o código errado (25/11/2026).
     try:
         urllib.request.urlopen(URL, timeout=1)
-        yield
-        return
-    except Exception:
+        pytest.exit(f"Porta 8767 já ocupada por outro servidor; feche-o antes de testar ({URL})", returncode=2)
+    except urllib.error.URLError:
         pass
-    p = subprocess.Popen([sys.executable, "-m", "http.server", "8767", "--directory", str(RAIZ)],
+    p =subprocess.Popen([sys.executable, "-m", "http.server", "8767", "--directory", str(RAIZ)],
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     for _ in range(30):
         try:

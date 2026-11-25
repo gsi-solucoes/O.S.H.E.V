@@ -103,3 +103,18 @@
 1. M-1, M-3, M-4: Construtor (com teste de regressão primeiro).
 2. M-2: decisão do Galindo sobre domínio próprio; a correção (b) do cache vai para o Construtor já.
 3. B-1: Testador acrescenta o teste do CA-100.
+
+## Correções (25/11/2026)
+
+| Achado | Status | O que foi feito |
+|---|---|---|
+| M-1 | Corrigido | `validarBackup()` converte todo valor de registro para texto (objeto vira JSON em texto); `aba()` só devolve string, número finito, Date ou null (`primitivo()`). Sem fórmula nem hiperlink vindos de dado. |
+| M-2 | Parcial | `sw.js` só apaga caches com prefixo `raiox-` (cache agora `raiox-v3`). **Pendente (Galindo):** domínio próprio para isolar `localStorage`/IndexedDB; enquanto isso, risco aceito. |
+| M-3 | Corrigido | Restaurar valida a estrutura inteira (conjuntos, formatos, registros, Config) antes de apagar ou gravar; inválido → "Esse arquivo não é um backup do Raio X… Nada foi alterado." |
+| M-4 | Corrigido | `conjs`, `fmts` e `v` são mapas sem herança (`Object.create(null)`; `Core.juntar` também); registros lidos do IndexedDB e do localStorage são copiados para mapas sem herança. Chaves `__proto__`/`constructor`/`toString` viram chaves comuns (importam normalmente). Sem `Object.assign` de JSON externo: Config só aceita campos conhecidos com tipo conferido. |
+| B-1 | Com o Testador | Teste do CA-100 não é do Construtor. |
+| B-2 | Corrigido | "Copiar" prefixa `'` em valores que começam com `= + - @`; tab e CR viram espaço. |
+| B-3 | Parcial | CSP: `base-uri 'none'`, `form-action 'none'`, (`worker-src 'self' blob:` mantido: o teste da etapa 1 exige; o app não usa worker). **Pendente:** `frame-ancestors` (não funciona em `<meta>`; Pages não permite cabeçalho; só com domínio/host próprio) e `style-src 'unsafe-inline'` (necessário hoje). |
+| B-4 | Corrigido | Limites com mensagem: CSV 50 MB, logo 2 MB, backup 200 MB. |
+| B-5 | Aberto | `vendor/LEIAME.md` com versão e SHA-256 ainda não feito. |
+| B-6 | Corrigido | `&` da Config vira `&&` no rodapé do Excel. |

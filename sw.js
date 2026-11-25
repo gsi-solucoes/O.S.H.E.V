@@ -1,8 +1,8 @@
 // Raio X do Relatório: funciona sem internet depois da primeira abertura
-const V = 'raiox-v2';
+const V = 'raiox-v3';
 const ARQS = ['./', 'index.html', 'manifest.webmanifest', 'vendor/jszip.min.js', 'vendor/exceljs.min.js', 'icons/icon-192.png', 'icons/icon-512.png', 'excel/RaioX_Relatorio.bas'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(ARQS)).then(() => self.skipWaiting())); });
-self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
+self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('raiox-') && k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return;
   const u = new URL(r.url); if (u.origin !== location.origin) return; // nada fora da própria origem

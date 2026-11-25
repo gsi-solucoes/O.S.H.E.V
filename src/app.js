@@ -11,9 +11,38 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('Sem espaço para guardar neste aparelho.'); } } };
 const TIPOS = [['ignorar', 'Ignorar'], ['codigo', 'Código'], ['data', 'Data'], ['categoria', 'Categoria'], ['texto', 'Texto'], ['numero', 'Número']];
 
-let cfg = Object.assign({ cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' }, store.get('gos_cfg', {}));
-let fmts = store.get('raiox_fmt', {});     // formato lembrado: assinatura das colunas -> {conjunto, cols:[{n,t}]}
-let conjs = store.get('raiox_conj', {});   // conjunto -> {campos:[{n,t}]}
+const nulo = () => Object.create(null);   // mapa sem herança: 'constructor', '__proto__' etc. são chaves comuns
+const copiaNula = o => { const r = nulo(); if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(k => { r[k] = o[k]; }); return r; };
+const LIM = { csv: 50 * 1048576, logo: 2 * 1048576, backup: 200 * 1048576 };
+const mb = n => Math.round(n / 1048576) + ' MB';
+const TIPOS_OK = new Set(TIPOS.map(x => x[0]));
+// todo valor de registro vira texto simples; objeto vira JSON em texto (nunca fórmula/hiperlink)
+const paraTexto = x => { if (x == null) return ''; if (typeof x === 'string') return x; if (typeof x === 'number' || typeof x === 'boolean') return String(x); try { return JSON.stringify(x) || ''; } catch (e) { return ''; } };
+// segunda barreira para o Excel: só string, número finito, Date ou null
+const primitivo = x => x == null ? null : x instanceof Date ? (isNaN(x) ? null : x) : typeof x === 'number' ? (isFinite(x) ? x : null) : typeof x === 'string' ? x : paraTexto(x);
+const cfgLimpa = (o, base) => { const c = Object.assign({}, base); if (!o || typeof o !== 'object') return c; ['cliente', 'area', 'sinonimos'].forEach(k => { if (typeof o[k] === 'string') c[k] = o[k].slice(0, 5000); }); ['meta', 'prazoH'].forEach(k => { if (typeof o[k] === 'number' && isFinite(o[k])) c[k] = o[k]; }); if (typeof o.logo === 'string' && (o.logo === '' || /^data:image\/png;base64,[A-Za-z0-9+\/=]*$/.test(o.logo))) c.logo = o.logo; return c; };
+const camposOk = l => Array.isArray(l) && l.every(x => x && typeof x === 'object' && typeof x.n === 'string' && x.n.trim() && TIPOS_OK.has(x.t));
+// valida o backup inteiro e devolve cópias limpas; null se inválido (nada é alterado antes disso)
+function validarBackup(b) {
+  try {
+    if (!b || typeof b !== 'object' || b.app !== 'raiox' || !Array.isArray(b.registros)) return null;
+    const cj = nulo(), fm = nulo(), rg = [];
+    if (b.conjs != null) { if (typeof b.conjs !== 'object' || Array.isArray(b.conjs)) return null; for (const k of Object.keys(b.conjs)) { const x = b.conjs[k]; if (!k.trim() || !x || !camposOk(x.campos)) return null; cj[k] = { campos: x.campos.map(y => ({ n: y.n, t: y.t })) }; } }
+    if (b.fmts != null) { if (typeof b.fmts !== 'object' || Array.isArray(b.fmts)) return null; for (const k of Object.keys(b.fmts)) { const x = b.fmts[k]; if (!x || typeof x.conjunto !== 'string' || !x.conjunto.trim() || !camposOk(x.cols)) return null; fm[k] = { conjunto: x.conjunto, cols: x.cols.map(y => ({ n: y.n, t: y.t })) }; } }
+    for (const x of b.registros) {
+      if (!x || typeof x !== 'object' || typeof x.conjunto !== 'string' || !x.conjunto.trim() || !cj[x.conjunto]) return null;
+      if (!(typeof x.codigo === 'string' || typeof x.codigo === 'number') || String(x.codigo).trim() === '') return null;
+      if (!x.v || typeof x.v !== 'object' || Array.isArray(x.v)) return null;
+      const v = nulo(); for (const k of Object.keys(x.v)) { const t = paraTexto(x.v[k]); if (t !== '') v[k] = t; }
+      rg.push({ conjunto: x.conjunto, codigo: String(x.codigo), v });
+    }
+    if (b.cfg != null && (typeof b.cfg !== 'object' || Array.isArray(b.cfg))) return null;
+    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null };
+  } catch (e) { return null; }
+}
+let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' });
+let fmts = copiaNula(store.get('raiox_fmt', {}));     // formato lembrado: assinatura das colunas -> {conjunto, cols:[{n,t}]}
+let conjs = copiaNula(store.get('raiox_conj', {}));   // conjunto -> {campos:[{n,t}]}
 let regs = [];                             // {conjunto, codigo, v:{campo:valor}}
 let mapa = new Map();
 const F = { conjunto: '', per: 'tudo', mes: '', de: '', ate: '', cd: '', cat: '', val: '', q: '', tA: '', tB: '' };
@@ -64,7 +93,7 @@ async function migrar() {
   };
   const campos = chaves.map(k => ({ n: k, t: tipo(k) }));
   const lista = velhos.map(o => {
-    const v = {};
+    const v = nulo();
     campos.forEach(c => { let x = o[c.n]; if (x == null || x === '') return; v[c.n] = c.t === 'data' ? Core.iso(new Date(x)) : Array.isArray(x) ? x.join('; ') : String(x); });
     return { conjunto: nome, codigo: String(o[kp]), v };
   });
@@ -108,6 +137,7 @@ function perguntarColunas(arquivo, hdr, corpo) {
   });
 }
 async function lerArquivo(f) {
+  if (f.size > LIM.csv) { toast(f.name + ': arquivo grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.csv) + ').'); return null; }
   const rows = Core.parseCSV(Core.decode(await f.arrayBuffer())), hi = Core.acharCabecalho(rows);
   if (hi < 0) { toast('Não achei o cabeçalho em ' + f.name + '.'); return null; }
   const hdr = rows[hi].map(Core.t), corpo = rows.slice(hi + 1).filter(r => r.some(x => Core.t(x)));
@@ -122,7 +152,7 @@ async function importar(fm, corpo) {
   const noArq = new Map();
   corpo.forEach(r => {
     const k = Core.t(r[icod]); if (!k) return;
-    const v = {}; fm.cols.forEach((x, j) => { if (x.t === 'ignorar' || x.t === 'codigo') return; let s = Core.t(r[j]); if (x.t === 'data') s = Core.dataISO(s); if (s) v[x.n] = s; });
+    const v = nulo(); fm.cols.forEach((x, j) => { if (x.t === 'ignorar' || x.t === 'codigo') return; let s = Core.t(r[j]); if (x.t === 'data') s = Core.dataISO(s); if (s) v[x.n] = s; });
     noArq.set(k, Core.juntar(noArq.get(k), v));
   });
   // Junção: mesmo nome de campo código e ao menos um código já guardado num conjunto -> entra nele, campo a campo.
@@ -273,7 +303,7 @@ function abrirJanela(titulo, lista, c) {
   return j;
 }
 function copiar(lista, campos) {
-  const tsv = [campos.map(c => c.n).join('\t')].concat(lista.map(r => campos.map(c => (c.t === 'codigo' ? r.codigo : c.t === 'data' ? fmtData(r.v[c.n]) : (r.v[c.n] || '')).replace(/[\t\n]/g, ' ')).join('\t'))).join('\n');
+  const tsv = [campos.map(c => c.n).join('\t')].concat(lista.map(r => campos.map(c => (c.t === 'codigo' ? r.codigo : c.t === 'data' ? fmtData(r.v[c.n]) : (r.v[c.n] || '')).replace(/[\t\r\n]/g, ' ').replace(/^[=+\-@]/, "'$&")).join('\t'))).join('\n');
   (navigator.clipboard ? navigator.clipboard.writeText(tsv) : Promise.reject()).then(() => toast('Copiado.'), () => toast('Não consegui copiar neste navegador.'));
 }
 function imprimir(titulo, lista, campos, sel) {
@@ -303,12 +333,12 @@ function aba(wb, nome, campos, linhas, comRel) {
   const ws = wb.addWorksheet(nomeAba(wb, nome)), cols = (comRel ? [{ n: 'Relatório', t: 'texto' }] : []).concat(campos);
   ws.addRow(cols.map(c => c.n)); const h = ws.getRow(1); h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; });
   linhas.forEach(({ r, c }) => ws.addRow(cols.map((k, i) => {
-    if (comRel && i === 0) return c; if (k.t === 'codigo') return r.codigo; const v = r.v[k.n]; if (!v) return null;
-    if (k.t === 'data') { const m = Core.msISO(v); return m == null ? v : new Date(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10), +v.slice(11, 13), +v.slice(14, 16))); }
-    if (k.t === 'numero') { const n = Core.numero(v); return n == null ? v : n; } return v; })));
+    if (comRel && i === 0) return primitivo(c); if (k.t === 'codigo') return primitivo(r.codigo); const v = r.v[k.n]; if (!v) return null;
+    if (k.t === 'data') { const m = Core.msISO(v); return m == null ? primitivo(v) : new Date(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10), +v.slice(11, 13), +v.slice(14, 16))); }
+    if (k.t === 'numero') { const n = Core.numero(v); return n == null ? primitivo(v) : primitivo(n); } return primitivo(v); })));
   cols.forEach((k, i) => { const col = ws.getColumn(i + 1); let w = k.n.length; ws.eachRow({ includeEmpty: false }, (row, n) => { if (n < 400) { const x = row.getCell(i + 1).value; w = Math.max(w, x instanceof Date ? 16 : String(x == null ? '' : x).length); } }); col.width = Math.min(60, w + 3); if (k.t === 'data') col.numFmt = 'dd/mm/yyyy hh:mm'; });
   ws.views = [{ state: 'frozen', ySplit: 1 }]; if (cols.length) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
-  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:1' }; ws.headerFooter.oddFooter = '&L' + (ORG() || 'Raio X do Relatório') + '&CPágina &P de &N&R&D';
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:1' }; ws.headerFooter.oddFooter = '&L' + (ORG() || 'Raio X do Relatório').replace(/&/g, '&&') + '&CPágina &P de &N&R&D';
 }
 async function gerarExcel() {
   const msg = $('#xMsg');
@@ -347,24 +377,26 @@ function renderConfig() {
 function iniciaConfig() {
   const lig = (id, k, num) => { const i = $(id); i.value = cfg[k]; i.oninput = () => { cfg[k] = num ? (parseFloat(i.value) || (k === 'meta' ? 90 : 24)) : i.value; salvaCfg(); topo(); render(); }; };
   lig('#cfgCliente', 'cliente'); lig('#cfgArea', 'area'); lig('#cfgMeta', 'meta', true); lig('#cfgPrazo', 'prazoH', true); lig('#cfgSin', 'sinonimos');
-  $('#cfgLogo').onchange = e => { const f = e.target.files[0]; if (!f) return; const img = new Image(); img.onload = () => { const k = Math.min(1, 240 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); cfg.logo = cv.toDataURL('image/png'); salvaCfg(); topo(); URL.revokeObjectURL(img.src); }; img.onerror = () => toast('Não consegui ler essa imagem.'); img.src = URL.createObjectURL(f); e.target.value = ''; };
+  $('#cfgLogo').onchange = e => { const f = e.target.files[0]; if (!f) return; if (f.size > LIM.logo) { toast('Logo grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.logo) + ').'); e.target.value = ''; return; } const img = new Image(); img.onload = () => { const k = Math.min(1, 240 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); cfg.logo = cv.toDataURL('image/png'); salvaCfg(); topo(); URL.revokeObjectURL(img.src); }; img.onerror = () => toast('Não consegui ler essa imagem.'); img.src = URL.createObjectURL(f); e.target.value = ''; };
   $('#cfgLogoX').onclick = () => { cfg.logo = ''; salvaCfg(); topo(); };
   document.querySelectorAll('.passosBas').forEach(p => { const d = el('details', null, el('summary', { text: 'Como instalar a versão Excel (4 passos)' }), el('ol', { class: 'passos' }, PASSOS.map(x => el('li', { text: x })))); p.append(d); });
   document.querySelectorAll('[data-baixar-bas]').forEach(a => a.addEventListener('click', () => document.querySelectorAll('.passosBas details').forEach(d => { d.open = true; })));
   $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
   $('#bkArq').onchange = async e => {
-    const f = e.target.files[0]; e.target.value = ''; if (!f) return; let b;
-    try { b = JSON.parse(await f.text()); if (b.app !== 'raiox' || !Array.isArray(b.registros)) throw 0; } catch (x) { toast('Esse arquivo não é um backup do Raio X.'); return; }
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (f.size > LIM.backup) { toast('Backup grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.backup) + '). Nada foi alterado.'); return; }
+    let b; try { b = validarBackup(JSON.parse(await f.text())); } catch (x) { b = null; }
+    if (!b) { toast('Esse arquivo não é um backup do Raio X (ou está com a estrutura errada). Nada foi alterado.'); return; }
     const r = await perguntar('Restaurar backup', 'O backup tem ' + b.registros.length + ' registros. Somar aos dados atuais ou substituir tudo?', [{ t: 'Somar', v: 'somar', prim: true }, { t: 'Substituir', v: 'subst' }, { t: 'Cancelar', v: null }]);
     if (!r) return;
-    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = {}; fmts = {}; if (b.cfg) { cfg = Object.assign(cfg, b.cfg); salvaCfg(); } }
-    Object.assign(conjs, b.conjs || {}); Object.assign(fmts, b.fmts || {});
+    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
+    Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; });
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };
   $('#apagarTudo').onclick = async () => {
     const r = await perguntar('Apagar todos os dados', 'Isso apaga os ' + regs.length + ' registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]);
-    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = {}; salvaConjs(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
+    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
   };
 }
 function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
@@ -385,7 +417,7 @@ $('#versao').textContent = 'Versão ' + VERSAO;
   iniciaConfig(); topo();
   const vAnt = localStorage.getItem('raiox_ver'); if (vAnt && vAnt !== VERSAO) toast('Versão nova instalada'); try { localStorage.setItem('raiox_ver', VERSAO); } catch (e) { /* sem espaço: segue */ }
   if ('serviceWorker' in navigator) { const tinha = !!navigator.serviceWorker.controller; navigator.serviceWorker.register('sw.js').catch(() => {}); navigator.serviceWorker.addEventListener('controllerchange', () => { if (tinha) toast('Versão nova instalada'); }); }
-  try { await migrar(); regs = await IDB.all(); } catch (e) { toast('Não consegui abrir os dados guardados neste aparelho.'); }
+  try { await migrar(); regs = (await IDB.all()).map(r => Object.assign(r, { v: copiaNula(r.v) })); } catch (e) { toast('Não consegui abrir os dados guardados neste aparelho.'); }
   regs.forEach(r => mapa.set(chave(r.conjunto, r.codigo), r));
   F.conjunto = Object.keys(conjs).find(c => doConj(c).length) || '';
   render(); renderConfig();

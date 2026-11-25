@@ -79,7 +79,7 @@ var Core = (function () {
 
   // junta registros por código, campo a campo: campo vazio do novo não apaga o que já existe
   function juntar(velho, novo) {
-    var v = {}, k;
+    var v = Object.create(null), k;
     for (k in (velho || {})) v[k] = velho[k];
     for (k in novo) if (t(novo[k]) !== '') v[k] = novo[k];
     return v;
