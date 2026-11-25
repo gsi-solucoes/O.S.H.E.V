@@ -3,7 +3,7 @@
 Agente 1 (Conceptor) · versão 1.0 · 25/11/2026 · aguardando portão 1
 
 ## 1. Origem
-Nasceu como gerador de relatórios de OS da manutenção do HEV (O.S.H.E.V), feito em conversa de 19 a 25/11/2026, a partir dos CSVs `R_ORDEM_SERVICO` do MV. Em 25/11 o Galindo decidiu transformá-lo num produto genérico: **Raio X do Relatório**, que serve para qualquer relatório e qualquer empresa, usando o mesmo repositório e o mesmo link.
+Nasceu como gerador de relatórios de OS da manutenção do HEV (nome antigo do repositório: O.S.H.E.V), feito em conversa de 19 a 25/11/2026, a partir dos CSVs `R_ORDEM_SERVICO` do MV. Em 25/11 o Galindo decidiu transformá-lo num produto genérico: **Raio X do Relatório**, que serve para qualquer relatório e qualquer empresa, usando o mesmo repositório e o mesmo link.
 
 **Definição (Galindo, 25/11/2026):** O Raio X do Relatório lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel, PDF e imagem) e monta sozinho o painel e os relatórios que a pessoa escolher. Funciona no navegador, sem API e sem custo por uso, e serve para qualquer cliente.
 

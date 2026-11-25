@@ -260,7 +260,7 @@ Macro Excel (`excel/GeradorOS_HEV.bas`): continua só com o modelo de ordens de 
 
 ## 13. Perguntas abertas (PERGUNTAR AO GALINDO) — com decisão provisória
 - **P-01** Macro Excel acompanha o Raio X genérico? *Provisório: não; fica só com o modelo de ordens de serviço.*
-- **P-02** Nome do repositório e do link (hoje "O.S.H.E.V"). Renomear muda o link. *Provisório: mantém até você decidir.*
+- **P-02** ✅ Decidido (Galindo, 25/11/2026 14h25): repositório `gsi-solucoes/raio-x-do-relatorio`, link https://gsi-solucoes.github.io/raio-x-do-relatorio/.
 - **P-03** A meta de 90% vira configurável por indicador (cada cliente tem a sua)? *Provisório: sim, na Config, padrão 90%.*
 - **P-04** O modelo pronto de ordens de serviço continua mostrando as frases e regras do hospital como padrão, ou começa vazio para cliente novo? *Provisório: frases genéricas de manutenção como padrão, editáveis.*
 - **P-05** Ordem das etapas: 1 → 2 → 3 → 4 → 5 → 6 → 7? Ou trazer a 7 (formatos/OCR) para antes? *Provisório: ordem numérica.*
