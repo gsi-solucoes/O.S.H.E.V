@@ -1,6 +1,10 @@
-# Raio X do Relatório — Especificação v1.0
+# Raio X do Relatório — Especificação v1.1
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
+
+**Histórico de versões**
+- v1.0 (25/11/2026 14h18): primeira versão; portão 2 em 14h43.
+- v1.1 (25/11/2026 15h10, tarefa F-43): seção 0.1 "Nomes na tela (rótulos exatos)"; CAs das seções 1, 8 e 9 apontam para os rótulos; dúvidas do Testador decididas no próprio critério (CA-96 formato da mediana, CA-98 data no nome do arquivo, D-01 a D-08 na seção 0.2). Nenhuma regra de negócio mudou.
 Caminho direto (Método 5.5, 1.8.4): **sem encaixes e sem dublês**. Critérios rodam contra dados reais anonimizados em `tests/dados/`, sem rede.
 Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05 confirmados como estão).
 
@@ -19,10 +23,71 @@ Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05
 - Nenhum dado de usuário no repositório (o repositório é público).
 
 **Critérios**
-- CA-01: com a rede bloqueada depois do 1º carregamento, abrir o app, ler um CSV e gerar o Excel funcionam (Playwright em modo offline).
+- CA-01: com a rede bloqueada depois do 1º carregamento, abrir o app, ler um CSV (`Carregar relatório`, R-02) e gerar o Excel (`Gerar Excel`, R-18) funcionam (Playwright em modo offline).
 - CA-02: durante todos os testes, nenhuma requisição sai para outra origem (log de rede do Playwright = só a própria origem).
 - CA-03: busca no `index.html` e no `.bas` pelos termos da lista `tests/termos_proibidos.txt` (nomes, siglas e termos do protótipo de origem; arquivo mantido pelo coordenador) devolve 0.
 - CA-04: o app abre em celular (390 px de largura) sem barra de rolagem horizontal na tela inicial.
+
+### 0.1 Nomes na tela (rótulos exatos) — etapa 1
+
+Os textos abaixo são **exatos** (maiúsculas, acentos e pontuação). Os testes localizam os elementos **por estes rótulos** (`get_by_role(..., name=...)`, `get_by_label`, `get_by_text`), nunca por `id` ou classe. Foram adotados os textos que o app já usa. Mudar um rótulo = mudar esta tabela antes (nova versão da especificação).
+
+| Nº | Rótulo exato | Tipo | Onde aparece | CA que usa |
+|---|---|---|---|---|
+| R-01 | `Raio X do Relatório` | título da página (`<title>`) e do cabeçalho | aba do navegador; topo | CA-10, CA-11 |
+| R-02 | `Carregar relatório` | botão (abre a escolha de arquivos, aceita vários) | cabeçalho | CA-01, CA-11, CA-80, CA-81, CA-90, CA-91 |
+| R-03 | `Painel` | aba | barra de abas | CA-93, CA-99, CA-100 |
+| R-04 | `Config` | aba | barra de abas | CA-11, CA-12, CA-16, CA-91, CA-92 |
+| R-05 | (não existe aba `Histórico` na etapa 1) | — | os registros aparecem na lista `Registros` do Painel | CA-100 |
+| R-06 | `Registros` | título da lista de registros | Painel, abaixo dos blocos | CA-100 |
+| R-07 | `Total de registros` | número clicável (abre janela) | Painel, 1º número | CA-93 |
+| R-08 | `Empresa / cliente` | título do cartão | Config | CA-11 |
+| R-09 | `Cliente` | campo de texto | Config → Empresa / cliente | CA-11 |
+| R-10 | `Área` | campo de texto | Config → Empresa / cliente | CA-11 |
+| R-11 | `Escolher logo` | botão (imagem) | Config → Empresa / cliente | CA-11 |
+| R-12 | `Apagar logo` | botão (só aparece quando há logo) | Config → Empresa / cliente | CA-12 |
+| R-13 | (sem botão Salvar) | — | Config salva sozinha a cada letra digitada ou logo escolhido | CA-11, CA-12 |
+| R-14 | `Dados deste aparelho` | título do cartão | Config | CA-92 |
+| R-15 | `Baixar backup` | botão (baixa `historico_RaioX_AAAA-MM-DD.json`) | Config → Dados deste aparelho | CA-14, CA-80, CA-81, CA-90, CA-92 |
+| R-16 | `Restaurar backup` | botão (escolhe o `.json`); depois pergunta com título `Restaurar backup` e botões `Somar`, `Substituir`, `Cancelar` | Config → Dados deste aparelho | CA-92 |
+| R-17 | `Apagar todos os dados` | botão; depois pergunta com título `Apagar todos os dados` e botões `Apagar`, `Cancelar` | Config → Dados deste aparelho | CA-92 |
+| R-18 | `Gerar Excel` | título do cartão e botão | Painel, no fim | CA-01, CA-11, CA-12, CA-98 |
+| R-19 | `Formato` com opções `Uma planilha por relatório`, `Tudo numa planilha`, `Arquivos separados` | lista de escolha | Painel → Gerar Excel | CA-98 |
+| R-20 | `Gerar relatório` | botão **da macro** (não do app) | planilha da versão Excel | CA-110 |
+| R-21 | `Esta coluna é o quê?` | título da tela de colunas | janela ao carregar formato novo | CA-91 |
+| R-22 | `Confirmar` / `Cancelar` | botões | tela "Esta coluna é o quê?" | CA-91 |
+| R-23 | `Formatos lembrados` | título do cartão | Config | CA-91 |
+| R-24 | `Esquecer` | botão (um por formato lembrado) | Config → Formatos lembrados | CA-91 |
+| R-25 | `Baixar versão Excel para o PC` | link de download | Config (cartão `Versão Excel para o PC`) e rodapé | CA-16 |
+| R-26 | `Como instalar a versão Excel (4 passos)` | título que abre a lista numerada dos 4 passos (abre sozinho ao clicar em R-25) | Config → Versão Excel para o PC | CA-16 |
+| R-27 | `Versão nova instalada` | aviso rápido (some sozinho) | rodapé da tela | CA-15 |
+| R-28 | `Filtros` | painel que abre/fecha (começa fechado) | Painel, no topo | CA-99 |
+| R-29 | `Relatório` | lista de escolha (conjunto) | Painel → Filtros | CA-99 |
+| R-30 | `Período` com opções `Tudo`, `Mês`, `De–até`; campos `Mês`, `De`, `Até` (aparecem conforme a opção) | lista de escolha e datas | Painel → Filtros | CA-98, CA-99 |
+| R-31 | `Campo de data` | lista de escolha | Painel → Filtros | CA-96, CA-99 |
+| R-32 | `Campo categoria` | lista de escolha | Painel → Filtros | CA-99 |
+| R-33 | `Valor` | lista de escolha | Painel → Filtros | CA-99 |
+| R-34 | `Buscar texto` | campo de busca | Painel → Filtros | CA-99 |
+| R-35 | `Minimizar` (o botão mostra `_`; `Minimizar` é o nome acessível) | botão | barra de título de cada janela | CA-93 |
+| R-36 | `Fechar` (o botão mostra `×`; `Fechar` é o nome acessível) | botão | barra de título de cada janela | CA-93 |
+| R-37 | `Limpar seleção` | botão | rodapé de cada janela | CA-93 |
+| R-38 | `Imprimir` | botão | rodapé de cada janela | CA-93 |
+| R-39 | `Copiar` | botão; ao copiar mostra `Copiado.` | rodapé de cada janela | CA-93 |
+| R-40 | `Mediana:`; `Dentro de N h:`; faixas `Até 1 h`, `De 1 a 4 h`, `De 4 a 24 h`, `De 1 a 3 dias`, `De 3 a 7 dias`, `Mais de 7 dias` | textos do bloco de tempo entre datas | Painel | CA-96 |
+| R-41 | `Metas`; `Meta dos indicadores em % (padrão 90)`; `faltam X para a meta` | cartão e campo da Config; texto no bloco percentual | Config; Painel | CA-97 |
+
+### 0.2 Decisões sobre suposições do Testador (v1.1)
+
+Divergências entre `tests/test_etapa1.py` e o app, decididas aqui. "Muda" diz quem ajusta.
+
+- **D-01 (CA-11/12, R-13):** não há botão Salvar; a Config salva sozinha. O teste não deve clicar em "salvar". **Muda: Testador.**
+- **D-02 (CA-92, R-17):** o botão é `Apagar todos os dados` (não "Apagar histórico"); confirmar com `Apagar`. **Muda: Testador.**
+- **D-03 (CA-92, R-15/R-16):** backup e restaurar ficam na aba `Config`; o teste abre `Config` antes, clica em `Baixar backup` e restaura pelo campo do rótulo `Restaurar backup` (não pela "2ª entrada de arquivo" da página, que é a do logo). **Muda: Testador.**
+- **D-04 (CA-100, R-05/R-06):** não existe aba `Histórico` na etapa 1; o texto do arquivo é conferido na lista `Registros` do Painel. **Muda: Testador.**
+- **D-05 (CA-99, R-30):** o período De–até se usa escolhendo `De–até` em `Período` e preenchendo `De` e `Até` (por rótulo). O teste não pode passar sem conferir quando não acha os campos. **Muda: Testador.**
+- **D-06 (CA-16, R-26):** os 4 passos são uma lista numerada (`<ol>`) com 4 itens; o teste conta os 4 itens sob `Como instalar a versão Excel (4 passos)` em vez de procurar "1." no texto. **Muda: Testador.**
+- **D-07 (CA-93, R-37):** o teste precisa conferir que `Limpar seleção` está **visível** (hoje a conferência sempre passa). **Muda: Testador.**
+- **D-08 (CA-96):** formato e arredondamento da mediana, ver o próprio CA-96. **Muda: Construtor** (formato) e **Testador** (arredondamento).
 
 ---
 
@@ -38,13 +103,13 @@ Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05
 - Perder a configuração ou o histórico de quem já usa o link (migração automática do que está salvo).
 
 **Critérios**
-- CA-10: abrir com o armazenamento vazio → título "Raio X do Relatório", sem nome de cliente no cabeçalho.
-- CA-11: preencher cliente "Empresa Teste", área "Operações" e um logo PNG → aparecem no cabeçalho; ao recarregar continuam; a capa do Excel gerado mostra "Operações · Empresa Teste" e o logo.
-- CA-12: apagar o logo → some do cabeçalho e da capa.
+- CA-10: abrir com o armazenamento vazio → título "Raio X do Relatório" (R-01), sem nome de cliente no cabeçalho.
+- CA-11: na aba `Config` (R-04), preencher `Cliente` "Empresa Teste" (R-09), `Área` "Operações" (R-10) e um logo PNG por `Escolher logo` (R-11), sem botão Salvar (R-13) → aparecem no cabeçalho; ao recarregar continuam; carregar um CSV (R-02) e clicar em `Gerar Excel` (R-18) → a capa do Excel gerado mostra "Operações · Empresa Teste" e o logo.
+- CA-12: clicar em `Apagar logo` (R-12) → some do cabeçalho e da capa.
 - CA-13: o manifesto é válido (nome, ícones 192 e 512, `display: standalone`) e o service worker fica ativo após o 1º carregamento.
 - CA-14: com configuração antiga salva (formato atual do `localStorage`), o app abre, mantém nomes genéricos, de-para e limites, e o histórico do IndexedDB continua com a mesma contagem de registros.
-- CA-15: publicar versão nova → aparelho com a antiga, ao voltar a ter internet e reabrir, mostra "Versão nova instalada" e roda a nova.
-- CA-16: clicar em "Baixar versão Excel para o PC" (online ou offline) → baixa `RaioX_Relatorio.bas`; a tela mostra os 4 passos de instalação; `grep -i` por "HEV" e "Edmundo" no `.bas` = 0.
+- CA-15: publicar versão nova → aparelho com a antiga, ao voltar a ter internet e reabrir, mostra "Versão nova instalada" (R-27) e roda a nova.
+- CA-16: clicar em "Baixar versão Excel para o PC" (R-25, online ou offline) → baixa `RaioX_Relatorio.bas`; a tela mostra os 4 passos de instalação (R-26: lista numerada com 4 itens); `grep -i` por "HEV" e "Edmundo" no `.bas` = 0.
 
 ---
 
@@ -209,8 +274,8 @@ Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05
 - Dados de teste em `tests/dados/`: **só dados fictícios**, gerados por script com semente fixa (`tests/gerar_dados.py`): `vendas.*` (pedidos de uma loja) e `chamados.*` (atendimentos de suporte), nos formatos da etapa 7. Nenhum relatório real entra no repositório.
 
 **Critérios**
-- CA-80: carregar o mesmo arquivo duas vezes → contagem não muda.
-- CA-81: arquivo A (código, cliente) + arquivo B (código, prioridade) → registros com os dois campos; campo vazio em B não apaga valor de A.
+- CA-80: carregar o mesmo arquivo duas vezes (`Carregar relatório`, R-02) → contagem não muda (conferida no arquivo de `Baixar backup`, R-15).
+- CA-81: arquivo A (código, cliente) + arquivo B (código, prioridade), ambos por `Carregar relatório` (R-02) → registros com os dois campos; campo vazio em B não apaga valor de A (conferido no arquivo de `Baixar backup`, R-15).
 - CA-82: 72 mil registros no histórico → painel abre em ≤ 5 s em notebook comum (medido no Playwright, máquina de CI).
 - CA-83: todos os arquivos de `tests/dados/` são gerados pelo `gerar_dados.py` (rodar de novo dá o mesmo conteúdo).
 
@@ -220,16 +285,18 @@ Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05
 
 O código atual é um protótipo feito para um caso específico. **Nada do conteúdo dele entra no produto** (nomes, regras de negócio, frases, abas e indicadores próprios daquele caso). Entra só a **estrutura**, que vira peça genérica e não pode quebrar:
 
-- CA-90: leitor de CSV acha a linha de cabeçalho sozinho, aceita `;` `,` e tab, UTF-8 e Windows-1252.
-- CA-91: importador que aprende: formato novo → "Esta coluna é o quê?" uma vez; o formato fica lembrado (Config → "Esquecer").
-- CA-92: junção por código, campo a campo (CA-80/81), guardada no IndexedDB, com backup/restaurar/apagar.
-- CA-93: janelas flutuantes: abrir pelo clique em qualquer número, barra ou mês; arrastar; minimizar para o rodapé; várias abertas; mini painel com chips que filtram a lista; "Limpar seleção"; imprimir (A4, com a seleção escrita no topo); copiar.
+- CA-90: leitor de CSV acha a linha de cabeçalho sozinho, aceita `;` `,` e tab, UTF-8 e Windows-1252 (arquivo escolhido por `Carregar relatório`, R-02).
+- CA-91: importador que aprende: formato novo → "Esta coluna é o quê?" (R-21, botões `Confirmar`/`Cancelar`, R-22) uma vez; o formato fica lembrado (Config → `Formatos lembrados` → "Esquecer", R-23/R-24).
+- CA-92: junção por código, campo a campo (CA-80/81), guardada no IndexedDB, com backup/restaurar/apagar: `Baixar backup` (R-15) baixa `historico_RaioX_AAAA-MM-DD.json`; `Apagar todos os dados` + `Apagar` (R-17) zera; `Restaurar backup` + `Substituir` (R-16) volta a mesma contagem.
+- CA-93: janelas flutuantes: abrir pelo clique em qualquer número (ex.: `Total de registros`, R-07), barra ou mês; arrastar; minimizar para o rodapé (`Minimizar`, R-35); várias abertas; mini painel com chips que filtram a lista; "Limpar seleção" (R-37); imprimir (`Imprimir`, R-38; A4, com a seleção escrita no topo); copiar (`Copiar`, R-39). Os três botões do rodapé da janela ficam visíveis ao abrir.
 - CA-94: semelhança de texto (erro de digitação ≥ 80%) usada no pedido escrito e nas frases padrão.
 - CA-95: possíveis repetidos: registros abertos com texto parecido (peso por raridade da palavra), mostrados para a pessoa decidir.
-- CA-96: tempo entre duas datas em faixas (até 1 h … mais de 7 dias), mediana, % dentro do prazo; durações mostradas em "h min".
-- CA-97: meta configurável por indicador percentual (padrão 90%): acima da meta em verde, "faltam X para a meta".
-- CA-98: Excel com capa, faixa de números, período real, filtros, rodapé, configuração de impressão; período tudo / mês / de–até; formatos uma planilha por relatório / tudo numa / arquivos separados.
-- CA-99: filtros começam fechados; período e filtros valem para o painel, as janelas e o Excel.
+- CA-96: tempo entre duas datas em faixas (`Até 1 h` … `Mais de 7 dias`, R-40), mediana (`Mediana:`), % dentro do prazo (`Dentro de N h:`); durações mostradas em "h min".
+  **Formato (decisão v1.1, dúvida 1 do Testador; igual ao CA-43):** a mediana usa só os registros com as duas datas; com quantidade par, é a média dos dois do meio. O resultado é arredondado ao **minuto inteiro mais próximo, meio minuto para cima** (sem casas decimais, sem segundos). Abaixo de 1 h: `M min` sem zero à esquerda (ex.: `48 min`, `5 min`, `0 min`). De 1 h em diante: `H h MM min`, horas acumuladas **sem converter em dias**, minutos sempre com 2 dígitos (ex.: `1 h 05 min`, `26 h 00 min`, `200 h 10 min`). Sem dados: `—`. Ex.: 1.565 min → `26 h 05 min`; 29,5 min → `30 min`. A mesma regra vale para toda duração mostrada na tela, nas janelas e no Excel.
+- CA-97: meta configurável por indicador percentual (padrão 90%, campo `Meta dos indicadores em % (padrão 90)`, R-41): acima da meta em verde, "faltam X para a meta".
+- CA-98: Excel (botão `Gerar Excel`, R-18) com capa, faixa de números, período real, filtros, rodapé, configuração de impressão; período tudo / mês / de–até (R-30); formatos uma planilha por relatório / tudo numa / arquivos separados (`Formato`, R-19).
+  **Nome do arquivo (decisão v1.1, dúvida 2 do Testador):** `RaioX_<relatório>_<data>.xlsx`, com `<data>` = **AAAA-MM-DD**, a data do aparelho no momento em que o arquivo é gerado (ex.: `RaioX_VENDAS_2026-11-25.xlsx`). `<relatório>` = nome do conjunto em maiúsculas, sem acentos, com `_` no lugar de espaços; `TUDO` quando há mais de um conjunto num só arquivo; em `Arquivos separados`, um arquivo por conjunto. O backup segue o mesmo formato de data: `historico_RaioX_AAAA-MM-DD.json`. Teste: o nome casa com `^RaioX_[A-Z0-9_]+_\d{4}-\d{2}-\d{2}\.xlsx$` e a data é a de hoje.
+- CA-99: filtros começam fechados (`Filtros`, R-28); período e filtros (R-29 a R-34) valem para o painel, as janelas e o Excel.
 
 ## 9b. Versão Excel para baixar (macro)
 
