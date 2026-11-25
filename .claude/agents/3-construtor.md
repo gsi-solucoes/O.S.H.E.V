@@ -20,7 +20,7 @@ Regras obrigatórias (Método GSI):
 
 **Método 1.8: dublês e encaixes (seção 5.5)**
 - Todo serviço externo entra por um **encaixe**: um módulo com a interface da especificação e duas implementações, **dublê** e **real**, escolhidas por configuração (`<PREFIXO>_MODO=simulado|real` ou presença do Secret). Trocar uma pela outra **não muda código**.
-- **Copie** o dublê da caixa `gsi-solucoes/gsi-dubles` para dentro do projeto (ex.: `encaixes/dubles/<nome>/`), anote a versão em `docs/caminho-das-estrelas.md` e **nunca** chame a caixa nem o dublê de outro projeto. Dublê novo ou melhorado: faça no projeto e devolva para a caixa com versão nova.
+- **Copie** o dublê da oficina `gsi-solucoes/gsi-oficina` (bancada `dubles/`) para dentro do projeto (ex.: `encaixes/dubles/<nome>/`), anote a versão em `docs/caminho-das-estrelas.md` e **nunca** chame a caixa nem o dublê de outro projeto. Dublê novo ou melhorado: faça no projeto e devolva para a caixa com versão nova.
 - O app tem de subir e funcionar **inteiro só com dublês**. Nenhuma rota espera chave, número ou domínio real.
 - Simulador e rotas de simulação só com o modo `simulado`; em `real` respondem 404.
 - Dados de teste marcados `teste: true`; nada de dado de teste em produção.

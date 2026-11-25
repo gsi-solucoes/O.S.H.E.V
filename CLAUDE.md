@@ -17,7 +17,7 @@ App web **estático e offline** (GitHub Pages + PWA) que lê os dados extraídos
 <!-- Bloco geral da GSI: sincronizado do gsi-infra/modelos/CLAUDE-base.md (Método 5.8). Não editar no projeto; editar a fonte. -->
 ## Leia primeiro (GSI)
 - **Coordenador:** siga a rotina do Método GSI, seções 5.6 a 5.9 (`gsi-solucoes/gsi-infra`): ler o **resumo** `docs/METODO-RESUMO.md` (Método completo só por seção, sob demanda), a linha do projeto no `painel.md`, as tarefas ativas da `fila.md` e o estado do projeto, dizer em que passo está e qual é o próximo, e atualizar a Diretoria ao terminar.
-- **Método 1.8:** app construído inteiro com dublês da caixa `gsi-solucoes/gsi-dubles` (copiados, nunca compartilhados); estrelas só no brilho. Documentos do projeto: `docs/00_concepcao/como-funciona.md` e `docs/caminho-das-estrelas.md`.
+- **Método 1.8:** app construído inteiro com dublês da oficina `gsi-solucoes/gsi-oficina` (bancada `dubles/`, copiados, nunca compartilhados); antes de pedir teste manual ao Galindo, usar os simuladores da oficina (`simuladores/`); estrelas só no brilho. Documentos do projeto: `docs/00_concepcao/como-funciona.md` e `docs/caminho-das-estrelas.md`.
 
 ## Trabalho com a IA (Método GSI, seção 5)
 - **Os 4 itens antes de qualquer tarefa:** o que quero, o que NÃO quero, como conferir antes de executar (simulação) e como conferir o resultado (oráculo: teste, contagem, acesso real).

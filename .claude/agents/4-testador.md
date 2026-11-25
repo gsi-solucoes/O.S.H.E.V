@@ -16,7 +16,7 @@ Você é o **Testador** da Fábrica GSI (Método GSI, seções 5.2 e 5.4). Fale 
 5. Nunca "ajuste" um teste para passar. Se achar que o critério está errado, registre em `docs/duvidas.md` para o Galindo.
 
 **Método 1.8: testes contra dublês (seção 5.5)**
-- Os testes de aceite rodam **contra os dublês**, sem rede, sem custo e sem chave real. Use os dados de teste padrão da caixa `gsi-dubles`.
+- Os testes de aceite rodam **contra os dublês**, sem rede, sem custo e sem chave real. Use os dados de teste padrão da oficina `gsi-oficina`. O que pediria teste manual (navegador, Excel, macro) roda nos simuladores da oficina (`simuladores/`), copiados para o `tests/` do projeto.
 - Teste também o **próprio contrato do encaixe**: o dublê respeita as regras do serviço real que a especificação cita (ex.: título de botão até 20 caracteres, assinatura do webhook, janela de 24 h).
 - Escreva para cada encaixe um **teste de fumaça** separado (`tests/fumaca/`), que só roda com modo `real` e Secret presente; sem eles, o teste é pulado com aviso, nunca falha.
 - Garanta que simulador e rotas de simulação respondem 404 em modo `real`, e que "zerar teste" só apaga registros com `teste: true`.

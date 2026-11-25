@@ -16,7 +16,7 @@ O diário registra: data, de onde veio cada ideia, ideias descartadas e por quê
 
 **Caminho das estrelas:** o que só o Galindo consegue trazer (seção 5.5 do Método), cada item com link, tempo típico, dependência e o acesso que tiraria a tarefa dele da próxima vez.
 
-**Dublês (Método 1.8):** na concepção, liste os serviços externos do app e qual dublê da caixa `gsi-dubles` cada um usa (ou se precisa de um novo). O app é concebido para funcionar inteiro com dublês; as estrelas só fazem o brilho no fim. No como-funciona use os selos 🟢 no ar · 🟡 pronto com dublê · 🔨 a construir · 💡 ideia.
+**Dublês (Método 1.8):** na concepção, liste os serviços externos do app e qual dublê da oficina `gsi-oficina` (bancada `dubles/`) cada um usa (ou se precisa de um novo). O app é concebido para funcionar inteiro com dublês; as estrelas só fazem o brilho no fim. No como-funciona use os selos 🟢 no ar · 🟡 pronto com dublê · 🔨 a construir · 💡 ideia.
 
 Regras: nada de inventar regra de negócio ou número; o que não estiver claro vira pergunta ao Galindo. Áudio, vídeo e foto nunca vão para o repositório (só texto). Ao terminar, peça a aprovação do Galindo (portão 1).
 

@@ -21,10 +21,10 @@ Regras: não invente regra de negócio; se a concepção não diz, marque **"PER
 
 **Método 1.8: esqueleto primeiro, encaixes depois (seção 5.5)**
 - Toda dependência externa (WhatsApp/Meta, e-mail, SMS, pagamento, mapa, arquivos, IA, domínio) vira um **encaixe** com **interface única** e duas versões: **dublê** e **real**. A especificação descreve a interface e as regras do serviço real **pela documentação oficial** (ex.: botão até 20 caracteres), para o dublê imitá-las.
-- Para cada encaixe, diga qual dublê da caixa `gsi-solucoes/gsi-dubles` usar (e a versão). Se não existir, especifique o dublê novo, que vai para a caixa.
+- Para cada encaixe, diga qual dublê da oficina `gsi-solucoes/gsi-oficina` (bancada `dubles/`) usar (e a versão). Se não existir, especifique o dublê novo, que vai para a oficina. Para cada critério que pediria teste manual (abrir no Excel, baixar, celular), indique o simulador da oficina (`simuladores/`) que o confere.
 - Critérios de aceite são escritos **contra o dublê** (rodam sem rede e sem custo) e cada encaixe ganha um **teste de fumaça** curto para rodar contra o real no brilho das estrelas.
 - Inclua o **simulador** (página só em homologação, atrás de login da GSI) quando o app conversa com pessoas.
-- Dados de teste com os padrões da caixa (`+55 11 90000-00xx`, "Cliente Teste 01") e marcador `teste: true`.
+- Dados de teste com os padrões da oficina (`+55 11 90000-00xx`, "Cliente Teste 01") e marcador `teste: true`.
 - Nada da especificação pode esperar uma estrela (chave, número, CNPJ, domínio). Se depender, é encaixe com dublê. Atualize `docs/caminho-das-estrelas.md` com o que só o Galindo traz.
 - IA real (Gemini, API do Claude) só com chave liberada pelo Galindo; por padrão, dublê de IA (regras, custo zero).
 - Ao terminar, avise o Conceptor/coordenador para atualizar o `docs/00_concepcao/como-funciona.md` (selos 🟢 no ar · 🟡 pronto com dublê · 🔨 a construir · 💡 ideia).
