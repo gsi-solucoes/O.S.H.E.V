@@ -42,5 +42,6 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 ## Etapa 2 (F-46, 25/11/2026) — publicada no `main` (`4de9c40`)
 - Branch `etapa-2`. Suíte: etapa 2 = 10 verdes + CA-28 adiado (etapas 3 e 6); suíte inteira sem a macro: 47 verdes, 3 skip (2 testes de teste corrigidos depois).
 - Revisão de segurança: liberada, 0 Crítico/Alto/Médio; 4 Baixos (B-1 a B-4) na fila, ver `docs/04_seguranca/revisao-etapa2.md`. Falta teste de regressão de segurança da etapa 2.
+- F-50 feita (25/11): B-1 a B-4 corrigidos, 6 testes de regressão em `tests/test_seguranca.py` (SEG2); suíte 53 verdes, 3 skip; no `main` (`5a6ca9b`). Testes da macro só rodam onde há LibreOffice/uno.
 - Divergências decididas: mediana no formato da etapa 1 (não "1 d 4 h"); tipo `Data e hora` não criado (Data cobre).
 - Publicada: 45 verdes conferidos no `main` (25/11 19h). Próximo: F-50 (Baixos + regressão) e F-51, etapa 3 (pedido escrito). Regra nova: etapa pronta vai ao `main` sozinha.
