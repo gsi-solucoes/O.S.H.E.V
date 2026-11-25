@@ -74,6 +74,8 @@ textarea{min-height:120px}
 .dh{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .drmore{justify-self:start}
 .rq{margin-bottom:14px}
+.mmw{display:grid;gap:4px}.mm{display:grid;grid-template-columns:3em 1fr;align-items:center;gap:6px}.mm .n{font-size:13px;color:var(--muted)}.mb{display:grid;gap:2px}.mb .bar{padding:1px 0;min-height:0}.mb .bar.ant i{background:var(--line)!important;filter:brightness(.8)}.mb .bar:not(.ant) i{background:var(--accent)!important}.wl .bar{grid-template-columns:minmax(0,17em) minmax(0,1fr) auto}
+.lg{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 8px;vertical-align:middle}.lg.a{background:var(--accent)}.lg.b{background:var(--line);filter:brightness(.8)}.hb{margin-top:16px;display:flex;flex-wrap:wrap;gap:8px}
 .win{position:fixed;inset:0;z-index:60;background:var(--bg);border:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45)}
 @media(min-width:701px){.win{inset:auto;border-radius:14px;resize:both;min-width:360px;min-height:260px}.win.max{left:0!important;top:0!important;width:100vw!important;height:100vh!important;border-radius:0}}
 .wh{display:flex;align-items:center;gap:8px;padding:8px 10px 8px 16px;background:var(--band);color:#fff;user-select:none;touch-action:none}
@@ -158,7 +160,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
   </div>
 </header>
 <nav class="tabs" id="tabs">
-  <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#relatorios">Relatórios</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#inconsistencias">Para arrumar</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
+  <a href="#dashboard">Dashboard</a><a href="#backlog">Backlog</a><a href="#relatorios">Relatórios</a><a href="#tempos">Tempos</a><a href="#equipe">Equipe</a><a href="#setores">Setores</a><a href="#historico">Histórico</a><a href="#inconsistencias">Para arrumar</a><a href="#arquivos">Arquivos</a><a href="#config">Config</a>
 </nav>
 <main class="band">
   <section id="emptyState" class="empty">
@@ -177,6 +179,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:now
     <section class="view" id="v-tempos"></section>
     <section class="view" id="v-equipe"></section>
     <section class="view" id="v-setores"></section>
+    <section class="view" id="v-historico"></section>
     <section class="view" id="v-inconsistencias"></section>
   </div>
   <section class="view" id="v-arquivos">
@@ -310,6 +313,50 @@ var Core = (function () {
   }
 
   var RANK = { 'concluída': 3, 'cancelada': 3 };
+  // ---- relatório DETALHADO do MV (histórico): Oficina > Setor > OS (sem horas, sem observação)
+  function isDet(text) { var h = text.slice(0, 6000); return /Nr\.OS/.test(h) && /Funcion.rio da Oficina/.test(h); }
+  function toDateD(s) { var d = toDate(s); if (d) return d; var m = /^(\d{2})\/(\d{2})\/(\d{2,4})$/.exec(t(s)); if (!m) return null; var y = +m[3]; if (y < 100) y += 2000; return new Date(y, +m[2] - 1, +m[1]); }
+  function parseDet(rows) {
+    var by = {}, setor = '', hdr = null, cur = null, modo = '';
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i]; if (!r || !r.length) continue;
+      var c0 = t(r[0]), c1 = t(r[1]);
+      if (c1 === 'Setor:') { setor = t(r[3]); cur = null; continue; }
+      if (c0 === 'Nr.OS') { hdr = r.map(t); continue; }
+      if (hdr && !c0 && /^\d+$/.test(c1)) {
+        cur = { os: c1, setor: setor, tecnicos: [] };
+        for (var j = 2; j < r.length; j++) {
+          var v = t(r[j]); if (!v) continue;
+          var k = Math.min(j, hdr.length - 1); while (k > 0 && !hdr[k]) k--;
+          var lab = hdr[k] || '';
+          if (/Pedido/.test(lab)) cur.pedido = v; else if (/Tipo/.test(lab)) cur.tipo = v; else if (/^Bem/.test(lab)) cur.bem = v;
+          else if (/Plaqueta/.test(lab)) cur.plaqueta = v; else if (/Prev/.test(lab)) cur.prev = v; else if (/Execu/.test(lab)) cur.termino = v;
+          else if (/Situa/.test(lab)) cur.situacao = v; else if (/Solicit/.test(lab)) cur.solicitante = v;
+        }
+        by[cur.os] = cur; modo = ''; continue;
+      }
+      if (!cur) continue;
+      if (t(r[2]) === 'Servico:') { cur.desc = t(r.slice(3).join(' ')); modo = ''; continue; }
+      if (c1.indexOf('Funcion') === 0) { modo = 'func'; var n = t(r.slice(2).join(' ')); if (n) cur.tecnicos.push(n); continue; }
+      if (modo === 'func' && !c0 && !c1) { var n2 = t(r.join(' ')); if (n2 && !/^\d+$/.test(n2) && !/Total/.test(n2)) { cur.tecnicos.push(n2); continue; } }
+      modo = '';
+    }
+    return Object.keys(by).map(function (k) {
+      var o = by[k], p = toDateD(o.pedido), te = toDateD(o.termino), pv = toDateD(o.prev);
+      return { os: o.os, p: p ? p.getTime() : null, te: te ? te.getTime() : null, pv: pv ? pv.getTime() : null, f: filaFrom(o.situacao) || 'sem fila',
+        ti: o.tipo || 'Sem tipo', se: o.setor || 'Sem setor', so: o.solicitante || '', d: o.desc || '', b: o.bem || '', pl: o.plaqueta || '', tc: o.tecnicos };
+    });
+  }
+  // registro guardado do histórico -> formato que as telas usam
+  function histView(h) {
+    var pend = h.f === 'aberta' || h.f === 'não atendida' || h.f === 'agendar', terc = h.f === 'aguardando material' || h.f === 'conserto externo';
+    var p = h.p ? new Date(h.p) : null, te = h.te ? new Date(h.te) : null, tc = h.tc || [];
+    return { os: h.os, pedido: p, termino: te, prevExec: h.pv ? new Date(h.pv) : null, fila: h.f, tipo: h.ti, setor: h.se, solicitante: h.so, desc: h.d, bem: h.b, plaqueta: h.pl,
+      tecnicos: tc, tecnico: tc[0] || '', exec: tc.map(function (n) { return { servico: '', func: n, ini: null, fim: null }; }),
+      especialidade: '—', localidade: '', obs: '', pendente: '', criticidade: '', arrumar: [], ok: true, provisorio: false,
+      backlog: pend, terceiros: terc, horas: 0, espera: null, total: p && te && te >= p ? (te - p) / 36e5 : null, carregado: h.t || 0, hist: true };
+  }
+
   function merge(list) {
     var map = {};
     list.forEach(function (o) {
@@ -535,7 +582,7 @@ var Core = (function () {
   }
 
   var Core_sim;
-  return { sim: function (a, b) { return Core_sim(a, b); }, REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
+  return { isDet: isDet, parseDet: parseDet, histView: histView, sim: function (a, b) { return Core_sim(a, b); }, REGRAS_PADRAO: REGRAS_PADRAO, classificar: classificar, decode: decode, parseCSV: parseCSV, parseMV: parseMV, merge: merge, enrich: enrich, median: median, mean: mean, count: count, backlogAt: backlogAt, terceirosAt: terceirosAt, ageBand: ageBand, repetidas: repetidas, PEND: PEND, TERC: TERC };
 })();
 
 </script>
@@ -563,14 +610,14 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 function copy(text,msg){navigator.clipboard.writeText(text).then(()=>toast(msg||'Copiado. Cole no Excel.'),()=>toast('Não foi possível copiar neste aparelho.'))}
 
 function rebuild(){
-  data = Core.enrich(Core.merge(raw), cfg); relStale = true;
+  data = Core.enrich(Core.merge(raw), cfg); relStale = true; histComplementa();
   const dates = data.map(o => o.pedido).filter(Boolean);
   setCut();
   const files = [...new Set(raw.map(o=>o.file))];
   const bad = data.filter(o=>!o.ok).length;
   const nprov = data.filter(o=>o.provisorio).length;
   $('#status').textContent = data.length ? `${nf(data.length)} OS em ${files.length} arquivo(s): ${nf(data.length-bad-nprov)} normais${nprov?` + ${nprov} com horário ajustado (corrigir no MV)`:''}${bad?` · ${nf(bad)} fora por erro`:''}${empties.size?` · ${empties.size} arquivo(s) sem OS (fila vazia)`:''}${demo?' · dados de exemplo':''}` : 'Nenhum arquivo carregado.';
-  $('#emptyState').hidden = !!data.length; $('#app').hidden = !data.length;
+  $('#emptyState').hidden = !!(data.length || hist.length); $('#app').hidden = !(data.length || hist.length);
   drawFiles();
   drawFilters(); render();
 }
@@ -663,7 +710,7 @@ function blStats(list, c){
 function monthEnds(n){const out=[];for(let i=n-1;i>=0;i--)out.push(new Date(cut.getFullYear(),cut.getMonth()-i+1,0));return out}
 
 function render(){
-  if (!data.length) return;
+  if (!data.length) { SETS = []; renderHist(); if (hist.length && location.hash !== '#historico' && location.hash !== '#arquivos' && location.hash !== '#config') location.hash = 'historico'; return; }
   SETS = [];
   setCut();
   updSum();
@@ -699,7 +746,7 @@ function render(){
   $('#cpList').onclick = () => copy(tsv(L));
   const m = $('#more'); if (m) m.onclick = () => {shown+=100; render()};
   if (!$('#v-relatorios').childElementCount || relStale) { drawRel(); relStale = false; }
-  renderBacklog(L); renderTempos(L); renderEquipe(L); renderSetores(L); renderInc(); renderRep();
+  renderBacklog(L); renderTempos(L); renderEquipe(L); renderSetores(L); renderInc(); renderRep(); renderHist();
 }
 
 function renderBacklog(L){
@@ -802,6 +849,79 @@ function renderInc(){
   ${I.map(o=>`<tr><td><b>${o.os}</b></td><td class="warn">${esc(o.arrumar.join('; '))}${o.provisorio?'':' (fora dos relatórios)'}</td><td>${fd(o.pedido)}</td><td>${fd(o.inicio)}</td><td>${fd(o.fim)}</td><td>${fd(o.termino)}</td><td>${esc(o.exec.length?o.tecnico:'')}</td><td>${o.fila}</td><td>${esc(o.desc)}</td></tr>`).join('') || '<tr><td colspan="9">Nenhuma inconsistência.</td></tr>'}</tbody></table></div></div>`;
   $('#v-inconsistencias').insertAdjacentHTML('beforeend', '<div id="v-repetidas" style="margin-top:28px"></div>');
   const ci=$('#cpInc'); if(ci) ci.onclick=()=>copy(tsv(I));
+}
+
+// ===================== HISTÓRICO (relatório detalhado do MV, guardado e somado no navegador) =====================
+let hist = [], histMap = new Map();
+const IDB = {
+  open(){ return new Promise((ok, no) => { const r = indexedDB.open('gos_hist', 1); r.onupgradeneeded = () => r.result.createObjectStore('os', {keyPath:'os'}); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); }); },
+  async all(){ const db = await IDB.open(); return new Promise((ok, no) => { const q = db.transaction('os').objectStore('os').getAll(); q.onsuccess = () => ok(q.result || []); q.onerror = () => no(q.error); }); },
+  async put(list){ const db = await IDB.open(); return new Promise((ok, no) => { const tx = db.transaction('os', 'readwrite'), st = tx.objectStore('os'); list.forEach(x => st.put(x)); tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); }); },
+  async clear(){ const db = await IDB.open(); return new Promise((ok, no) => { const tx = db.transaction('os', 'readwrite'); tx.objectStore('os').clear(); tx.oncomplete = () => ok(); tx.onerror = () => no(tx.error); }); }
+};
+async function histLoad(){ try { const a = await IDB.all(); hist = a.map(Core.histView); histMap = new Map(hist.map(o => [o.os, o])); } catch(e) { hist = []; histMap = new Map(); } }
+// OS que estão nos dois relatórios: o R_ORDEM_SERVICO manda (tem horas e observação); do detalhado vem o equipamento
+function histComplementa(){ data.forEach(o => { const h = histMap.get(o.os); if (h) { if (h.bem && !o.bem) o.bem = h.bem; if (h.plaqueta && !o.plaqueta) o.plaqueta = h.plaqueta; if (h.prevExec && !o.prevExec) o.prevExec = h.prevExec; } }); }
+// visão única do histórico: o detalhado + as OS do R_ORDEM_SERVICO; vale a situação do arquivo carregado por último
+function histTudo(){
+  const m = new Map(histMap);
+  data.forEach(o => { const h = m.get(o.os), tR = (flog[o.file] && flog[o.file].t) || 0; if (!h || tR >= (h.carregado || 0)) m.set(o.os, o); });
+  return [...m.values()].filter(o => o.pedido);
+}
+function renderHist(){
+  const V = $('#v-historico'); if (!V) return;
+  const H = histTudo();
+  const bt = `<p class="hb"><button id="hBkp">Baixar backup do histórico</button> <label class="btn">Restaurar backup<input type="file" id="hRes" accept=".json,application/json" hidden></label> <button id="hLimpa">Apagar histórico</button></p>`;
+  if (!hist.length) { V.innerHTML = `<h2>Histórico</h2><div class="card"><p>Carregue o <b>relatório detalhado</b> do MV (Nr.OS, Dt. Pedido, Situação, Funcionário da Oficina...) pelo mesmo botão de carregar arquivos. Ele fica guardado neste aparelho e vai sendo atualizado a cada arquivo novo: OS nova entra, OS que já existe é atualizada.</p><p class="muted">O Dashboard e o Backlog continuam usando o R_ORDEM_SERVICO, que é o único com as horas dos técnicos e as observações.</p></div>${bt}`; histBotoes(); return; }
+  const ds = H.map(o=>o.pedido).sort((a,b)=>a-b), ini = ds[0], fim = ds[ds.length-1];
+  const ano = fim.getFullYear(), mes = fim.getMonth(), dia = fim.getDate();
+  const ateHoje = (o, y) => o.pedido.getFullYear() === y && (o.pedido.getMonth() < mes || (o.pedido.getMonth() === mes && o.pedido.getDate() <= dia));
+  const esteAno = H.filter(o=>ateHoje(o, ano)), anoPass = H.filter(o=>ateHoje(o, ano-1)), varAno = anoPass.length ? (esteAno.length/anoPass.length-1)*100 : null;
+  const pend = H.filter(o=>o.backlog), d12 = new Date(fim); d12.setFullYear(d12.getFullYear()-1); const d24 = new Date(d12); d24.setFullYear(d24.getFullYear()-1);
+  const u12 = H.filter(o=>o.pedido > d12), a12 = H.filter(o=>o.pedido > d24 && o.pedido <= d12);
+  const fech12 = u12.map(o=>o.total).filter(x=>x!=null);
+  const S = (list, key, w, t) => SETS.push({list, key, asc: false}) - 1;
+  const kp = (t, v, sub, list) => `<div class="kpi"${list?` data-s="${SETS.push({list, key:()=>'m', asc:1})-1}" data-v="m" data-w="Histórico" data-t="${esc(t)}"`:''}><span>${t}</span><b>${v}</b><span>${sub}</span></div>`;
+  // por ano
+  const anos = Core.count(H, o=>String(o.pedido.getFullYear())).sort((a,b)=>a[0]-b[0]), mxA = Math.max(1,...anos.map(a=>a[1])), sidA = SETS.push({list:H, key:o=>String(o.pedido.getFullYear())}) - 1;
+  // mês a mês: este ano x ano anterior
+  const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  const doAno = y => H.filter(o=>o.pedido.getFullYear()===y), A1 = doAno(ano), A0 = doAno(ano-1);
+  const sid1 = SETS.push({list:A1, key:o=>MESES[o.pedido.getMonth()]}) - 1, sid0 = SETS.push({list:A0, key:o=>MESES[o.pedido.getMonth()]}) - 1;
+  const mxM = Math.max(1, ...MESES.map((m,i)=>Math.max(A1.filter(o=>o.pedido.getMonth()===i).length, A0.filter(o=>o.pedido.getMonth()===i).length)));
+  const mm = MESES.map((m,i) => { const n1 = A1.filter(o=>o.pedido.getMonth()===i).length, n0 = A0.filter(o=>o.pedido.getMonth()===i).length;
+    return `<div class="mm"><span class="n">${m}</span><div class="mb"><button class="bar" data-s="${sid1}" data-k="" data-v="${m}" data-t="${m}/${ano}" style="grid-template-columns:minmax(0,1fr) 3.5em"><span class="t"><i style="width:${n1/mxM*100}%"></i></span><span class="v">${nf(n1)}</span></button><button class="bar ant" data-s="${sid0}" data-k="" data-v="${m}" data-t="${m}/${ano-1}" style="grid-template-columns:minmax(0,1fr) 3.5em"><span class="t"><i style="width:${n0/mxM*100}%"></i></span><span class="v">${nf(n0)}</span></button></div></div>`; }).join('');
+  // setores que mais cresceram (12 meses x 12 anteriores)
+  const cs1 = new Map(Core.count(u12,'setor')), cs0 = new Map(Core.count(a12,'setor'));
+  const cres = [...new Set([...cs1.keys(), ...cs0.keys()])].map(k => [k, cs1.get(k)||0, cs0.get(k)||0]).filter(r=>r[1]+r[2]>=20).map(r => [...r, r[1]-r[2]]).sort((a,b)=>b[3]-a[3]);
+  const sidS = SETS.push({list:u12, key:'setor'}) - 1;
+  const linhaS = r => `<tr data-s="${sidS}" data-v="${esc(r[0])}" data-t="${esc(r[0])} (últimos 12 meses)" style="cursor:pointer"><td>${esc(r[0])}</td><td class="num">${nf(r[1])}</td><td class="num">${nf(r[2])}</td><td class="num ${r[3]>0?'warn':'good'}">${r[3]>0?'+':''}${nf(r[3])}${r[2]?` (${r[3]>0?'+':''}${nf(r[3]/r[2]*100)}%)`:''}</td></tr>`;
+  // fechamento por ano (mediana pedido -> término)
+  const fx = anos.map(([y]) => [y, Core.median(H.filter(o=>String(o.pedido.getFullYear())===y && o.total!=null).map(o=>o.total))]), mxF = Math.max(1, ...fx.map(f=>f[1]||0));
+  // equipamentos que mais voltam
+  const eq = H.filter(o=>o.plaqueta), sidE = SETS.push({list:eq, key:o=>`${o.bem} · plaqueta ${o.plaqueta}`}) - 1;
+  V.innerHTML = `<h2>Histórico</h2><p class="muted">${nf(H.length)} OS abertas de <b>${ini.toLocaleDateString('pt-BR')}</b> a <b>${fim.toLocaleDateString('pt-BR')}</b> · ${nf(hist.length)} vindas do relatório detalhado, guardadas neste aparelho. Cada arquivo novo atualiza as OS que já existem e acrescenta as novas.</p>
+  <div class="kpis kmain">
+    ${kp('OS no histórico', nf(H.length), `desde ${ini.toLocaleDateString('pt-BR')}`)}
+    ${kp(`${ano} até ${dia}/${mes+1}`, nf(esteAno.length), varAno==null?'':`<b class="${varAno>0?'warn':'good'}">${varAno>0?'+':''}${nf(varAno)}%</b> contra ${nf(anoPass.length)} no mesmo período de ${ano-1}`, esteAno)}
+    ${kp('Pendentes hoje no MV', nf(pend.length), 'aberta + não atendida + agendar, pelo arquivo mais novo', pend)}
+    ${kp('Do pedido ao fechamento', fh(Core.median(fech12)), 'mediana dos últimos 12 meses')}
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>OS por ano</h3><div class="bars">${anos.map(([y,n])=>`<button class="bar" data-s="${sidA}" data-k="" data-v="${y}" data-t="${y}"><span class="n"><span class="chev">▸</span>${y}${+y===ano?' (até agora)':''}</span><span class="t"><i style="width:${n/mxA*100}%"></i></span><span class="v">${nf(n)}</span></button>`).join('')}</div></div>
+    <div class="card"><h3>Mês a mês: ${ano} x ${ano-1}</h3><p class="note" style="margin-top:-4px"><span class="lg a"></span>${ano} <span class="lg b"></span>${ano-1} · toque na barra para abrir as OS</p><div class="mmw">${mm}</div></div>
+    <div class="card"><h3>Setores que mais cresceram</h3><p class="note" style="margin-top:-4px">Últimos 12 meses contra os 12 anteriores (setores com 20 OS ou mais). Toque para abrir.</p><div class="scroll"><table><thead><tr><th>Setor</th><th class="num">12 meses</th><th class="num">Anteriores</th><th class="num">Diferença</th></tr></thead><tbody>${cres.slice(0,10).map(linhaS).join('')}</tbody></table></div>
+      <p class="note">Os que mais caíram: ${cres.slice(-3).reverse().map(r=>`${esc(r[0])} (${nf(r[3])})`).join(' · ')}</p></div>
+    <div class="card"><h3>Do pedido ao fechamento, por ano</h3><p class="note" style="margin-top:-4px">Mediana do tempo entre abrir e fechar a OS no MV.</p><div class="bars">${fx.map(([y,v])=>`<div class="bar" style="cursor:default"><span class="n">${y}</span><span class="t"><i style="width:${(v||0)/mxF*100}%"></i></span><span class="v">${fh(v)}</span></div>`).join('')}</div></div>
+    <div class="card wl"><h3>Técnicos: últimos 12 meses</h3>${bars(u12.filter(o=>o.tecnico), o=>o.tecnico, {top:12})}</div>
+    <div class="card wl"><h3>Equipamentos que mais voltam</h3>${eq.length?`<div class="bars">${Core.count(eq, o=>`${o.bem} · plaqueta ${o.plaqueta}`).filter(r=>r[1]>1).slice(0,10).map(([k,n])=>`<button class="bar" data-s="${sidE}" data-k="" data-v="${esc(k)}" data-t="${esc(k)}"><span class="n"><span class="chev">▸</span>${esc(k)}</span><span class="t"><i style="width:${n/Math.max(...Core.count(eq,o=>o.plaqueta).map(x=>x[1]))*100}%"></i></span><span class="v">${nf(n)}</span></button>`).join('')||'<p class="muted">Nenhum equipamento com mais de uma OS.</p>'}</div>`:'<p class="muted">Sem equipamentos ligados às OS.</p>'}<p class="note">Só as OS que têm equipamento cadastrado no MV (bem e plaqueta).</p></div>
+  </div>${bt}`;
+  histBotoes();
+}
+function histBotoes(){
+  const b = $('#hBkp'); if (b) b.onclick = async () => { const a = await IDB.all(); const blob = new Blob([JSON.stringify({tipo:'gos_hist', v:1, gerado:new Date().toISOString(), os:a})], {type:'application/json'}); const l = document.createElement('a'); l.href = URL.createObjectURL(blob); l.download = `historico_OS_HEV_${new Date().toISOString().slice(0,10)}.json`; document.body.appendChild(l); l.click(); setTimeout(()=>{URL.revokeObjectURL(l.href); l.remove();}, 4000); toast(`Backup com ${nf(a.length)} OS baixado.`); };
+  const r = $('#hRes'); if (r) r.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { await prog('Restaurando backup...', f.name, .3); const j = JSON.parse(await f.text()); if (j.tipo !== 'gos_hist' || !Array.isArray(j.os)) throw 0; await IDB.put(j.os); await histLoad(); rebuild(); toast(`Backup restaurado: ${nf(j.os.length)} OS.`); } catch(x) { toast('Esse arquivo não é um backup do histórico.'); } finally { progEnd(); } };
+  const c = $('#hLimpa'); if (c) c.onclick = async () => { if (!confirm('Apagar todo o histórico guardado neste aparelho? (o backup baixado continua valendo)')) return; await IDB.clear(); await histLoad(); rebuild(); toast('Histórico apagado.'); };
 }
 
 // ===================== PENDENTES POR TRATATIVA =====================
@@ -1194,13 +1314,13 @@ function route(){
   const h = (location.hash||'#dashboard').slice(1);
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id==='v-'+h));
   document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.hash==='#'+h));
-  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos'||h==='relatorios') ? 'none' : '';
+  $('#fbox').style.display = (h==='config'||h==='inconsistencias'||h==='arquivos'||h==='relatorios'||h==='historico') ? 'none' : '';
   $('#app').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
   $('#emptyState').style.display = (h==='config'||h==='arquivos') ? 'none' : '';
   if (!document.querySelector('.view.on')) $('#v-dashboard').classList.add('on');
 }
 
-let empties = new Set(), flog = {};
+let empties = new Set(), flog = {}, histNovo = false;
 const tick = () => new Promise(r => setTimeout(r, 30));
 async function prog(txt, sub, frac){ $('#prog').hidden = false; $('#progTxt').textContent = txt; $('#progSub').textContent = sub || ''; $('#progBar').style.width = Math.round((frac||0)*100) + '%'; $('#progPct').textContent = Math.round((frac||0)*100) + '%'; await tick(); }
 function progEnd(){ $('#prog').hidden = true; }
@@ -1234,13 +1354,24 @@ async function readFiles(list){
   for (const f of list) {
     k++; await prog(`Lendo arquivo ${k} de ${list.length}`, `${f.name} · ${nf(f.size/1024)} KB`, k/(list.length+1));
     if (flog[f.name] && flog[f.name].size === f.size && flog[f.name].st !== 'erro') { dups.push(f.name); continue }
-    try { const txt = Core.decode(await f.arrayBuffer()); const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os);
+    try { const txt = Core.decode(await f.arrayBuffer());
+      if (Core.isDet(txt)) { // relatório detalhado = histórico (guarda e soma)
+        await prog(`Lendo histórico ${k} de ${list.length}`, `${f.name} · ${nf(f.size/1024)} KB · pode levar alguns segundos`, k/(list.length+1));
+        const H = Core.parseDet(Core.parseCSV(txt)), agora = Date.now(); H.forEach(h => h.t = agora);
+        const novas = H.filter(h => !histMap.has(h.os)).length;
+        await prog('Guardando no histórico...', `${nf(H.length)} OS`, k/(list.length+1));
+        await IDB.put(H);
+        flog[f.name] = {name:f.name, size:f.size, n:H.length, t:agora, tipo:'Histórico (detalhado)', filas:`${nf(novas)} novas · ${nf(H.length-novas)} atualizadas`, st:'ok', msg:''};
+        histNovo = true; continue;
+      }
+      const os = Core.parseMV(Core.parseCSV(txt), f.name); raw = raw.filter(o=>o.file!==f.name).concat(os);
       if(!os.length) empties.add(f.name); else empties.delete(f.name);
       const looksMV = /Ordem de Servi/i.test(txt.slice(0,3000));
-      flog[f.name] = {name:f.name, size:f.size, n:os.length, filas:Core.count(os,'fila').map(([k,v])=>`${k} ${v}`).join(', '), st: os.length ? 'ok' : (looksMV ? 'vazio' : 'erro'), msg: os.length ? '' : (looksMV ? 'fila vazia no MV' : 'não parece um relatório R_ORDEM_SERVICO')} }
+      flog[f.name] = {name:f.name, size:f.size, n:os.length, t:Date.now(), filas:Core.count(os,'fila').map(([k,v])=>`${k} ${v}`).join(', '), st: os.length ? 'ok' : (looksMV ? 'vazio' : 'erro'), msg: os.length ? '' : (looksMV ? 'fila vazia no MV' : 'não parece um relatório R_ORDEM_SERVICO')} }
     catch(e){ flog[f.name] = {name:f.name, size:f.size, n:0, filas:'', st:'erro', msg:'não foi possível ler o arquivo'} }
   }
   if (demo) { raw = raw.filter(o=>o.file!=='exemplo'); demo=false }
+  if (histNovo) { await prog('Atualizando o histórico...', '', 0.93); await histLoad(); histNovo = false; }
   await prog('Montando relatórios...', `${nf(raw.length)} OS lidas`, 0.95);
   try { cut = null; rebuild(); saveState(); } finally { progEnd(); }
   const nErr = Object.values(flog).filter(x=>x.st==='erro').length;
@@ -1268,6 +1399,7 @@ $('#cfgSave').onclick = () => {
 // Filtros começa fechado (abre ao tocar)
 loadState();
 window.addEventListener('hashchange', () => { route(); const t = $('#tabs'); window.scrollTo({top: t.offsetTop, behavior: matchMedia('(prefers-reduced-motion:reduce)').matches ? 'auto' : 'smooth'}); }); route(); rebuild();
+histLoad().then(() => { if (hist.length) rebuild(); });
 }
 </script>
 <div id="dock"></div>
