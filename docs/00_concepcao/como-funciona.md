@@ -21,5 +21,8 @@ Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 ## Onde ficam os dados
 Só no seu aparelho. Não há servidor nem login. Para levar para outro aparelho, use "Fazer backup" e "Restaurar".
 
-## Modelos prontos
-O app já vem sabendo ler alguns relatórios comuns. Para os outros, ele pergunta uma vez o que é cada coluna e aprende.
+## Formato novo
+Na primeira vez que vê um formato de relatório, o app pergunta o que é cada coluna e aprende. Das próximas vezes, lê sozinho.
+
+## Versão Excel para baixar
+Quem prefere usar no PC baixa a versão em Excel pelo botão do app, com a mesma forma de trabalhar.

@@ -12,6 +12,8 @@ Lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel, PDF e im
 
 ## Versão Excel para baixar e usar no PC
 
+Mesma estrutura do app (importar, dizer o que é cada coluna, escolher os indicadores, gerar relatório com capa), no Excel 2016 ou mais novo.
+
 **Baixar:** https://github.com/gsi-solucoes/raio-x-do-relatorio/raw/main/excel/RaioX_Relatorio.bas
 
 Arquivo: `excel/RaioX_Relatorio.bas` (Excel 2016 ou mais novo).
@@ -20,5 +22,5 @@ Arquivo: `excel/RaioX_Relatorio.bas` (Excel 2016 ou mais novo).
 2. **Arquivo → Importar arquivo** → escolha o `.bas` e feche o editor.
 3. Salve como **Pasta de Trabalho Habilitada para Macro (.xlsm)**.
 4. **Alt + F8** → **Instalar** → Executar.
-5. Na aba Dashboard, clique em **Importar CSVs** e selecione os arquivos (ou um .zip).
+5. Na aba Painel, clique em **Importar arquivos** e selecione os arquivos (ou um .zip).
 6. O botão **Gerar relatório (Excel)** cria um arquivo novo, só com valores, com capa, período, filtros e um relatório por aba.

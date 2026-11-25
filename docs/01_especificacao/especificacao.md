@@ -15,13 +15,13 @@ Status: **esperando Galindo (portão 2)**.
 
 **O que NÃO quero**
 - Nenhuma requisição para fora da própria origem (sem API, sem IA, sem CDN, sem analytics).
-- Nenhum nome de cliente, hospital, pessoa ou sistema no código, fora dos **modelos prontos** (seção 9), que são arquivos de configuração separados.
+- Nenhum nome de cliente, pessoa, sistema ou ramo de negócio no código; nenhum indicador ou regra de negócio fixo: tudo nasce dos dados e da escolha da pessoa.
 - Nenhum dado de usuário no repositório (o repositório é público).
 
 **Critérios**
 - CA-01: com a rede bloqueada depois do 1º carregamento, abrir o app, ler um CSV e gerar o Excel funcionam (Playwright em modo offline).
 - CA-02: durante todos os testes, nenhuma requisição sai para outra origem (log de rede do Playwright = só a própria origem).
-- CA-03: `grep -i` por "HEV", "Edmundo", "hospital", nomes de supervisores e "MV" no `index.html`, fora do arquivo do modelo pronto, devolve 0.
+- CA-03: busca no `index.html` e no `.bas` pelos termos da lista `tests/termos_proibidos.txt` (nomes, siglas e termos do protótipo de origem; arquivo mantido pelo coordenador) devolve 0.
 - CA-04: o app abre em celular (390 px de largura) sem barra de rolagem horizontal na tela inicial.
 
 ---
@@ -68,7 +68,6 @@ Status: **esperando Galindo (portão 2)**.
 | Mais antigos em aberto | data + situação | "Mais antigo: 12/03/2026" |
 
 - O que for marcado vira **bloco** no painel: números em cima, gráficos no meio, **tabela de registros sempre embaixo**. A escolha fica salva por conjunto; o botão "O que acompanhar" reabre a tela.
-- Os indicadores de um **modelo pronto** (seção 9) vêm marcados quando o conjunto é reconhecido como daquele modelo.
 
 **O que NÃO quero**
 - Indicador que não dá para calcular aparecer (ex.: tempo entre datas sem 2 datas).
@@ -80,7 +79,7 @@ Status: **esperando Galindo (portão 2)**.
 - CA-22: marcar 3 indicadores e confirmar → painel com 3 blocos na ordem número → gráfico → tabela de registros no fim.
 - CA-23: recarregar → mesmos 3 blocos; reabrir "O que acompanhar" → os 3 continuam marcados.
 - CA-24: campo com ≤ 30 valores distintos e ≥ 50% de repetição é sugerido como categoria; a pessoa pode trocar o tipo do campo na tela de colunas.
-- CA-25: arquivo do modelo pronto de ordens de serviço → painel atual completo (todas as abas da seção 9), sem passar pela tela.
+- CA-25: `tests/dados/chamados.csv` (código, abertura, conclusão, categoria, responsável, situação) → lista também "Tempo entre duas datas" e "Mais antigos em aberto", com valores iguais ao oráculo.
 
 ---
 
@@ -181,7 +180,7 @@ Status: **esperando Galindo (portão 2)**.
 | .zip | abre e lê cada arquivo de dentro, qualquer mistura |
 
 - Tudo que vem por **OCR ou PDF** passa pela **tela de conferência**: a tabela lida, com as células de baixa confiança marcadas, editável, e os botões "Confirmar" e "Descartar". Várias fotos do mesmo relatório viram um conjunto só (mesmos campos).
-- Relatório "de impressão" (blocos, cabeçalho repetido por página) tem leitor próprio por modelo; o 1º é o detalhado do sistema do modelo de ordens de serviço (já existe).
+- Relatório "de impressão" (blocos, cabeçalho repetido por página): o app tenta tirar a tabela repetindo o cabeçalho de cada página; se não conseguir, cai na tela "Esta coluna é o quê?".
 
 **O que NÃO quero**
 - Dado de OCR entrar sem conferência.
@@ -207,35 +206,36 @@ Status: **esperando Galindo (portão 2)**.
 - O arquivo original não é guardado: lê, guarda os registros e descarta.
 - Backup = um arquivo `.json` com tudo; restaurar substitui ou soma (pergunta).
 - **Sensível:** os relatórios podem ter nomes de pessoas. Por isso nada sai do aparelho, e o repositório só recebe dados de teste anonimizados.
-- Dados de teste em `tests/dados/`: `vendas.*` (fictício, gerado por script com semente fixa), e os CSVs reais do modelo de ordens de serviço **anonimizados** por script (`tests/anonimizar.py`: troca nomes de pessoas por "Pessoa 01…", mantém datas, situações e números).
+- Dados de teste em `tests/dados/`: **só dados fictícios**, gerados por script com semente fixa (`tests/gerar_dados.py`): `vendas.*` (pedidos de uma loja) e `chamados.*` (atendimentos de suporte), nos formatos da etapa 7. Nenhum relatório real entra no repositório.
 
 **Critérios**
 - CA-80: carregar o mesmo arquivo duas vezes → contagem não muda.
 - CA-81: arquivo A (código, cliente) + arquivo B (código, prioridade) → registros com os dois campos; campo vazio em B não apaga valor de A.
 - CA-82: 72 mil registros no histórico → painel abre em ≤ 5 s em notebook comum (medido no Playwright, máquina de CI).
-- CA-83: nenhum arquivo em `tests/dados/` contém nome de pessoa real (lista de nomes de teste no script de conferência).
+- CA-83: todos os arquivos de `tests/dados/` são gerados pelo `gerar_dados.py` (rodar de novo dá o mesmo conteúdo).
 
 ---
 
-## 9. Modelo pronto "Ordens de serviço" (regressão do que já existe)
+## 9. Estrutura reaproveitada do protótipo (regressão)
 
-O app atual vira o 1º **modelo pronto**, num arquivo de configuração separado (`modelos/ordens-servico.js`): reconhecimento dos relatórios, abas, regras e frases padrão. Tudo abaixo já funciona e **não pode quebrar**; cada item é um critério de regressão.
+O código atual é um protótipo feito para um caso específico. **Nada do conteúdo dele entra no produto** (nomes, regras de negócio, frases, abas e indicadores próprios daquele caso). Entra só a **estrutura**, que vira peça genérica e não pode quebrar:
 
-- CA-90: realizadas = concluída + aguardando material + conserto externo + cancelada.
-- CA-91: backlog não inclui aguardando material nem conserto externo; esses dois aparecem sempre **separados**, nunca somados.
-- CA-92: % de atendimento ≥ 90% em verde; "% fantasma" (se resolver as com tratativa) em dourado; "faltam X para 90%".
-- CA-93: tratativas reconhecidas pelas frases padrão da Config (semelhança ≥ 80%), vale a data mais recente; frase escrita pelo solicitante não conta; tratativa só conta no backlog.
-- CA-94: repetidas: só registros abertos, pesos por raridade da palavra, "lugar diferente" não junta; ação sugerida por registro; ficam na aba "Para arrumar".
-- CA-95: tempo até o 1º atendimento: faixas (até 1 h … mais de 7 dias), % em até 24 h, ainda sem atendimento.
-- CA-96: durações mostradas em "h min".
-- CA-97: abas Dashboard, Backlog (2ª), Tempos, Equipe, Para arrumar, Histórico, Config; filtros começam fechados.
-- CA-98: histórico do relatório detalhado: soma por código, KPIs por ano, mês a mês, backup/restaurar/apagar.
-- CA-99: Excel com as 6 opções atuais de relatório e os 3 formatos, valores iguais aos atuais para o mesmo arquivo (comparação com saída de referência gerada antes da mudança).
-- Oráculo: antes de mexer no código, gerar **saídas de referência** (números da tela e Excel) com os CSVs anonimizados; depois de cada etapa, comparar.
+- CA-90: leitor de CSV acha a linha de cabeçalho sozinho, aceita `;` `,` e tab, UTF-8 e Windows-1252.
+- CA-91: importador que aprende: formato novo → "Esta coluna é o quê?" uma vez; o formato fica lembrado (Config → "Esquecer").
+- CA-92: junção por código, campo a campo (CA-80/81), guardada no IndexedDB, com backup/restaurar/apagar.
+- CA-93: janelas flutuantes: abrir pelo clique em qualquer número, barra ou mês; arrastar; minimizar para o rodapé; várias abertas; mini painel com chips que filtram a lista; "Limpar seleção"; imprimir (A4, com a seleção escrita no topo); copiar.
+- CA-94: semelhança de texto (erro de digitação ≥ 80%) usada no pedido escrito e nas frases padrão.
+- CA-95: possíveis repetidos: registros abertos com texto parecido (peso por raridade da palavra), mostrados para a pessoa decidir.
+- CA-96: tempo entre duas datas em faixas (até 1 h … mais de 7 dias), mediana, % dentro do prazo; durações mostradas em "h min".
+- CA-97: meta configurável por indicador percentual (padrão 90%): acima da meta em verde, "faltam X para a meta".
+- CA-98: Excel com capa, faixa de números, período real, filtros, rodapé, configuração de impressão; período tudo / mês / de–até; formatos uma planilha por relatório / tudo numa / arquivos separados.
+- CA-99: filtros começam fechados; período e filtros valem para o painel, as janelas e o Excel.
 
-Macro Excel (`excel/RaioX_Relatorio.bas`): versão para baixar e usar no PC (P-01); nesta versão traz o modelo de ordens de serviço; etapas 2 a 7 **não** vão para a macro nesta versão.
+## 9b. Versão Excel para baixar (macro)
 
----
+- Mesma estrutura do app, sem conteúdo de nenhum caso: importar CSV/XLSX (ou .zip), perguntar o que é cada coluna (uma vez por formato), escolher indicadores do catálogo da etapa 2, painel com segmentação por período e categoria, botão "Gerar relatório" com capa.
+- CA-110: a macro importa `tests/dados/vendas.csv`, pergunta as colunas e gera o mesmo Total e Por cliente que o app (conferência manual no Excel 2016, roteiro em `docs/03_homologacao/roteiro-excel.md`).
+- CA-111: `grep -i` dos termos do CA-03 no `.bas` = 0.
 
 ## 10. Segurança (Método 6, ajustado a app sem servidor)
 
@@ -258,11 +258,11 @@ Macro Excel (`excel/RaioX_Relatorio.bas`): versão para baixar e usar no PC (P-0
 - Ler letra de mão.
 - Conectar direto em banco ou API de outro sistema.
 - Idiomas além do português.
-- Levar as etapas 2 a 7 para a macro Excel.
+- Pedido escrito, Editar layout e OCR na macro Excel (o Excel 2016 não comporta bem).
 
 ## 13. Perguntas abertas (PERGUNTAR AO GALINDO) — com decisão provisória
-- **P-01** ✅ Decidido (Galindo, 25/11/2026 14h28): a macro Excel fica como **versão para baixar e usar no PC**, com link disponível no app e no README. Conteúdo nesta versão: o modelo de ordens de serviço (o que couber no Excel 2016).
+- **P-01** ✅ Decidido (Galindo, 25/11/2026 14h28 e 14h34): a macro Excel fica como **versão para baixar e usar no PC**, com link no app e no README, com a mesma estrutura genérica do app no que couber no Excel 2016 (seção 9b).
 - **P-02** ✅ Decidido (Galindo, 25/11/2026 14h25): repositório `gsi-solucoes/raio-x-do-relatorio`, link https://gsi-solucoes.github.io/raio-x-do-relatorio/.
-- **P-03** A meta de 90% vira configurável por indicador (cada cliente tem a sua)? *Provisório: sim, na Config, padrão 90%.*
-- **P-04** O modelo pronto de ordens de serviço continua mostrando as frases e regras do hospital como padrão, ou começa vazio para cliente novo? *Provisório: frases genéricas de manutenção como padrão, editáveis.*
+- **P-03** Meta configurável por indicador percentual (cada cliente tem a sua)? *Provisório: sim, padrão 90%.*
+- **P-04** ✅ Decidido (Galindo, 25/11/2026 14h34): nada do caso de origem no produto; sem modelo pronto com regras de um ramo. Frases padrão começam vazias e cada cliente cadastra as suas.
 - **P-05** Ordem das etapas: 1 → 2 → 3 → 4 → 5 → 6 → 7? Ou trazer a 7 (formatos/OCR) para antes? *Provisório: ordem numérica.*

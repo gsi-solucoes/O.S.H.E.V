@@ -4,12 +4,12 @@ Projeto da Fábrica GSI (dono: Galindo). Falar sempre em português do Brasil.
 Repositório: `gsi-solucoes/raio-x-do-relatorio` (antes O.S.H.E.V). Link do app: https://gsi-solucoes.github.io/raio-x-do-relatorio/
 
 ## O que é
-App web **estático e offline** (GitHub Pages + PWA) que lê os dados extraídos de qualquer sistema (CSV, Excel, JSON/XML, PDF e imagem), guarda no navegador e monta dashboards, KPIs e relatórios em Excel. Mais a macro Excel `excel/RaioX_Relatorio.bas` para o computador do hospital.
+App web **estático e offline** (GitHub Pages + PWA) que lê os dados extraídos de qualquer sistema (CSV, Excel, JSON/XML, PDF e imagem), guarda no navegador e monta dashboards, KPIs e relatórios em Excel. Mais a versão Excel para baixar (`excel/RaioX_Relatorio.bas`), com a mesma estrutura.
 
 ## Regras deste projeto (Galindo, 25/11/2026)
-- **Sem dublês e sem esqueleto simulado:** não há serviço externo. Os dados de teste são CSVs reais do MV anonimizados em `tests/dados/` (nunca dados de paciente).
+- **Sem dublês e sem esqueleto simulado:** não há serviço externo. Os dados de teste são só fictícios, gerados por `tests/gerar_dados.py` em `tests/dados/`; nenhum relatório real no repositório.
 - **Sem servidor, sem VM, sem porta, sem IA paga, sem API:** tudo roda no navegador; o pedido escrito é entendido por regras.
-- **Nada específico do hospital no código:** cliente, área e logo vêm da Config.
+- **Nada do caso de origem (protótipo) no produto:** só a estrutura. Sem nomes, regras, frases ou indicadores fixos de um ramo; cliente, área e logo vêm da Config.
 - Tudo que for aprovado na versão web vale também para a macro Excel (quando couber no Excel 2016).
 - Documentos: `docs/00_concepcao/` (concepção, diário, como-funciona), `docs/caminho-das-estrelas.md`, especificação em `docs/01_especificacao/`, estado em `docs/03_homologacao/estado.md`.
 - Build: `app.html` + `core.js` → `index.html` (core injetado em `/*CORE*/`). Testes com Playwright antes de publicar; falhou não sobe.
