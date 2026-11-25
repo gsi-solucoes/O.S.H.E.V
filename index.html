@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-TKvC8+iju9r9zesWEk73n5A+gJj8YRJJam4QkVpnyMU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-F9JHJ1Trww6peadGoIaJMNoR2yT0JKoJS5LZ5iy7emg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -313,7 +313,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
-const VERSAO = "75c6f02392";
+const VERSAO = "69f1477589";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -335,6 +335,14 @@ const TIPOS_OK = new Set(TIPOS.map(x => x[0]));
 // todo valor de registro vira texto simples; objeto vira JSON em texto (nunca fórmula/hiperlink)
 const paraTexto = x => { if (x == null) return ''; if (typeof x === 'string') return x; if (typeof x === 'number' || typeof x === 'boolean') return String(x); try { return JSON.stringify(x) || ''; } catch (e) { return ''; } };
 // segunda barreira para o Excel: só string, número finito, Date ou null
+// B-1 (revisão etapa 2): escolhas de indicadores vindas de fora (backup, localStorage): até 200 conjuntos, listas de strings sem repetidos (até 500 ids de até 1000 caracteres); inválido = null
+function acompLimpa(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const ks = Object.keys(o); if (ks.length > 200) return null;
+  const r = Object.create(null);
+  for (const k of ks) { const l = o[k]; if (!Array.isArray(l) || l.length > 500 || !l.every(x => typeof x === 'string' && x.length <= 1000)) return null; r[k] = [...new Set(l)]; }
+  return r;
+}
 const primitivo = x => x == null ? null : x instanceof Date ? (isNaN(x) ? null : x) : typeof x === 'number' ? (isFinite(x) ? x : null) : typeof x === 'string' ? x : paraTexto(x);
 const cfgLimpa = (o, base) => { const c = Object.assign({}, base); if (!o || typeof o !== 'object') return c; ['cliente', 'area', 'sinonimos'].forEach(k => { if (typeof o[k] === 'string') c[k] = o[k].slice(0, 5000); }); ['meta', 'prazoH'].forEach(k => { if (typeof o[k] === 'number' && isFinite(o[k])) c[k] = o[k]; }); if (typeof o.logo === 'string' && (o.logo === '' || /^data:image\/png;base64,[A-Za-z0-9+\/=]*$/.test(o.logo))) c.logo = o.logo; return c; };
 const camposOk = l => Array.isArray(l) && l.every(x => x && typeof x === 'object' && typeof x.n === 'string' && x.n.trim() && TIPOS_OK.has(x.t));
@@ -354,14 +362,14 @@ function validarBackup(b) {
     }
     if (b.cfg != null && (typeof b.cfg !== 'object' || Array.isArray(b.cfg))) return null;
     const ac = nulo();
-    if (b.acomp != null) { if (typeof b.acomp !== 'object' || Array.isArray(b.acomp)) return null; for (const k of Object.keys(b.acomp)) { const l = b.acomp[k]; if (!Array.isArray(l) || l.length > 500 || !l.every(x => typeof x === 'string')) return null; ac[k] = l.slice(); } }
+    if (b.acomp != null) { if (typeof b.acomp !== 'object' || Array.isArray(b.acomp)) return null; const r = acompLimpa(b.acomp); if (!r) return null; Object.assign(ac, r); }
     return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac };
   } catch (e) { return null; }
 }
 let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' });
 let fmts = copiaNula(store.get('raiox_fmt', {}));     // formato lembrado: assinatura das colunas -> {conjunto, cols:[{n,t}]}
 let conjs = copiaNula(store.get('raiox_conj', {}));   // conjunto -> {campos:[{n,t}]}
-let acomp = copiaNula(store.get('raiox_acomp', {}));   // conjunto -> [id dos indicadores escolhidos, na ordem em que foram marcados]
+let acomp = acompLimpa(store.get('raiox_acomp', {})) || nulo();   // conjunto -> [id dos indicadores escolhidos, na ordem em que foram marcados]
 let regs = [];                             // {conjunto, codigo, v:{campo:valor}}
 let mapa = new Map();
 const F = { conjunto: '', per: 'tudo', mes: '', de: '', ate: '', cd: '', cat: '', val: '', q: '', tA: '', tB: '' };
@@ -553,21 +561,21 @@ function render() {
   $('#kAnt span').textContent = 'Mais antigo' + (cd && ds.length > 1 ? ' (' + cd + ')' : ''); $('#kNov span').textContent = 'Mais novo' + (cd && ds.length > 1 ? ' (' + cd + ')' : '');
   $('#kTotal').onclick = () => abrirJanela('Todos os registros', L, c);
 
-  const esc = blocosEscolhidos(c); $('#kpis').hidden = $('#blocos').hidden = !!esc.length; $('#blocosEsc').hidden = !esc.length;
-  $('#btnEntender').hidden = !esc.length; $('#blocosEsc').textContent = '';
-  if (esc.length) esc.forEach(b => $('#blocosEsc').append(b.desenha(L, c)));
+  const escolhidos = blocosEscolhidos(c); $('#kpis').hidden = $('#blocos').hidden = !!escolhidos.length; $('#blocosEsc').hidden = !escolhidos.length;
+  $('#btnEntender').hidden = !escolhidos.length; $('#blocosEsc').textContent = '';
+  if (escolhidos.length) escolhidos.forEach(b => $('#blocosEsc').append(b.desenha(L, c)));
   const bl = $('#blocos'); bl.textContent = '';
-  if (!esc.length) cats.slice(0, 3).forEach(cat => {
+  if (!escolhidos.length) cats.slice(0, 3).forEach(cat => {
     const g = [...agrupa(L, r => r.v[cat.n])].sort((a, b) => b[1].length - a[1].length).slice(0, 8).map(([k, l]) => [k, l.length, l]);
     if (g.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Por ' + cat.n }), barras(g, (k, l) => abrirJanela(cat.n + ': ' + k, l, c))));
   });
-  if (cd && !esc.length) {
+  if (cd && !escolhidos.length) {
     const g = [...agrupa(L, r => (r.v[cd] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).slice(-12).map(([k, l]) => [k.slice(5) + '/' + k.slice(0, 4), l.length, l]);
     if (g.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Por mês (' + cd + ')' }), barras(g, (k, l) => abrirJanela('Mês ' + k, l, c))));
   }
-  if (ds.length >= 2 && !esc.length) bl.append(cartaoTempo(L, c, ds));
+  if (ds.length >= 2 && !escolhidos.length) bl.append(cartaoTempo(L, c, ds));
   const txs = camposDe(c, 'texto');
-  if (txs.length && !esc.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Possíveis repetidos' }), el('p', { class: 'muted', text: 'Registros com texto parecido em “' + txs[0].n + '”, para você decidir.' }),
+  if (txs.length && !escolhidos.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Possíveis repetidos' }), el('p', { class: 'muted', text: 'Registros com texto parecido em “' + txs[0].n + '”, para você decidir.' }),
     el('button', { type: 'button', id: 'btnRep', text: 'Procurar repetidos', onclick: () => procurarRepetidos(L, c, txs[0].n) })));
 
   const campos = camposC, vis = L.slice().sort((a, b) => cd ? (b.v[cd] || '').localeCompare(a.v[cd] || '') : a.codigo.localeCompare(b.codigo, 'pt', { numeric: true }));
@@ -616,7 +624,7 @@ const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'but
 const cartao = (b, ...kids) => el('div', { class: 'card bloco' }, el('h3', { text: b.nome }), ...kids);
 
 // catálogo de indicadores possíveis do conjunto: só entram os que dá para calcular (ex() devolve null quando não dá)
-function catalogo(c) {
+function catalogo(c, soIds) {
   const todos = doConj(c), campos = (conjs[c] || {}).campos || [], cs = camposDe(c, 'categoria'), ns = camposDe(c, 'numero'), ds = camposDe(c, 'data'), ss = camposDe(c, 'situacao');
   const abrir = (t, l) => abrirJanela(t, l, c), SEP = '\u0001', out = [];
   out.push({ id: 'total', grupo: 'num', nome: 'Total de registros', oque: 'quantos registros há', conta: 'contagem de todos os registros', campos: 'nenhum campo específico, conta os registros',
@@ -654,12 +662,12 @@ function catalogo(c) {
       ex: L => { const l = lista(L); return l.length ? 'Mais antigo: ' + fmtData(l[0].v[dat()]) : null; },
       desenha: L => { const l = lista(L); return cartao({ nome: 'Mais antigos em aberto' }, kpiBtn('Mais antigo: ', l.length ? fmtData(l[0].v[dat()]) : '—', '', () => abrir('Mais antigos em aberto', l)), el('p', { class: 'muted', text: fmtI(l.length) + ' em aberto' })); } });
   }
-  return out.filter(x => x.ex(todos) != null);
+  return (soIds ? out.filter(x => soIds.indexOf(x.id) >= 0) : out).filter(x => x.ex(todos) != null);
 }
 // blocos escolhidos do conjunto, na ordem da especificação: números, gráficos (cada grupo na ordem em que foram marcados); [] = painel da etapa 1
 function blocosEscolhidos(c) {
   const ids = Array.isArray(acomp[c]) ? acomp[c] : []; if (!ids.length || !conjs[c]) return [];
-  const cat = catalogo(c), lista = ids.map(i => cat.find(x => x.id === i)).filter(Boolean);
+  const cat = catalogo(c, ids), lista = ids.map(i => cat.find(x => x.id === i)).filter(Boolean);
   return lista.filter(b => b.grupo === 'num').concat(lista.filter(b => b.grupo !== 'num'));
 }
 
@@ -762,21 +770,23 @@ function capa(wb, nomeRel, grupos) {
   info.forEach((p, i) => { ws.getCell(8 + i, 1).value = p[0]; ws.getCell(8 + i, 1).font = { bold: true }; ws.getCell(8 + i, 2).value = p[1]; });
   ws.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1 }; ws.headerFooter.oddFooter = '&LRaio X do Relatório&RPágina &P de &N';
 }
+const cortaCelula = v => typeof v === 'string' && v.length > 32000 ? v.slice(0, 32000) : v;   // B-3: limite do Excel é 32.767 caracteres por célula
 function comoLer(wb, grupos) {
   const itens = []; grupos.forEach(g => { const bl = blocosEscolhidos(g.c); if (bl.length) resumoBlocos(g.c, bl, g.lista).forEach(x => itens.push(grupos.length > 1 && grupos.filter(h => blocosEscolhidos(h.c).length).length > 1 ? '[' + g.c + '] ' + x.texto : x.texto)); });
   if (!itens.length) return;   // sem escolha confirmada a planilha não é criada
   const ws = wb.addWorksheet('Como ler este relatório'); ws.columns = [{ width: 120 }];
   ws.getCell('A1').value = 'Seu painel'; ws.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF0F2A4A' } };
-  itens.forEach((t, i) => { const c = ws.getCell(2 + i, 1); c.value = primitivo(t); c.alignment = { wrapText: true, vertical: 'top' }; });
+  itens.forEach((t, i) => { const c = ws.getCell(2 + i, 1); c.value = cortaCelula(primitivo(t)); c.alignment = { wrapText: true, vertical: 'top' }; });
   ws.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
 }
+const primitivoXL = x => cortaCelula(primitivo(x));
 function aba(wb, nome, campos, linhas, comRel) {
   const ws = wb.addWorksheet(nomeAba(wb, nome)), cols = (comRel ? [{ n: 'Relatório', t: 'texto' }] : []).concat(campos);
   ws.addRow(cols.map(c => c.n)); const h = ws.getRow(1); h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; });
   linhas.forEach(({ r, c }) => ws.addRow(cols.map((k, i) => {
-    if (comRel && i === 0) return primitivo(c); if (k.t === 'codigo') return primitivo(r.codigo); const v = r.v[k.n]; if (!v) return null;
-    if (k.t === 'data') { const m = Core.msISO(v); return m == null ? primitivo(v) : new Date(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10), +v.slice(11, 13), +v.slice(14, 16))); }
-    if (k.t === 'numero') { const n = Core.numero(v); return n == null ? primitivo(v) : primitivo(n); } return primitivo(v); })));
+    if (comRel && i === 0) return primitivoXL(c); if (k.t === 'codigo') return primitivoXL(r.codigo); const v = r.v[k.n]; if (!v) return null;
+    if (k.t === 'data') { const m = Core.msISO(v); return m == null ? primitivoXL(v) : new Date(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10), +v.slice(11, 13), +v.slice(14, 16))); }
+    if (k.t === 'numero') { const n = Core.numero(v); return n == null ? primitivoXL(v) : primitivoXL(n); } return primitivoXL(v); })));
   cols.forEach((k, i) => { const col = ws.getColumn(i + 1); let w = k.n.length; ws.eachRow({ includeEmpty: false }, (row, n) => { if (n < 400) { const x = row.getCell(i + 1).value; w = Math.max(w, x instanceof Date ? 16 : String(x == null ? '' : x).length); } }); col.width = Math.min(60, w + 3); if (k.t === 'data') col.numFmt = 'dd/mm/yyyy hh:mm'; });
   ws.views = [{ state: 'frozen', ySplit: 1 }]; if (cols.length) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
   ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:1' }; ws.headerFooter.oddFooter = '&L' + (ORG() || 'Raio X do Relatório').replace(/&/g, '&&') + '&CPágina &P de &N&R&D';

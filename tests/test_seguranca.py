@@ -177,3 +177,86 @@ def test_SEG_M2_service_worker_nao_apaga_cache_de_outro_app(page):
     if "raiox-v0-antigo" in nomes:
         pytest.skip(f"activate nao rodou neste ambiente (caches: {nomes}); nao da para simular versao nova")
     assert "outro-app-v1" in nomes, f"cache de outro app apagado pelo SW: {nomes}"
+
+
+# ---------- Etapa 2: B-1 a B-4 (parecer docs/04_seguranca/revisao-etapa2.md) ----------
+def _acomp_do_storage(page):
+    return page.evaluate("JSON.parse(localStorage.getItem('raiox_acomp')||'{}')")
+
+
+def test_SEG2_B1_backup_com_ids_repetidos_nao_multiplica_blocos(page):
+    carregar(page, "vendas.csv")
+    _, b = backup(page)
+    d = json.loads(b)
+    c = next(iter(d["conjs"]))
+    d["acomp"] = {c: ["total"] * 500}
+    restaurar(page, json.dumps(d))
+    abrir_painel(page)
+    assert page.get_by_role("heading", name="Total de registros", exact=True).count() == 1
+    assert _acomp_do_storage(page)[c] == ["total"]
+
+
+def test_SEG2_B1_backup_com_ids_enormes_ou_chaves_demais_e_recusado(page):
+    carregar(page, "vendas.csv")
+    _, b = backup(page)
+    d = json.loads(b)
+    c = next(iter(d["conjs"]))
+    d["acomp"] = {c: ["x" * 5000]}
+    restaurar(page, json.dumps(d), modo="Juntar")
+    assert c not in _acomp_do_storage(page) or all(len(i) <= 1000 for i in _acomp_do_storage(page)[c])
+    d["acomp"] = {f"k{i}": ["total"] for i in range(2000)}
+    restaurar(page, json.dumps(d), modo="Juntar")
+    assert len(_acomp_do_storage(page)) <= 200
+
+
+def test_SEG2_B1_localstorage_adulterado_tambem_e_limpo(page):
+    carregar(page, "vendas.csv")
+    c = page.evaluate("Object.keys(JSON.parse(localStorage.getItem('raiox_conj')))[0]")
+    page.evaluate("c => localStorage.setItem('raiox_acomp', JSON.stringify({[c]: Array(500).fill('total')}))", c)
+    page.reload(); page.wait_for_timeout(1200)
+    abrir_painel(page)
+    assert page.get_by_role("heading", name="Total de registros", exact=True).count() == 1
+
+
+def test_SEG2_B2_digitar_na_busca_nao_recalcula_catalogo_inteiro(page, tmp_path):
+    cols = [f"N{i}" for i in range(30)] + [f"C{i}" for i in range(30)]
+    linhas = ["Codigo," + ",".join(cols)]
+    for r in range(1500):
+        linhas.append(f"R{r}," + ",".join([str((r * 7 + i) % 97) for i in range(30)] + [f"v{(r + i) % 12}" for i in range(30)]))
+    p = csv_tmp(tmp_path, "grande.csv", "\n".join(linhas))
+    page.locator("input[type=file]").first.set_input_files([str(p)])
+    page.wait_for_timeout(2500)
+    from test_etapa1 import mapear_se_preciso
+    mapear_se_preciso(page)
+    page.evaluate("""() => { const c = Object.keys(JSON.parse(localStorage.getItem('raiox_conj')))[0];
+        localStorage.setItem('raiox_acomp', JSON.stringify({[c]: ['total']})); }""")
+    page.reload(); page.wait_for_timeout(2500)
+    abrir_painel(page)
+    ms = page.evaluate("""() => { const q = document.querySelector('#fQ'); const t0 = performance.now();
+        for (let i = 0; i < 5; i++) { q.value = 'v' + i; q.dispatchEvent(new Event('input')); }
+        return (performance.now() - t0) / 5; }""")
+    assert ms < 60, f"cada tecla na busca levou {ms:.0f} ms"
+
+
+def test_SEG2_B3_celula_da_aba_como_ler_cabe_no_limite_do_excel(page, tmp_path):
+    carregar(page, "vendas.csv")
+    abrir_painel(page)
+    page.evaluate("""() => { const q = document.querySelector('#fQ'); q.value = 'a'.repeat(40000); q.dispatchEvent(new Event('input')); }""")
+    c = page.evaluate("Object.keys(JSON.parse(localStorage.getItem('raiox_conj')))[0]")
+    page.evaluate("c => localStorage.setItem('raiox_acomp', JSON.stringify({[c]: ['total']}))", c)
+    page.reload(); page.wait_for_timeout(1200)
+    abrir_painel(page)
+    page.evaluate("""() => { const q = document.querySelector('#fQ'); q.value = 'a'.repeat(40000); q.dispatchEvent(new Event('input')); }""")
+    wb = abrir_xlsx(gerar_excel(page), tmp_path)
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cel in row:
+                if isinstance(cel.value, str):
+                    assert len(cel.value) <= 32767, f"{ws.title}!{cel.coordinate} com {len(cel.value)} caracteres"
+
+
+def test_SEG2_B4_render_nao_sombreia_o_esc_de_html():
+    import pathlib
+    src = (pathlib.Path(__file__).resolve().parent.parent / "src" / "app.js").read_text(encoding="utf-8")
+    trecho = src[src.index("function render()"):src.index("function render()") + 6000]
+    assert "const esc =" not in trecho
