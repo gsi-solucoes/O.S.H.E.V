@@ -451,7 +451,7 @@ function capa(wb, nomeRel, grupos) {
   ws.getRow(5).values = ['Total de registros', 'Mais antigo', 'Mais novo']; ws.getRow(6).values = [tot, datas.length ? fmtData(datas[0]) : '—', datas.length ? fmtData(datas[datas.length - 1]) : '—'];
   ws.getRow(5).font = { bold: true, color: { argb: 'FFFFFFFF' } }; ws.getRow(5).eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; }); ws.getRow(6).font = { size: 14, bold: true }; ws.getRow(6).alignment = { horizontal: 'left' };
   const info = [['Relatório', nomeRel], ['Período', datas.length ? fmtData(datas[0]) + ' a ' + fmtData(datas[datas.length - 1]) : 'sem datas'], ['Filtros', textoFiltros() || 'nenhum'], ['Gerado em', new Date().toLocaleString('pt-BR')]];
-  info.forEach((p, i) => { ws.getCell(8 + i, 1).value = p[0]; ws.getCell(8 + i, 1).font = { bold: true }; ws.getCell(8 + i, 2).value = p[1]; });
+  info.forEach((p, i) => { ws.getCell(8 + i, 1).value = p[0]; ws.getCell(8 + i, 1).font = { bold: true }; ws.getCell(8 + i, 2).value = cortaCelula(p[1]); });
   ws.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1 }; ws.headerFooter.oddFooter = '&LRaio X do Relatório&RPágina &P de &N';
 }
 const cortaCelula = v => typeof v === 'string' && v.length > 32000 ? v.slice(0, 32000) : v;   // B-3: limite do Excel é 32.767 caracteres por célula
