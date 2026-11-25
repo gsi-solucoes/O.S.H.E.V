@@ -30,7 +30,7 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 - Suíte completa: **45 verdes, 2 skip** (etapa 1 + segurança + macro na oficina). Testes de segurança: 9 falham na versão anterior e passam nesta (servidor da suíte não reaproveita porta ocupada).
 - Revisão de segurança: libera; M-1, M-3, M-4, B-2, B-4, B-6 corrigidos; pendentes: domínio próprio (M-2, Galindo), `frame-ancestors` e `style-src unsafe-inline` (B-3).
 - Macro reescrita e rodando na oficina (LibreOffice); o que a oficina não cobre está no `roteiro-excel.md`.
-- Falta: Galindo dizer "pode publicar no main". Próximo: F-46, etapa 2 na branch `etapa-2`.
+- Publicada no `main` em `0e7d953` (25/11).
 
 ## Etapa 2 (F-46) — Construtor, 25/11/2026, branch `etapa-2` (sem commit)
 - **Feito:** catálogo de indicadores (R-53 a R-61) com exemplo calculado; janela R-51 (abre sozinha após ler conjunto sem escolha; Cancelar não salva); botão `O que acompanhar`; blocos na ordem número, gráfico, registros; escolha salva por conjunto em `localStorage` `raiox_acomp` e incluída no backup/restauração (somar/substituir/apagar); tipo `Situação` (sugestão por nome: situa/status/estado; conta como categoria nos filtros e gráficos); `Seu painel` + `Entender este painel`; planilha `Como ler este relatório` (2ª aba, só com escolha confirmada). Sem escolha, painel da etapa 1 idêntico.
@@ -39,8 +39,8 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 - **Decisões/riscos:** (1) mediana do tempo no formato da etapa 1 (`11 h 50 min`), não `1 d 4 h` do exemplo da especificação (os dois textos da 0.3 divergem); (2) indicadores `Por`/`<Número> por` também para o campo Situação (superset do CA-20); (3) o tipo `Data e hora` da R-65 não existe separado (`Data` cobre as duas); (4) `Mais antigo` mostra a hora quando a data tem hora; (5) em aberto: situação vazia conta como em aberto (regra literal da 0.3); (6) conjuntos já guardados mantêm os tipos antigos (Situação só em formato novo ou após `Esquecer`).
 - **Falta:** testes de aceite do Testador; CA-28 adiado (etapas 3 e 6).
 
-## Etapa 2 (F-46, 25/11/2026) — pronta, esperando publicar
+## Etapa 2 (F-46, 25/11/2026) — publicada no `main` (`4de9c40`)
 - Branch `etapa-2`. Suíte: etapa 2 = 10 verdes + CA-28 adiado (etapas 3 e 6); suíte inteira sem a macro: 47 verdes, 3 skip (2 testes de teste corrigidos depois).
 - Revisão de segurança: liberada, 0 Crítico/Alto/Médio; 4 Baixos (B-1 a B-4) na fila, ver `docs/04_seguranca/revisao-etapa2.md`. Falta teste de regressão de segurança da etapa 2.
 - Divergências decididas: mediana no formato da etapa 1 (não "1 d 4 h"); tipo `Data e hora` não criado (Data cobre).
-- Falta: Galindo dizer "pode publicar no main". Próximo: etapa 3 (pedido escrito).
+- Publicada: 45 verdes conferidos no `main` (25/11 19h). Próximo: F-50 (Baixos + regressão) e F-51, etapa 3 (pedido escrito). Regra nova: etapa pronta vai ao `main` sozinha.
