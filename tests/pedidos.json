@@ -1,0 +1,931 @@
+[
+ {
+  "variacao": "medida",
+  "frase": "quantidade de registros",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "quantos registros",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "soma do valor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "média do valor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "media",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "mediana do valor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "mediana",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "valor mínimo",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "minimo",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "valor máximo",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "maximo",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "maior valor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "maximo",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "menor valor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "minimo",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "% de cancelados por mês",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "percentual",
+   "campo": null,
+   "agrupar": "mês",
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Cancelado"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "percentual de entregues por mês",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "percentual",
+   "campo": null,
+   "agrupar": "mês",
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Entregue"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "medida",
+  "frase": "percentual de pendentes por mês",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "percentual",
+   "campo": null,
+   "agrupar": "mês",
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Pendente"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "quantidade de registros por cliente",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": "Cliente",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "soma do valor por região",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": "Região",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "média do valor por vendedor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "media",
+   "campo": "Valor",
+   "agrupar": "Vendedor",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "quantidade por situação",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": "Situação",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "soma do valor por mês",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": "mês",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "quantidade por região",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": "Região",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "máximo do valor por cliente",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "maximo",
+   "campo": "Valor",
+   "agrupar": "Cliente",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "mediana do valor por região",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "mediana",
+   "campo": "Valor",
+   "agrupar": "Região",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "agrupar",
+  "frase": "quantidade de registros por vendedor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": "Vendedor",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "soma do valor só entregues",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Entregue"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "quantidade de registros da região Sul",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Região",
+     "valor": "Sul"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "média do valor, só cancelados",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "media",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Cancelado"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "quantidade de registros do cliente Alfa Comercial",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Cliente",
+     "valor": "Alfa Comercial"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "soma do valor do vendedor Bruno Teste",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Vendedor",
+     "valor": "Bruno Teste"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "quantidade de registros em transporte",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Em transporte"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "soma do valor pendentes por região",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": "Região",
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Pendente"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "quantidade de registros da região Norte, só entregues",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Região",
+     "valor": "Norte"
+    },
+    {
+     "campo": "Situação",
+     "valor": "Entregue"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "filtro",
+  "frase": "quantidade de registros da regiao leste",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Região",
+     "valor": "Leste"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "quantidade de registros em outubro",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "mes",
+    "mes": 10,
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "soma do valor em setembro",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "mes",
+    "mes": 9,
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "quantidade em 2026",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "ano",
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "soma do valor este ano",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "ano",
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "quantidade de registros este mês",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "mes",
+    "mes": 11,
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "quantidade de registros mês passado",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "mes",
+    "mes": 10,
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "quantos registros de 01/09 a 15/09",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "intervalo",
+    "de": "2026-09-01",
+    "ate": "2026-09-15"
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "soma do valor de 01/03 a 31/03",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "intervalo",
+    "de": "2026-03-01",
+    "ate": "2026-03-31"
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "quantidade de registros em março",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "mes",
+    "mes": 3,
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "periodo",
+  "frase": "média do valor em janeiro",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "media",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "mes",
+    "mes": 1,
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "soma do valr por clinte",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": "Cliente",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "quantidde de registros",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "mdia do valor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "media",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "media do valor por regio",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "media",
+   "campo": "Valor",
+   "agrupar": "Região",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "soma do valor por vendedr",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": "Vendedor",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "quantidade por situaçao",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": "Situação",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "soma do valor so entregeus",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Situação",
+     "valor": "Entregue"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "quantidade de registros da regiao nrte",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [
+    {
+     "campo": "Região",
+     "valor": "Norte"
+    }
+   ],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "maxmo do valor",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "maximo",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "soma do vlor em outubo",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": {
+    "tipo": "mes",
+    "mes": 10,
+    "ano": 2026
+   },
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "erro_digitacao",
+  "frase": "soma do valor por clientes",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": "Cliente",
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": []
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "bom dia",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "bom dia"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "qual a previsão do tempo",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "qual a previsão do tempo"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "xyzzy",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "xyzzy"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "me conte uma piada",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "me conte uma piada"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "asdfgh qwerty",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "asdfgh qwerty"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "olá tudo bem",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "olá tudo bem"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "preciso de ajuda urgente",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "preciso de ajuda urgente"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "quero um bolo de chocolate",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": null,
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "quero um bolo de chocolate"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "soma do valor por zzzzz",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "soma",
+   "campo": "Valor",
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "zzzzz"
+   ]
+  }
+ },
+ {
+  "variacao": "nao_entendida",
+  "frase": "quantidade de registros em blablabla",
+  "conjunto": "vendas",
+  "esperado": {
+   "medida": "quantidade",
+   "campo": null,
+   "agrupar": null,
+   "filtros": [],
+   "periodo": null,
+   "naoEntendi": [
+    "blablabla"
+   ]
+  }
+ }
+]
