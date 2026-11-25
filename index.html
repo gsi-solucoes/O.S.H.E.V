@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ykqXPCLkq0vt87qdA86zDhxgYVVdfM+qYuFs4P4ivy0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-L0RtV/mY/wSYsuiMp6zCb7XP1myNJT9z8NOyF40KOrg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -345,17 +345,17 @@ var Core = (function () {
     for (i = 0; i < a.length; i++) for (j = 0; j < b.length; j++) { k = 0; while (i + k < a.length && j + k < b.length && a[i + k] === b[j + k]) k++; if (k > bl) { bl = k; bi = i; bj = j; } }
     return bl ? bl + casados(a.slice(0, bi), b.slice(0, bj)) + casados(a.slice(bi + bl), b.slice(bj + bl)) : 0;
   }
-  function sim(a, b) { if (a === b) return 1; if (a.length < 4 || b.length < 4) return 0; return 2 * casados(a, b) / (a.length + b.length); }
+  function sim(a, b) { if (a === b) return 1; if (a.length < 4 || b.length < 4) return 0; if (2 * Math.min(a.length, b.length) / (a.length + b.length) < 0.8) return 0; return 2 * casados(a, b) / (a.length + b.length); }
   function p2n(n) { return (n < 10 ? '0' : '') + n; }
   function entender(frase, ctx) {
-    frase = String(frase == null ? '' : frase); ctx = ctx || {};
-    var campos = (ctx.campos || []).filter(function (k) { return k.t !== 'codigo' && k.t !== 'ignorar'; }), vals = ctx.valores || {}, sin = ctx.sin || {};
+    frase = String(frase == null ? '' : frase).slice(0, 300); ctx = ctx || {};
+    var campos = (ctx.campos || []).filter(function (k) { return k.t !== 'codigo' && k.t !== 'ignorar'; }), vals = Object.assign(Object.create(null), ctx.valores), sin = ctx.sin || {};
     var out = { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [] };
     var H = ctx.hoje && /^\d{4}-\d{2}-\d{2}/.test(ctx.hoje) ? { a: +ctx.hoje.slice(0, 4), m: +ctx.hoje.slice(5, 7), d: +ctx.hoje.slice(8, 10) } : null;
     var tk = [], re = /\S+/g, mm;
     while ((mm = re.exec(frase))) { var raw = mm[0].replace(/^[("'“‘¿¡]+|[)"'”’,.;:!?]+$/g, ''); if (!raw) continue; tk.push({ raw: raw, ini: mm.index, fim: mm.index + mm[0].length, n: raw === '%' ? '%' : sing1(nz(raw)), ok: false, forca: null }); }
     var fld = campos.map(function (k) { return { ref: k, chave: S(k.n) }; });
-    var vls = []; Object.keys(vals).forEach(function (c) { (vals[c] || []).forEach(function (v) { var ch = S(v); if (ch) vls.push({ campo: c, valor: v, chave: ch }); }); });
+    var vls = []; Object.keys(vals).forEach(function (c) { (Array.isArray(vals[c]) ? vals[c] : []).forEach(function (v) { var ch = S(v).slice(0, 60); if (ch) vls.push({ campo: c, valor: v, chave: ch }); }); });
     function conhecida(n) { return P_STOP.indexOf(' ' + n + ' ') >= 0 || P_MED.some(function (x) { return x[0] === n; }) || fld.some(function (f) { return f.chave === n; }) || vls.some(function (v) { return v.chave === n; }); }
     // sinônimos (raiox_sin): apelido -> medida ou campo (ou valor)
     var sinL = Object.keys(sin).map(function (a) { return [S(a).split(' '), String(sin[a])]; }).filter(function (p) { return p[0][0]; }).sort(function (a, b) { return b[0].length - a[0].length; });
@@ -463,7 +463,7 @@ var Core = (function () {
         else if (k.t === 'data') { /* menção ao campo de data: nada a fazer */ }
         else {
           var j2 = i + w2; while (j2 < tk.length && !tk[j2].ok && /^(de|do|da|igual|e|=)$/.test(tk[j2].n) && j2 - (i + w2) < 2) j2++;
-          var lv = (vals[k.n] || []).map(function (v) { return { campo: k.n, valor: v, chave: S(v) }; }), vm = j2 < tk.length ? achar(j2, lv, function (x) { return x.chave; }, 4) : { n: 0 };
+          var lv = (Array.isArray(vals[k.n]) ? vals[k.n] : []).map(function (v) { return { campo: k.n, valor: v, chave: S(v) }; }), vm = j2 < tk.length ? achar(j2, lv, function (x) { return x.chave; }, 4) : { n: 0 };
           if (vm.n) { for (var q = i + w2; q < j2 + vm.n; q++) tk[q].ok = true; filtra(k.n, vm.ref.valor); }
           else falha();
         }
@@ -486,7 +486,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
-const VERSAO = "5b288b89a0";
+const VERSAO = "39e159c418";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -897,7 +897,7 @@ const txtOk = x => typeof x === 'string' && x.length > 0 && x.length <= 200;
 // sinônimos vindos de fora (localStorage, backup): até 200 pares de textos curtos; inválido = null
 function sinLimpo(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
-  const ks = Object.keys(o); if (ks.length > 200) return null; const r = nulo();
+  const ks = Object.keys(o).slice(0, 200); const r = nulo();
   for (const k of ks) { if (!k.trim() || k.length > 100 || typeof o[k] !== 'string' || !o[k].trim() || o[k].length > 100) return null; r[k] = o[k]; }
   return r;
 }
@@ -917,8 +917,8 @@ function pedLimpo(p) {
 }
 function meusLimpo(o) {
   if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
-  const ks = Object.keys(o); if (ks.length > 200) return null; const r = nulo();
-  for (const k of ks) { const l = o[k]; if (!Array.isArray(l) || l.length > 50) return null; const m = l.map(pedLimpo); if (m.some(x => !x)) return null; r[k] = m; }
+  const ks = Object.keys(o).slice(0, 200); const r = nulo();
+  for (const k of ks) { const l = o[k]; if (!Array.isArray(l)) return null; r[k] = l.slice(0, 50).map(pedLimpo).filter(Boolean); }
   return r;
 }
 let meus = meusLimpo(store.get('raiox_meus', {})) || nulo();   // conjunto -> [pedidos confirmados com "Sim"]
@@ -926,14 +926,14 @@ const salvaMeus = () => store.set('raiox_meus', meus);
 const sinMap = () => sinLimpo(store.get('raiox_sin', {})) || nulo();
 
 function ctxPedido(c) {
-  const L = doConj(c), valores = {}, meses = new Set(); let hoje = '';
+  const L = doConj(c), valores = nulo(), meses = new Set(); let hoje = '';
   camposDe(c, 'categoria').forEach(k => { const s = new Set(); L.forEach(r => { const v = r.v[k.n]; if (v) s.add(v); }); valores[k.n] = [...s].slice(0, 500); });
   camposDe(c, 'data').forEach(k => L.forEach(r => { const v = r.v[k.n]; if (v) { if (v.slice(0, 10) > hoje) hoje = v.slice(0, 10); meses.add(v.slice(0, 7)); } }));   // "hoje" = maior data dos registros, nunca o relógio
   return { campos: ((conjs[c] || {}).campos || []).map(k => ({ n: k.n, t: k.t })), valores, hoje: hoje || null, meses: [...meses], sin: sinMap() };
 }
 const achaConj = nome => { if (conjs[nome]) return nome; const n = Core.norm(nome || ''); return Object.keys(conjs).find(k => Core.norm(k) === n) || F.conjunto; };
 const entenderPed = (frase, c) => Core.entender(frase, ctxPedido(c));
-window.__entender = (frase, nome) => { const c = achaConj(nome); return JSON.parse(JSON.stringify(c && conjs[c] ? entenderPed(frase, c) : { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [String(frase || '')] })); };
+window.__entender = (frase, nome) => { frase = String(frase == null ? '' : frase).slice(0, 300); const c = achaConj(nome); return JSON.parse(JSON.stringify(c && conjs[c] ? entenderPed(frase, c) : { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [String(frase || '')] })); };
 
 const perTxt = p => !p ? '' : p.tipo === 'mes' ? MESES[p.mes - 1] + '/' + p.ano : p.tipo === 'ano' ? String(p.ano) : p.de === p.ate ? fmtD(p.de) : 'de ' + fmtD(p.de) + ' a ' + fmtD(p.ate);
 // na medida "percentual" o filtro da situação é o numerador (a fatia que se quer); os demais filtram os registros
@@ -1023,15 +1023,15 @@ function exemplosPed(c) {
   return ok.slice(0, 3);
 }
 function abrirPedido(frase, c) {
-  const d = $('#pedCard'), box = $('#pedBox'), L = filtrar(c); let ped = entenderPed(frase, c), nao = false, corr = '', erro = '';
+  const d = $('#pedCard'), box = $('#pedBox'), L = filtrar(c); let ped = entenderPed(frase, c), filtroOps = [], nao = false, corr = '', erro = '';
   const nada = !ped.medida && !ped.campo && !ped.agrupar && !ped.filtros.length && !ped.periodo, nEnt = ped.naoEntendi.slice();
   const fecha = el('button', { type: 'button', text: 'Cancelar', onclick: () => { d.hidden = true; } });
   const editor = () => {
     const nomes = { 'Medida': () => [[['', '(nenhuma)']].concat(MEDS.map(m => [m, MED_NOME[m]])), ped.medida || ''],
       'Campo': () => [[['', '(nenhum)']].concat(camposDe(c, 'numero').map(k => [k.n, k.n])), ped.campo || ''],
       'Agrupar por': () => [[['', '(nenhum)']].concat(camposDe(c, 'data').length ? [['mês', 'mês']] : [], camposDe(c, 'categoria').map(k => [k.n, k.n])), ped.agrupar || ''],
-      'Filtro': () => { const ops = [], cont = {}; camposDe(c, 'categoria').forEach(k => ctxPedido(c).valores[k.n].forEach(v => { ops.push([k.n, v]); cont[v] = (cont[v] || 0) + 1; }));
-        const cur = ped.filtros[0] ? ped.filtros[0].campo + '\u0001' + ped.filtros[0].valor : ''; return [[['', '(sem filtro)']].concat(ops.map(([k, v]) => [k + '\u0001' + v, cont[v] > 1 ? k + ': ' + v : v])), cur]; },
+      'Filtro': () => { const ops = [], cont = nulo(); const vl = ctxPedido(c).valores; camposDe(c, 'categoria').forEach(k => vl[k.n].forEach(v => { ops.push([k.n, v]); cont[v] = (cont[v] || 0) + 1; }));
+        filtroOps = ops; const ix = ped.filtros[0] ? ops.findIndex(o => o[0] === ped.filtros[0].campo && o[1] === ped.filtros[0].valor) : -1; return [[['', '(sem filtro)']].concat(ops.map(([k, v], i) => ['f' + i, cont[v] > 1 ? k + ': ' + v : v])), ix >= 0 ? 'f' + ix : '']; },
       'Período': () => { const ms = [...new Set(ctxPedido(c).meses)].sort().reverse(), anos = [...new Set(ms.map(m => m.slice(0, 4)))];
         const p = ped.periodo, cur = p ? (p.tipo === 'mes' ? 'm:' + p.ano + '-' + z2(p.mes) : p.tipo === 'ano' ? 'a:' + p.ano : '') : '';
         return [[['', '(sem período)']].concat(ms.map(m => ['m:' + m, nomeMesAno(m)]), anos.map(a => ['a:' + a, a])), cur]; } };
@@ -1039,7 +1039,7 @@ function abrirPedido(frase, c) {
     const aplica = () => {
       const v = sel.value;
       if (corr === 'Medida') ped.medida = v || null; else if (corr === 'Campo') ped.campo = v || null; else if (corr === 'Agrupar por') ped.agrupar = v || null;
-      else if (corr === 'Filtro') ped.filtros = v ? [{ campo: v.split('\u0001')[0], valor: v.split('\u0001')[1] }] : [];
+      else if (corr === 'Filtro') ped.filtros = v && filtroOps[+v.slice(1)] ? [{ campo: filtroOps[+v.slice(1)][0], valor: filtroOps[+v.slice(1)][1] }] : [];
       else ped.periodo = !v ? null : v[0] === 'm' ? { tipo: 'mes', mes: +v.slice(7, 9), ano: +v.slice(2, 6) } : { tipo: 'ano', ano: +v.slice(2) };
       corr = ''; pinta();
     };
@@ -1060,6 +1060,8 @@ function abrirPedido(frase, c) {
       el('button', { type: 'button', class: 'prim', text: 'Sim', onclick: () => {
         const f = faltaPed(ped); if (f) { erro = f; pinta(); return; }
         const lim = pedLimpo(ped), l = meus[c] || (meus[c] = []);
+        if (!lim) { erro = 'Pedido grande demais: use até 10 filtros e textos de até 200 caracteres.'; pinta(); return; }
+        if (l.length >= 50) { erro = 'Limite de 50 indicadores por relatório. Remova algum antes.'; toast('Limite de 50 indicadores por relatório.'); pinta(); return; }
         if (l.some(x => JSON.stringify(x) === JSON.stringify(lim))) { erro = 'Esse indicador já está no painel.'; pinta(); return; }
         l.push(lim); salvaMeus(); d.hidden = true; $('#pedTxt').value = ''; render(); toast('Indicador adicionado ao painel.');
       } }),
@@ -1202,7 +1204,7 @@ function iniciaConfig() {
   $('#cfgLogoX').onclick = () => { cfg.logo = ''; salvaCfg(); topo(); };
   document.querySelectorAll('.passosBas').forEach(p => { const d = el('details', null, el('summary', { text: 'Como instalar a versão Excel (4 passos)' }), el('ol', { class: 'passos' }, PASSOS.map(x => el('li', { text: x })))); p.append(d); });
   document.querySelectorAll('[data-baixar-bas]').forEach(a => a.addEventListener('click', () => document.querySelectorAll('.passosBas details').forEach(d => { d.open = true; })));
-  $('#sinAdd').onclick = () => { const ap = $('#sinAp').value.trim(), sg = $('#sinSig').value; if (!ap || ap.length > 100 || !sg) { toast('Escreva o apelido e escolha o que ele significa.'); return; } const n = sinMap(); n[ap] = sg; store.set('raiox_sin', n); $('#sinAp').value = ''; renderSin(); };
+  $('#sinAdd').onclick = () => { const ap = $('#sinAp').value.trim(), sg = $('#sinSig').value; if (!ap || ap.length > 100 || !sg) { toast('Escreva o apelido e escolha o que ele significa.'); return; } const n = sinMap(); if (!(ap in n) && Object.keys(n).length >= 200) { toast('Limite de 200 sinônimos atingido. Remova algum antes.'); return; } n[ap] = sg; store.set('raiox_sin', n); $('#sinAp').value = ''; renderSin(); };
   $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
   $('#bkArq').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
@@ -1213,7 +1215,7 @@ function iniciaConfig() {
     if (!r) return;
     if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
     Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp();
-    Object.keys(b.meus).forEach(k => { meus[k] = b.meus[k]; }); salvaMeus(); { const sn = sinMap(); Object.keys(b.sin).forEach(k => { sn[k] = b.sin[k]; }); store.set('raiox_sin', sn); }
+    Object.keys(b.meus).forEach(k => { meus[k] = b.meus[k]; }); salvaMeus(); { const sn = sinMap(); let cheio = false; Object.keys(b.sin).forEach(k => { if (k in sn || Object.keys(sn).length < 200) sn[k] = b.sin[k]; else cheio = true; }); store.set('raiox_sin', sn); if (cheio) setTimeout(() => toast('Limite de 200 sinônimos: alguns do backup ficaram de fora.'), 0); }
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };

@@ -260,3 +260,150 @@ def test_SEG2_B4_render_nao_sombreia_o_esc_de_html():
     src = (pathlib.Path(__file__).resolve().parent.parent / "src" / "app.js").read_text(encoding="utf-8")
     trecho = src[src.index("function render()"):src.index("function render()") + 6000]
     assert "const esc =" not in trecho
+
+
+# ---------- Etapa 3: M-1, M-2, B-1 a B-4 (parecer docs/04_seguranca/revisao-etapa3.md) ----------
+NOMES12 = ["alfa", "bravo", "charlie", "delta", "eco", "foxtrote", "golfe", "hotel", "india", "julieta", "kilo", "lima"]
+
+
+def _csv_regioes(tmp_path, cab="Código;Data;Região;Valor", nomes=NOMES12, extra=""):
+    linhas = [cab]
+    for i in range(36):
+        linhas.append(f"V{i:04d};{(i % 28) + 1:02d}/03/2026;{nomes[i % len(nomes)]};{10 + i},50")
+    return csv_tmp(tmp_path, "regioes.csv", "\n".join(linhas) + extra)
+
+
+def _carrega_csv(page, p):
+    from test_etapa1 import mapear_se_preciso, fechar_acompanhar
+    page.locator("input[type=file]").first.set_input_files([str(p)])
+    page.wait_for_timeout(1200)
+    mapear_se_preciso(page)
+    fechar_acompanhar(page)
+
+
+def _pedir(page, frase):
+    campo = page.get_by_label("Peça um indicador", exact=True)
+    campo.fill(frase)
+    campo.press("Enter")
+    page.wait_for_timeout(500)
+
+
+def _conj(page):
+    return page.evaluate("Object.keys(JSON.parse(localStorage.getItem('raiox_conj')))[0]")
+
+
+def test_SEG3_M1_pedido_com_filtros_demais_nao_salva_null_nem_quebra_painel(page, tmp_path):
+    erros = erros_pagina(page)
+    _carrega_csv(page, _csv_regioes(tmp_path))
+    _pedir(page, " ".join(NOMES12))
+    page.get_by_role("button", name="Sim", exact=True).click()
+    page.wait_for_timeout(500)
+    meus = page.evaluate("JSON.parse(localStorage.getItem('raiox_meus')||'{}')")
+    assert all(x is not None for l in meus.values() for x in l)
+    assert not erros, erros
+    page.reload(); page.wait_for_timeout(1200)
+    assert not erros, erros
+
+
+def test_SEG3_M1_item_invalido_no_localstorage_descarta_so_o_item(page):
+    carregar(page, "vendas.csv")
+    c = _conj(page)
+    ok = {"medida": "soma", "campo": "Valor", "agrupar": None, "filtros": [], "periodo": None}
+    page.evaluate("([c,ok]) => localStorage.setItem('raiox_meus', JSON.stringify({[c]: [ok, null, {medida:'xx'}]}))", [c, ok])
+    page.reload(); page.wait_for_timeout(1200)
+    page.evaluate("() => document.querySelector('#toast') && 0")
+    # um novo pedido valido deve somar ao item bom, sem apagar
+    _pedir(page, "soma de valor por região")
+    page.get_by_role("button", name="Sim", exact=True).click()
+    page.wait_for_timeout(500)
+    meus = page.evaluate("JSON.parse(localStorage.getItem('raiox_meus')||'{}')")
+    assert len(meus[c]) == 2 and meus[c][0]["campo"] == "Valor"
+
+
+def test_SEG3_M2_201o_sinonimo_e_recusado_e_os_200_continuam(page):
+    carregar(page, "vendas.csv")
+    page.evaluate("() => localStorage.setItem('raiox_sin', JSON.stringify(Object.fromEntries(Array.from({length:200},(_, i)=>['ap'+i,'Valor']))))")
+    page.reload(); page.wait_for_timeout(1200)
+    abrir_config(page)
+    page.locator("#sinAp").fill("novoapelido")
+    page.locator("#sinSig").select_option(index=1)
+    page.locator("#sinAdd").click()
+    page.wait_for_timeout(300)
+    assert page.evaluate("Object.keys(JSON.parse(localStorage.getItem('raiox_sin'))).length") == 200
+    assert "200" in page.locator("#toast").inner_text()
+
+
+def test_SEG3_M2_51o_indicador_e_recusado_e_os_50_continuam(page):
+    carregar(page, "vendas.csv")
+    c = _conj(page)
+    l = [{"medida": "soma", "campo": "Valor", "agrupar": None, "filtros": [], "periodo": {"tipo": "ano", "ano": 1950 + i}} for i in range(50)]
+    page.evaluate("([c,l]) => localStorage.setItem('raiox_meus', JSON.stringify({[c]: l}))", [c, l])
+    page.reload(); page.wait_for_timeout(1200)
+    _pedir(page, "soma de valor por região")
+    page.get_by_role("button", name="Sim", exact=True).click()
+    page.wait_for_timeout(500)
+    meus = page.evaluate("JSON.parse(localStorage.getItem('raiox_meus')||'{}')")
+    assert len(meus[c]) == 50
+    assert "50" in page.locator("#toast").inner_text()
+
+
+def test_SEG3_M2_somar_backup_que_estoura_o_limite_nao_apaga_a_lista(page):
+    carregar(page, "vendas.csv")
+    page.evaluate("() => localStorage.setItem('raiox_sin', JSON.stringify(Object.fromEntries(Array.from({length:150},(_, i)=>['ap'+i,'Valor']))))")
+    _, b = backup(page)
+    d = json.loads(b)
+    d["sin"] = {f"bk{i}": "Valor" for i in range(150)}
+    restaurar(page, json.dumps(d), modo="Somar")
+    n = page.evaluate("Object.keys(JSON.parse(localStorage.getItem('raiox_sin')||'{}')).length")
+    assert 150 <= n <= 200
+
+
+def test_SEG3_B1_motor_com_muitos_valores_e_frase_longa_nao_trava(page, tmp_path):
+    import random
+    rnd = random.Random(7)
+    L = "abcd"
+    cab = ["Código", "Data", "Valor"] + [f"Cat{i}" for i in range(20)]
+    linhas = [";".join(cab)]
+    for r in range(500):
+        linhas.append(";".join([f"V{r:04d}", "05/03/2026", "10,00"] + ["".join(rnd.choice(L) for _ in range(40)) for _ in range(20)]))
+    _carrega_csv(page, csv_tmp(tmp_path, "pesado.csv", "\n".join(linhas)))
+    frase = " ".join("".join(rnd.choice(L) for _ in range(4)) for _ in range(60))
+    ms = page.evaluate("([f]) => { const t = performance.now(); window.__entender(f, 'pesado'); return performance.now() - t; }", [frase])
+    assert ms < 3000, f"motor levou {ms:.0f} ms"
+
+
+def test_SEG3_B2_campo_chamado_constructor_nao_derruba_o_pedido(page, tmp_path):
+    erros = erros_pagina(page)
+    cab = "Código;Data;constructor;toString;Valor"
+    linhas = [cab] + [f"V{i:04d};05/03/2026;{'x' + str(i)};{'y' + str(i % 3)};{10 + i},00" for i in range(30)]
+    _carrega_csv(page, csv_tmp(tmp_path, "proto.csv", "\n".join(linhas)))
+    for f in ["constructor x1", "soma de valor por toString", "valueOf hasOwnProperty"]:
+        r = page.evaluate("([f]) => window.__entender(f, 'proto')", [f])
+        assert isinstance(r, dict)
+    _pedir(page, "constructor x1")
+    assert not erros, erros
+
+
+def test_SEG3_B3_filtro_com_caractere_de_controle_no_nome_aplica_o_valor_escolhido(page, tmp_path):
+    cab = "Código;Data;Reg\u0001ião;Valor"
+    p = _csv_regioes(tmp_path, cab=cab, nomes=["Norte", "Sul", "Leste"])
+    _carrega_csv(page, p)
+    _pedir(page, "soma de valor")
+    page.get_by_role("button", name="Não", exact=True).click()
+    page.get_by_role("button", name="Filtro", exact=True).click()
+    page.locator("#pedBox select").select_option(label="Sul")
+    page.get_by_role("button", name="Aplicar", exact=True).click()
+    page.wait_for_timeout(400)
+    txt = page.get_by_text("Entendi assim:").first.inner_text()
+    assert "Sul" in txt
+
+
+def test_SEG3_B4_gancho_entender_corta_a_frase_em_300_caracteres(page):
+    carregar(page, "vendas.csv")
+    frase = "x" * 299 + " " + "soma de valor " * 20
+    r = page.evaluate("([f]) => window.__entender(f, 'vendas')", [frase])
+    assert r["medida"] is None
+    longa = "palavra " * 20000
+    ms = page.evaluate("([f]) => { const t = performance.now(); window.__entender(f, 'vendas'); return performance.now() - t; }", [longa])
+    assert ms < 1500
+    assert sum(len(t) for t in r["naoEntendi"]) <= 400

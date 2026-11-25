@@ -170,17 +170,17 @@ var Core = (function () {
     for (i = 0; i < a.length; i++) for (j = 0; j < b.length; j++) { k = 0; while (i + k < a.length && j + k < b.length && a[i + k] === b[j + k]) k++; if (k > bl) { bl = k; bi = i; bj = j; } }
     return bl ? bl + casados(a.slice(0, bi), b.slice(0, bj)) + casados(a.slice(bi + bl), b.slice(bj + bl)) : 0;
   }
-  function sim(a, b) { if (a === b) return 1; if (a.length < 4 || b.length < 4) return 0; return 2 * casados(a, b) / (a.length + b.length); }
+  function sim(a, b) { if (a === b) return 1; if (a.length < 4 || b.length < 4) return 0; if (2 * Math.min(a.length, b.length) / (a.length + b.length) < 0.8) return 0; return 2 * casados(a, b) / (a.length + b.length); }
   function p2n(n) { return (n < 10 ? '0' : '') + n; }
   function entender(frase, ctx) {
-    frase = String(frase == null ? '' : frase); ctx = ctx || {};
-    var campos = (ctx.campos || []).filter(function (k) { return k.t !== 'codigo' && k.t !== 'ignorar'; }), vals = ctx.valores || {}, sin = ctx.sin || {};
+    frase = String(frase == null ? '' : frase).slice(0, 300); ctx = ctx || {};
+    var campos = (ctx.campos || []).filter(function (k) { return k.t !== 'codigo' && k.t !== 'ignorar'; }), vals = Object.assign(Object.create(null), ctx.valores), sin = ctx.sin || {};
     var out = { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [] };
     var H = ctx.hoje && /^\d{4}-\d{2}-\d{2}/.test(ctx.hoje) ? { a: +ctx.hoje.slice(0, 4), m: +ctx.hoje.slice(5, 7), d: +ctx.hoje.slice(8, 10) } : null;
     var tk = [], re = /\S+/g, mm;
     while ((mm = re.exec(frase))) { var raw = mm[0].replace(/^[("'“‘¿¡]+|[)"'”’,.;:!?]+$/g, ''); if (!raw) continue; tk.push({ raw: raw, ini: mm.index, fim: mm.index + mm[0].length, n: raw === '%' ? '%' : sing1(nz(raw)), ok: false, forca: null }); }
     var fld = campos.map(function (k) { return { ref: k, chave: S(k.n) }; });
-    var vls = []; Object.keys(vals).forEach(function (c) { (vals[c] || []).forEach(function (v) { var ch = S(v); if (ch) vls.push({ campo: c, valor: v, chave: ch }); }); });
+    var vls = []; Object.keys(vals).forEach(function (c) { (Array.isArray(vals[c]) ? vals[c] : []).forEach(function (v) { var ch = S(v).slice(0, 60); if (ch) vls.push({ campo: c, valor: v, chave: ch }); }); });
     function conhecida(n) { return P_STOP.indexOf(' ' + n + ' ') >= 0 || P_MED.some(function (x) { return x[0] === n; }) || fld.some(function (f) { return f.chave === n; }) || vls.some(function (v) { return v.chave === n; }); }
     // sinônimos (raiox_sin): apelido -> medida ou campo (ou valor)
     var sinL = Object.keys(sin).map(function (a) { return [S(a).split(' '), String(sin[a])]; }).filter(function (p) { return p[0][0]; }).sort(function (a, b) { return b[0].length - a[0].length; });
@@ -288,7 +288,7 @@ var Core = (function () {
         else if (k.t === 'data') { /* menção ao campo de data: nada a fazer */ }
         else {
           var j2 = i + w2; while (j2 < tk.length && !tk[j2].ok && /^(de|do|da|igual|e|=)$/.test(tk[j2].n) && j2 - (i + w2) < 2) j2++;
-          var lv = (vals[k.n] || []).map(function (v) { return { campo: k.n, valor: v, chave: S(v) }; }), vm = j2 < tk.length ? achar(j2, lv, function (x) { return x.chave; }, 4) : { n: 0 };
+          var lv = (Array.isArray(vals[k.n]) ? vals[k.n] : []).map(function (v) { return { campo: k.n, valor: v, chave: S(v) }; }), vm = j2 < tk.length ? achar(j2, lv, function (x) { return x.chave; }, 4) : { n: 0 };
           if (vm.n) { for (var q = i + w2; q < j2 + vm.n; q++) tk[q].ok = true; filtra(k.n, vm.ref.valor); }
           else falha();
         }

@@ -48,3 +48,4 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 
 ## Etapa 3 (F-51, 25/11/2026) — publicada no `main`
 - Pedido escrito com "É isso?", sinônimos, Meus indicadores, CA-28. Suíte: 88 verdes, 3 skip. Revisão: 0 Crítico/Alto, 2 Médios (M-1, M-2) e 4 Baixos em `docs/04_seguranca/revisao-etapa3.md` → F-52 (correção + regressão). Próximo: F-52, depois etapa 4 (Excel seguindo o painel).
+- F-52 feita (25/11): M-1, M-2 e B-1 a B-4 da etapa 3 corrigidos, 9 testes SEG3; suíte 97 verdes, 3 skip. Pendente (decisão de produto): "Somar" no restaurar backup troca ou junta a lista de Meus indicadores? Próximo: etapa 4 (Excel seguindo o painel).
