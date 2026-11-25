@@ -10,7 +10,7 @@ Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 2. **Escolha os arquivos** (CSV, Excel, PDF, foto ou print do relatório, ou um .zip com tudo). Pode mandar vários de uma vez.
 3. **O Raio X reconhece o relatório.** Se for um formato novo, pergunta uma vez "esta coluna é o quê?" e aprende.
 4. **"O que você quer acompanhar?"** Aparece uma lista só com o que dá para calcular com os seus dados, já com o número de exemplo. Você marca, e cada item vira um quadro no painel.
-5. **Peça por escrito** o que faltou ("OS concluídas por técnico em outubro"). O Raio X mostra "É isso?" com a prévia; você confirma e o quadro entra.
+5. **Peça por escrito** o que faltou ("pedidos entregues por vendedor em outubro"). O Raio X mostra "É isso?" com a prévia; você confirma e o quadro entra.
 
 ## Depois
 - **Editar layout:** arraste os quadros, crie abas, mude o tamanho e o tipo de gráfico.
@@ -22,4 +22,4 @@ Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 Só no seu aparelho. Não há servidor nem login. Para levar para outro aparelho, use "Fazer backup" e "Restaurar".
 
 ## Modelos prontos
-O app já vem sabendo ler alguns relatórios comuns (o primeiro é o de ordens de serviço de manutenção). Para os outros, ele pergunta uma vez o que é cada coluna e aprende.
+O app já vem sabendo ler alguns relatórios comuns. Para os outros, ele pergunta uma vez o que é cada coluna e aprende.
