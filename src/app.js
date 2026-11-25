@@ -9,7 +9,7 @@ const el = (tag, p, ...kids) => {
 };
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const store = { get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { toast('Sem espaço para guardar neste aparelho.'); } } };
-const TIPOS = [['ignorar', 'Ignorar'], ['codigo', 'Código'], ['data', 'Data'], ['categoria', 'Categoria'], ['texto', 'Texto'], ['numero', 'Número']];
+const TIPOS = [['ignorar', 'Ignorar'], ['codigo', 'Código'], ['data', 'Data'], ['categoria', 'Categoria'], ['situacao', 'Situação'], ['texto', 'Texto'], ['numero', 'Número']];
 
 const nulo = () => Object.create(null);   // mapa sem herança: 'constructor', '__proto__' etc. são chaves comuns
 const copiaNula = o => { const r = nulo(); if (o && typeof o === 'object' && !Array.isArray(o)) Object.keys(o).forEach(k => { r[k] = o[k]; }); return r; };
@@ -37,18 +37,22 @@ function validarBackup(b) {
       rg.push({ conjunto: x.conjunto, codigo: String(x.codigo), v });
     }
     if (b.cfg != null && (typeof b.cfg !== 'object' || Array.isArray(b.cfg))) return null;
-    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null };
+    const ac = nulo();
+    if (b.acomp != null) { if (typeof b.acomp !== 'object' || Array.isArray(b.acomp)) return null; for (const k of Object.keys(b.acomp)) { const l = b.acomp[k]; if (!Array.isArray(l) || l.length > 500 || !l.every(x => typeof x === 'string')) return null; ac[k] = l.slice(); } }
+    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac };
   } catch (e) { return null; }
 }
 let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' });
 let fmts = copiaNula(store.get('raiox_fmt', {}));     // formato lembrado: assinatura das colunas -> {conjunto, cols:[{n,t}]}
 let conjs = copiaNula(store.get('raiox_conj', {}));   // conjunto -> {campos:[{n,t}]}
+let acomp = copiaNula(store.get('raiox_acomp', {}));   // conjunto -> [id dos indicadores escolhidos, na ordem em que foram marcados]
 let regs = [];                             // {conjunto, codigo, v:{campo:valor}}
 let mapa = new Map();
 const F = { conjunto: '', per: 'tudo', mes: '', de: '', ate: '', cd: '', cat: '', val: '', q: '', tA: '', tB: '' };
 let mostrar = 50;
 const salvaCfg = () => store.set('gos_cfg', cfg);
 const salvaConjs = () => store.set('raiox_conj', conjs);
+const salvaAcomp = () => store.set('raiox_acomp', acomp);
 const chave = (c, k) => c + '\u0001' + k;
 
 function toast(txt) { const t = $('#toast'); t.textContent = txt; t.style.display = 'block'; clearTimeout(toast.h); toast.h = setTimeout(() => { t.style.display = 'none'; }, 5000); }
@@ -172,18 +176,20 @@ async function importar(fm, corpo) {
   return { c, lidos: noArq.size, novos };
 }
 async function carregar(files) {
-  const msgs = [];
+  const msgs = [], tocados = [];
   for (const f of files) {
-    try { const r = await lerArquivo(f); if (r) msgs.push(r.c + ': ' + r.lidos + ' lidos, ' + r.novos + ' novos'); }
+    try { const r = await lerArquivo(f); if (r) { msgs.push(r.c + ': ' + r.lidos + ' lidos, ' + r.novos + ' novos'); if (tocados.indexOf(r.c) < 0) tocados.push(r.c); } }
     catch (e) { toast('Não consegui ler ' + f.name + '.'); }
   }
   $('#status').textContent = msgs.join(' · ');
   if (!F.conjunto || !conjs[F.conjunto]) F.conjunto = Object.keys(conjs)[0] || '';
   mostrar = 50; render(); renderConfig();
+  // D-09: conjunto ainda sem escolha salva abre a janela "O que você quer acompanhar?" sozinha
+  for (const c of tocados) { if (!acomp[c] && conjs[c] && doConj(c).length) { F.conjunto = c; render(); await janelaAcomp(c); } }
 }
 
 /* ---------- filtros ---------- */
-const camposDe = (c, t) => ((conjs[c] || {}).campos || []).filter(x => x.t === t);
+const camposDe = (c, t) => ((conjs[c] || {}).campos || []).filter(x => x.t === t || (t === 'categoria' && x.t === 'situacao'));   // situação também é categoria
 const doConj = c => regs.filter(r => r.conjunto === c);
 function campoData(c) { const ds = camposDe(c, 'data'); return (ds.find(x => x.n === F.cd) || ds[0] || {}).n; }
 function filtrar(c, comCat) {
@@ -205,8 +211,8 @@ function tabela(campos, lista) {
     el('tbody', null, lista.map(r => el('tr', null, campos.map(c => el('td', { text: c.t === 'codigo' ? r.codigo : c.t === 'data' ? fmtData(r.v[c.n]) : (r.v[c.n] || '') }))))));
 }
 function barras(itens, abrir) {
-  const max = Math.max(1, ...itens.map(i => i[1]));
-  return el('div', { class: 'bars' }, itens.map(([nome, n, lista]) => el('button', { class: 'bar', type: 'button', onclick: () => abrir(nome, lista) }, el('span', { text: nome }), el('i', { style: 'width:' + Math.max(2, 100 * n / max) + '%' }), el('b', { text: n }))));
+  const max = Math.max(1, ...itens.map(i => Math.abs(i[1])));
+  return el('div', { class: 'bars' }, itens.map(([nome, n, lista, rot]) => el('button', { class: 'bar', type: 'button', onclick: () => abrir(nome, lista) }, el('span', { text: nome }), el('i', { style: 'width:' + Math.max(2, 100 * Math.abs(n) / max) + '%' }), el('b', { text: rot != null ? rot : n }))));
 }
 function agrupa(lista, fn) { const m = new Map(); lista.forEach(r => { const k = fn(r); if (k == null || k === '') return; (m.get(k) || m.set(k, []).get(k)).push(r); }); return m; }
 
@@ -231,18 +237,21 @@ function render() {
   $('#kAnt span').textContent = 'Mais antigo' + (cd && ds.length > 1 ? ' (' + cd + ')' : ''); $('#kNov span').textContent = 'Mais novo' + (cd && ds.length > 1 ? ' (' + cd + ')' : '');
   $('#kTotal').onclick = () => abrirJanela('Todos os registros', L, c);
 
+  const esc = blocosEscolhidos(c); $('#kpis').hidden = $('#blocos').hidden = !!esc.length; $('#blocosEsc').hidden = !esc.length;
+  $('#btnEntender').hidden = !esc.length; $('#blocosEsc').textContent = '';
+  if (esc.length) esc.forEach(b => $('#blocosEsc').append(b.desenha(L, c)));
   const bl = $('#blocos'); bl.textContent = '';
-  cats.slice(0, 3).forEach(cat => {
+  if (!esc.length) cats.slice(0, 3).forEach(cat => {
     const g = [...agrupa(L, r => r.v[cat.n])].sort((a, b) => b[1].length - a[1].length).slice(0, 8).map(([k, l]) => [k, l.length, l]);
     if (g.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Por ' + cat.n }), barras(g, (k, l) => abrirJanela(cat.n + ': ' + k, l, c))));
   });
-  if (cd) {
+  if (cd && !esc.length) {
     const g = [...agrupa(L, r => (r.v[cd] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).slice(-12).map(([k, l]) => [k.slice(5) + '/' + k.slice(0, 4), l.length, l]);
     if (g.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Por mês (' + cd + ')' }), barras(g, (k, l) => abrirJanela('Mês ' + k, l, c))));
   }
-  if (ds.length >= 2) bl.append(cartaoTempo(L, c, ds));
+  if (ds.length >= 2 && !esc.length) bl.append(cartaoTempo(L, c, ds));
   const txs = camposDe(c, 'texto');
-  if (txs.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Possíveis repetidos' }), el('p', { class: 'muted', text: 'Registros com texto parecido em “' + txs[0].n + '”, para você decidir.' }),
+  if (txs.length && !esc.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Possíveis repetidos' }), el('p', { class: 'muted', text: 'Registros com texto parecido em “' + txs[0].n + '”, para você decidir.' }),
     el('button', { type: 'button', id: 'btnRep', text: 'Procurar repetidos', onclick: () => procurarRepetidos(L, c, txs[0].n) })));
 
   const campos = camposC, vis = L.slice().sort((a, b) => cd ? (b.v[cd] || '').localeCompare(a.v[cd] || '') : a.codigo.localeCompare(b.codigo, 'pt', { numeric: true }));
@@ -250,14 +259,15 @@ function render() {
   $('#maisReg').hidden = vis.length <= mostrar; $('#infoReg').textContent = 'Mostrando ' + Math.min(mostrar, vis.length) + ' de ' + vis.length;
   $('#maisReg').onclick = () => { mostrar += 100; render(); };
 }
-function cartaoTempo(L, c, ds) {
-  if (!ds.some(x => x.n === F.tA)) F.tA = ds[0].n; if (!ds.some(x => x.n === F.tB) || F.tB === F.tA) F.tB = (ds.find(x => x.n !== F.tA) || ds[1]).n;
-  const itens = []; L.forEach(r => { const a = Core.msISO(r.v[F.tA]), b = Core.msISO(r.v[F.tB]); if (a != null && b != null && b >= a) itens.push([r, b - a]); });
+function parTempo(ds) { if (!ds.some(x => x.n === F.tA)) F.tA = ds[0].n; if (!ds.some(x => x.n === F.tB) || F.tB === F.tA) F.tB = (ds.find(x => x.n !== F.tA) || ds[1]).n; return [F.tA, F.tB]; }
+const paresTempo = (L, A, B) => { const itens = []; L.forEach(r => { const a = Core.msISO(r.v[A]), b = Core.msISO(r.v[B]); if (a != null && b != null && b >= a) itens.push([r, b - a]); }); return itens; };
+function cartaoTempo(L, c, ds, titulo) {
+  parTempo(ds); const itens = paresTempo(L, F.tA, F.tB);
   const durs = itens.map(x => x[1]), pct = Core.pctDentro(durs, cfg.prazoH * 3600000), m = Core.meta(pct, cfg.meta);
   const sa = el('select', { 'aria-label': 'De' }, ds.map(x => el('option', { value: x.n, text: x.n }))), sb = el('select', { 'aria-label': 'Até' }, ds.map(x => el('option', { value: x.n, text: x.n })));
   sa.value = F.tA; sb.value = F.tB; sa.onchange = () => { F.tA = sa.value; render(); }; sb.onchange = () => { F.tB = sb.value; render(); };
   const fx = Core.FAIXAS.map((n, i) => [n, 0, []]); itens.forEach(([r, d]) => { const f = fx[Core.faixa(d)]; f[1]++; f[2].push(r); });
-  return el('div', { class: 'card', id: 'cartaoTempo' }, el('h3', { text: 'Tempo entre datas' }), el('div', { class: 'row' }, sa, ' → ', sb),
+  return el('div', { class: 'card', id: 'cartaoTempo' }, el('h3', { text: titulo || 'Tempo entre datas' }), el('div', { class: 'row' }, sa, ' → ', sb),
     el('p', null, 'Mediana: ', el('b', { text: Core.hm(Core.mediana(durs)) })), el('p', { class: pct != null && m.ok ? 'good' : '' }, 'Dentro de ' + cfg.prazoH + ' h: ', el('b', { text: pct == null ? '—' : pct.toFixed(1).replace('.', ',') + '%' }), m.txt ? ' · ' + m.txt : ''),
     barras(fx, (k, l) => abrirJanela(k + ' (' + F.tA + ' → ' + F.tB + ')', l, c)));
 }
@@ -273,7 +283,7 @@ function procurarRepetidos(L, c, campo) {
 /* ---------- janelas flutuantes ---------- */
 let nJan = 0;
 function abrirJanela(titulo, lista, c) {
-  const campos = conjs[c].campos, cats = campos.filter(x => x.t === 'categoria').slice(0, 2), sel = {};
+  const campos = conjs[c].campos, cats = campos.filter(x => x.t === 'categoria' || x.t === 'situacao').slice(0, 2), sel = {};
   const filtrada = () => lista.filter(r => cats.every(k => !sel[k.n] || !sel[k.n].size || sel[k.n].has(r.v[k.n])));
   const j = el('div', { class: 'jan', role: 'dialog', 'aria-label': titulo }), corpo = el('div', { class: 'corpo' }), info = el('p', { class: 'muted' });
   const w = Math.min(720, window.innerWidth * 0.96); j.style.left = Math.max(4, Math.min(20 + (nJan % 8) * 28, window.innerWidth - w - 4)) + 'px'; j.style.top = (70 + (nJan % 8) * 28) + 'px'; nJan++;
@@ -329,6 +339,14 @@ function capa(wb, nomeRel, grupos) {
   info.forEach((p, i) => { ws.getCell(8 + i, 1).value = p[0]; ws.getCell(8 + i, 1).font = { bold: true }; ws.getCell(8 + i, 2).value = p[1]; });
   ws.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1 }; ws.headerFooter.oddFooter = '&LRaio X do Relatório&RPágina &P de &N';
 }
+function comoLer(wb, grupos) {
+  const itens = []; grupos.forEach(g => { const bl = blocosEscolhidos(g.c); if (bl.length) resumoBlocos(g.c, bl, g.lista).forEach(x => itens.push(grupos.length > 1 && grupos.filter(h => blocosEscolhidos(h.c).length).length > 1 ? '[' + g.c + '] ' + x.texto : x.texto)); });
+  if (!itens.length) return;   // sem escolha confirmada a planilha não é criada
+  const ws = wb.addWorksheet('Como ler este relatório'); ws.columns = [{ width: 120 }];
+  ws.getCell('A1').value = 'Seu painel'; ws.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF0F2A4A' } };
+  itens.forEach((t, i) => { const c = ws.getCell(2 + i, 1); c.value = primitivo(t); c.alignment = { wrapText: true, vertical: 'top' }; });
+  ws.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+}
 function aba(wb, nome, campos, linhas, comRel) {
   const ws = wb.addWorksheet(nomeAba(wb, nome)), cols = (comRel ? [{ n: 'Relatório', t: 'texto' }] : []).concat(campos);
   ws.addRow(cols.map(c => c.n)); const h = ws.getRow(1); h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; });
@@ -349,9 +367,9 @@ async function gerarExcel() {
   try {
     const novo = () => { const wb = new ExcelJS.Workbook(); wb.creator = 'Raio X do Relatório'; wb.title = 'Raio X do Relatório' + (ORG() ? ' · ' + ORG() : ''); wb.created = new Date(); return wb; };
     const grava = async (wb, nome) => baixar(new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'RaioX_' + slug(nome) + '_' + data + '.xlsx');
-    if (fm === 'sep') { for (const g of grupos) { const wb = novo(); capa(wb, g.c, [g]); aba(wb, g.c, g.campos, g.lista.map(r => ({ r, c: g.c }))); await grava(wb, g.c); await new Promise(r => setTimeout(r, 300)); } }
+    if (fm === 'sep') { for (const g of grupos) { const wb = novo(); capa(wb, g.c, [g]); comoLer(wb, [g]); aba(wb, g.c, g.campos, g.lista.map(r => ({ r, c: g.c }))); await grava(wb, g.c); await new Promise(r => setTimeout(r, 300)); } }
     else {
-      const nome = grupos.length === 1 ? grupos[0].c : 'Tudo', wb = novo(); capa(wb, nome, grupos);
+      const nome = grupos.length === 1 ? grupos[0].c : 'Tudo', wb = novo(); capa(wb, nome, grupos); comoLer(wb, grupos);
       if (fm === 'tudo') { const u = []; grupos.forEach(g => g.campos.forEach(k => { if (!u.some(x => x.n === k.n)) u.push({ n: k.n, t: k.t === 'codigo' ? 'texto' : k.t }); })); aba(wb, 'Tudo', u, grupos.flatMap(g => g.lista.map(r => ({ r: { codigo: r.codigo, v: Object.assign({ [camposDe(g.c, 'codigo')[0].n]: r.codigo }, r.v) }, c: g.c }))), true); }
       else grupos.forEach(g => aba(wb, g.c, g.campos, g.lista.map(r => ({ r, c: g.c }))));
       await grava(wb, nome);
@@ -381,7 +399,7 @@ function iniciaConfig() {
   $('#cfgLogoX').onclick = () => { cfg.logo = ''; salvaCfg(); topo(); };
   document.querySelectorAll('.passosBas').forEach(p => { const d = el('details', null, el('summary', { text: 'Como instalar a versão Excel (4 passos)' }), el('ol', { class: 'passos' }, PASSOS.map(x => el('li', { text: x })))); p.append(d); });
   document.querySelectorAll('[data-baixar-bas]').forEach(a => a.addEventListener('click', () => document.querySelectorAll('.passosBas details').forEach(d => { d.open = true; })));
-  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
+  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
   $('#bkArq').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (f.size > LIM.backup) { toast('Backup grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.backup) + '). Nada foi alterado.'); return; }
@@ -389,14 +407,14 @@ function iniciaConfig() {
     if (!b) { toast('Esse arquivo não é um backup do Raio X (ou está com a estrutura errada). Nada foi alterado.'); return; }
     const r = await perguntar('Restaurar backup', 'O backup tem ' + b.registros.length + ' registros. Somar aos dados atuais ou substituir tudo?', [{ t: 'Somar', v: 'somar', prim: true }, { t: 'Substituir', v: 'subst' }, { t: 'Cancelar', v: null }]);
     if (!r) return;
-    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
-    Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; });
+    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
+    Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp();
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };
   $('#apagarTudo').onclick = async () => {
     const r = await perguntar('Apagar todos os dados', 'Isso apaga os ' + regs.length + ' registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]);
-    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
+    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
   };
 }
 function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }

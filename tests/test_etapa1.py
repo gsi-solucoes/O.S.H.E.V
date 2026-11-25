@@ -35,9 +35,19 @@ def mapear_se_preciso(page):
     return True
 
 
+def fechar_acompanhar(page):
+    """D-09: a janela 'O que você quer acompanhar?' abre sozinha; nos testes da etapa 1 fica o painel padrão."""
+    page.wait_for_timeout(300)
+    if page.get_by_text("O que você quer acompanhar?").first.is_visible():
+        janela = page.locator("dialog, [role=dialog]").filter(has_text="O que você quer acompanhar?").first
+        janela.get_by_role("button", name="Cancelar", exact=True).click()
+        page.wait_for_timeout(300)
+
+
 def carregar(page, *arquivos):
     enviar(page, *arquivos)
     mapear_se_preciso(page)
+    fechar_acompanhar(page)
 
 
 def backup(page):
@@ -300,8 +310,10 @@ def test_CA91_importador_aprende(page):
     enviar(page, "chamados.csv")
     assert page.get_by_text("Esta coluna é o quê?").first.is_visible()
     mapear_se_preciso(page)
+    fechar_acompanhar(page)
     enviar(page, "chamados.csv")
     assert not page.get_by_text("Esta coluna é o quê?").first.is_visible(), "formato deveria estar lembrado"
+    fechar_acompanhar(page)
     abrir_config(page)
     assert page.get_by_role("button", name="Esquecer").first.is_visible()
 
