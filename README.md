@@ -12,15 +12,15 @@ Lê os dados extraídos de qualquer sistema (relatórios em CSV, Excel, PDF e im
 
 ## Versão Excel para baixar e usar no PC
 
-Mesma estrutura do app (importar, dizer o que é cada coluna, escolher os indicadores, gerar relatório com capa), no Excel 2016 ou mais novo.
+Mesma estrutura do app (importar, dizer o que é cada coluna, juntar por código, painel, relatório com capa), no Excel 2016 ou mais novo, Windows.
 
 **Baixar:** https://github.com/gsi-solucoes/raio-x-do-relatorio/raw/main/excel/RaioX_Relatorio.bas
 
-Arquivo: `excel/RaioX_Relatorio.bas` (Excel 2016 ou mais novo).
+Arquivo: `excel/RaioX_Relatorio.bas`.
 
-1. Abra uma pasta de trabalho nova no Excel e aperte **Alt + F11**.
+1. Abra uma pasta de trabalho nova no Excel, salve como **Pasta de Trabalho Habilitada para Macro (.xlsm)** e aperte **Alt + F11**.
 2. **Arquivo → Importar arquivo** → escolha o `.bas` e feche o editor.
-3. Salve como **Pasta de Trabalho Habilitada para Macro (.xlsm)**.
-4. **Alt + F8** → **Instalar** → Executar.
-5. Na aba Painel, clique em **Importar arquivos** e selecione os arquivos (ou um .zip).
-6. O botão **Gerar relatório (Excel)** cria um arquivo novo, só com valores, com capa, período, filtros e um relatório por aba.
+3. **Alt + F8** → macro **Instalar** → Executar (se o Excel avisar sobre macros, escolha "Habilitar conteúdo"). Surgem as abas **Painel**, **Config** e **Dados** (mais uma aba oculta que lembra os formatos).
+4. Na aba **Config**, preencha Cliente e Área. Na aba **Painel**, clique em **Importar arquivos** (CSV com `;`, `,` ou tab, XLSX ou .zip) e responda "Esta coluna é o quê?" (uma vez por formato).
+
+Depois: escolha período, campo categoria e categoria no Painel e clique em **Atualizar painel**. O botão **Gerar relatório** cria um arquivo novo, só com valores, com capa (cliente, área, período, filtros), um resumo por categoria e a lista de registros. Roteiro de conferência: `docs/03_homologacao/roteiro-excel.md`.
