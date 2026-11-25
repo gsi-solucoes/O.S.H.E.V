@@ -18,5 +18,20 @@ Feito no Excel 2016 (Windows). Leva uns 10 minutos. Use o arquivo `tests/dados/v
 9. Clique em **Gerar relatório (Excel)** e salve. Esperado: arquivo novo com abas **Capa** (Cliente Teste, Area Teste, período, filtros, total), **Resumo** e **Registros**, só com valores (sem fórmulas, sem macros).
 10. Config → **Esquecer formatos lembrados**; importe de novo: as perguntas voltam.
 
+## O que a oficina não cobre (conferir no Excel real)
+A oficina (`tests/oficina/macro_libreoffice.py`, usada por `tests/test_macro_oficina.py`) roda a macro no LibreOffice headless, com os ganchos `OficinaImportar`/`OficinaGerar` e sem nenhuma caixa de diálogo. Ela acha erros de lógica e de compilação, mas estes pontos só o Excel confere (passos acima):
+- **Botões do Painel e da Config** (`Shapes.AddShape` + `OnAction`): em oficina `NovoBotao`/`ApagarBotoes` não fazem nada. Confira o visual e que cada botão dispara a macro certa (passos 2 e 4).
+- **Diálogos reais**: `GetOpenFilename`, `GetSaveAsFilename`, `InputBox` ("Esta coluna é o quê?") e `MsgBox`. A oficina aceita o `PapelSugerido` e guarda as mensagens em memória. Confira a pergunta, o Cancelar e o texto das mensagens (passos 4, 5, 9, 10).
+- **Leitura de arquivo com `ADODB.Stream`** (UTF-8 x Windows-1252): em oficina um decodificador próprio faz o serviço. Confira com `vendas_cp1252.csv` que acentos saem certos.
+- **`Scripting.Dictionary`**: na oficina é trocado por um dublê escrito em Basic (só o test-runner, a macro continua igual).
+- **ZIP** (`Shell.Application` + `Environ$("TEMP")`): não roda no LibreOffice; confira importando um `.zip` com CSV.
+- **XLSX/XLS como entrada** (`Workbooks.Open` somente leitura) e `ThisWorkbook.Activate`: não exercitados.
+- **`wb.SaveAs ..., 51`**: o LibreOffice grava `.xls` com esse código; na oficina o relatório é salvo como `.xlsx` pelo runner. Confira que o arquivo do Excel abre como `.xlsx` (passo 9).
+- **Barras de dados** (`FormatConditions.AddDatabar`) na tabela "Por ...": pulado em oficina.
+- **Lista suspensa** (validação) de B8:B10 do Painel, formatos de data/número (`dd/mm/yyyy`, `#,##0`), `AutoFit`, `DisplayGridlines` e `Format$(Now, "dd/mm/yyyy hh:nn")` (o LibreOffice não entende `nn`; no Excel é minutos): só conferência visual.
+- **Aba `_Memoria` oculta** e `Names` com `OFFSET`: criados, mas a lista suspensa não é testada.
+
+Erros reais achados e corrigidos pela oficina (valem também no Excel): `n = Selecionar d, ...` sem parênteses (não compila); variável local `cod` escondia a constante `COD` (VBA não diferencia maiúsculas) e a junção falhava; `PapelSugerido` não reconhecia "Código" (só "cod"); `Range("B7,D7")` com várias áreas separado em duas linhas.
+
 ## Resultado
 Anote: passou / falhou, versão do Excel, e o que apareceu de diferente. Marque CA-110 como conferido em `docs/03_homologacao/estado.md`.

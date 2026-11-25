@@ -24,6 +24,48 @@ Private mMax As Long
 Private gNovos As Long
 Private gAtualizados As Long
 Private gLidos As Long
+Private mOficina As Boolean      ' ligada so pela oficina de testes: nenhuma caixa bloqueia
+Private mLogOficina As String   ' mensagens que a macro mostraria (uma por linha)
+Private mSaidaOficina As String  ' caminho de saida usado pela oficina (sem dialogo)
+
+'------------------------------------------------------------ oficina de testes
+' Ganchos para teste automatico (LibreOffice headless). No uso normal nao sao chamados.
+Public Sub OficinaLigar()
+    mOficina = True
+End Sub
+
+Public Function OficinaMensagens() As String
+    OficinaMensagens = mLogOficina
+End Function
+
+Public Sub OficinaImportar(ByVal caminhos As String)
+    Dim v As Variant, i As Long
+    mOficina = True
+    If Not Pronto() Then Exit Sub
+    v = Split(caminhos, "|")
+    gNovos = 0: gAtualizados = 0: gLidos = 0
+    For i = LBound(v) To UBound(v)
+        If Len(Trim$(CStr(v(i)))) > 0 Then ImportarUm CStr(v(i)), True
+    Next i
+    AtualizarPainel
+    Msg "Linhas lidas: " & gLidos & " | novos: " & gNovos & " | completados: " & gAtualizados, vbInformation, "Importar arquivos"
+End Sub
+
+Public Sub OficinaGerar(ByVal caminhoSaida As String)
+    mOficina = True
+    mSaidaOficina = caminhoSaida
+    GerarRelatorio
+End Sub
+
+' Em oficina, as mensagens ficam em mLogOficina (lidas por OficinaMensagens) e nao bloqueiam.
+Private Function Msg(ByVal texto As String, ByVal estilo As Long, ByVal titulo As String) As Long
+    If mOficina Then
+        mLogOficina = mLogOficina & IIf((estilo And 48) = 48, "[ALERTA] ", "") & titulo & ": " & texto & vbLf
+        Msg = vbYes
+    Else
+        Msg = MsgBox(texto, estilo, titulo)
+    End If
+End Function
 
 '------------------------------------------------------------ instalação
 Public Sub Instalar()
@@ -43,11 +85,11 @@ Public Sub Instalar()
     ThisWorkbook.Worksheets(SH_MEM).Visible = xlSheetHidden
     ThisWorkbook.Worksheets(SH_PAINEL).Activate
     Application.ScreenUpdating = True
-    MsgBox "Instalação pronta. Na aba Painel, clique em Importar arquivos.", vbInformation, "Raio X do Relatório"
+    Msg "Instalação pronta. Na aba Painel, clique em Importar arquivos.", vbInformation, "Raio X do Relatório"
     Exit Sub
 falha:
     Application.ScreenUpdating = True
-    MsgBox "Não consegui instalar: " & Err.Description, vbExclamation, "Raio X do Relatório"
+    Msg "Não consegui instalar: " & Err.Description, vbExclamation, "Raio X do Relatório"
 End Sub
 
 Private Sub MontarMemoria()
@@ -108,8 +150,10 @@ Private Sub MontarPainel()
     ws.Range("A9").Value = "Campo categoria"
     ws.Range("A10").Value = "Categoria"
     ws.Range("A7:A10").Font.Bold = True
-    ws.Range("B7,D7").NumberFormat = "dd/mm/yyyy"
-    ws.Range("B7:B10,D7").Interior.Color = RGB(255, 249, 219)
+    ws.Range("B7").NumberFormat = "dd/mm/yyyy"
+    ws.Range("D7").NumberFormat = "dd/mm/yyyy"
+    ws.Range("B7:B10").Interior.Color = RGB(255, 249, 219)
+    ws.Range("D7").Interior.Color = RGB(255, 249, 219)
     ws.Range("A12").Value = "Total de registros"
     ws.Range("A12:B12").Font.Bold = True
     ws.Range("A12:B12").Font.Size = 14
@@ -138,6 +182,7 @@ Private Sub ListaValidacao(ByVal r As Range, ByVal formula As String)
 End Sub
 
 Private Sub NovoBotao(ByVal ws As Worksheet, ByVal texto As String, ByVal macro As String, ByVal x As Double, ByVal y As Double, ByVal larg As Double)
+    If mOficina Then Exit Sub   ' LibreOffice nao cria Shapes com OnAction (ver roteiro-excel.md)
     Dim s As Shape
     Set s = ws.Shapes.AddShape(msoShapeRoundedRectangle, x, y, larg, 26)
     s.Name = "btn_" & macro
@@ -152,6 +197,7 @@ Private Sub NovoBotao(ByVal ws As Worksheet, ByVal texto As String, ByVal macro 
 End Sub
 
 Private Sub ApagarBotoes(ByVal ws As Worksheet)
+    If mOficina Then Exit Sub   ' LibreOffice nao cria Shapes com OnAction (ver roteiro-excel.md)
     Dim i As Long
     For i = ws.Shapes.Count To 1 Step -1
         If Left$(ws.Shapes(i).Name, 4) = "btn_" Then ws.Shapes(i).Delete
@@ -198,7 +244,7 @@ End Function
 
 Private Function Pronto() As Boolean
     If Folha(SH_PAINEL) Is Nothing Or Folha(SH_DADOS) Is Nothing Or Folha(SH_MEM) Is Nothing Or Folha(SH_CONFIG) Is Nothing Then
-        MsgBox "Rode primeiro a macro Instalar (Alt + F8).", vbExclamation, "Raio X do Relatório"
+        Msg "Rode primeiro a macro Instalar (Alt + F8).", vbExclamation, "Raio X do Relatório"
     Else
         Pronto = True
     End If
@@ -218,11 +264,11 @@ Public Sub ImportarArquivos()
     Next i
     AtualizarPainel
     Application.ScreenUpdating = True
-    MsgBox "Linhas lidas: " & gLidos & vbCrLf & "Registros novos: " & gNovos & vbCrLf & "Registros completados (mesmo código): " & gAtualizados, vbInformation, "Importar arquivos"
+    Msg "Linhas lidas: " & gLidos & vbCrLf & "Registros novos: " & gNovos & vbCrLf & "Registros completados (mesmo código): " & gAtualizados, vbInformation, "Importar arquivos"
     Exit Sub
 falha:
     Application.ScreenUpdating = True
-    MsgBox "Importação interrompida: " & Err.Description, vbExclamation, "Importar arquivos"
+    Msg "Importação interrompida: " & Err.Description, vbExclamation, "Importar arquivos"
 End Sub
 
 Private Function ImportarUm(ByVal caminho As String, ByVal aceitaZip As Boolean) As Long
@@ -240,7 +286,7 @@ Private Function ImportarUm(ByVal caminho As String, ByVal aceitaZip As Boolean)
     End Select
     Exit Function
 falha:
-    MsgBox "Não consegui ler " & Mid$(caminho, InStrRev(caminho, "\") + 1) & ": " & Err.Description, vbExclamation, "Importar arquivos"
+    Msg "Não consegui ler " & Mid$(caminho, InStrRev(caminho, "\") + 1) & ": " & Err.Description, vbExclamation, "Importar arquivos"
 End Function
 
 Private Function ImportarZip(ByVal caminho As String) As Long
@@ -299,6 +345,10 @@ Private Function LerTexto(ByVal caminho As String) As String
     Get #f, , b
     Close #f
     If Utf8Valido(b) Then cs = "utf-8" Else cs = "windows-1252"
+    If mOficina Then
+        LerTexto = DecodificarOficina(b, cs = "utf-8")   ' sem ADODB (nao existe fora do Windows)
+        Exit Function
+    End If
     Set stm = CreateObject("ADODB.Stream")
     stm.Type = 1
     stm.Open
@@ -308,6 +358,34 @@ Private Function LerTexto(ByVal caminho As String) As String
     stm.Charset = cs
     LerTexto = stm.ReadText
     stm.Close
+End Function
+
+' Somente oficina: decodifica UTF-8 ou Windows-1252 sem ADODB.Stream.
+Private Function DecodificarOficina(ByRef b() As Byte, ByVal utf8 As Boolean) As String
+    Dim i As Long, n As Long, c As Long, sb As String, cp As Long
+    Const CP1252 As String = "20AC 81 201A 0192 201E 2026 2020 2021 02C6 2030 0160 2039 0152 8D 017D 8F 90 2018 2019 201C 201D 2022 2013 2014 02DC 2122 0161 203A 0153 9D 017E 0178"
+    Dim t As Variant
+    t = Split(CP1252, " ")
+    n = UBound(b)
+    i = 0
+    Do While i <= n
+        c = b(i)
+        If utf8 And c >= 194 Then
+            If c <= 223 Then
+                cp = (c And 31) * 64 + (b(i + 1) And 63): i = i + 2
+            ElseIf c <= 239 Then
+                cp = (c And 15) * 4096 + (b(i + 1) And 63) * 64 + (b(i + 2) And 63): i = i + 3
+            Else
+                cp = 63: i = i + 4
+            End If
+        ElseIf Not utf8 And c >= 128 And c <= 159 Then
+            cp = CLng("&H" & t(c - 128)): i = i + 1
+        Else
+            cp = c: i = i + 1
+        End If
+        sb = sb & ChrW(cp)
+    Loop
+    DecodificarOficina = sb
 End Function
 
 Private Function Utf8Valido(ByRef b() As Byte) As Boolean
@@ -362,6 +440,10 @@ Private Function DetectarSeparador(ByVal t As String) As String
     End If
 End Function
 
+Private Function SepCampo() As String
+    SepCampo = Chr$(1)
+End Function
+
 Private Sub PCampo()
     mNc = mNc + 1
     If mNc = 1 Then
@@ -384,7 +466,7 @@ Private Sub PLinha()
     For j = 1 To mNc
         r(j) = mCur(j)
     Next j
-    mLin.Add r
+    mLin.Add Join(r, SepCampo())   ' texto em vez de matriz: Collection de matrizes falha no LibreOffice
     If mNc > mMax Then mMax = mNc
     mNc = 0
 End Sub
@@ -425,9 +507,9 @@ Private Function AnalisarCsv(ByVal t As String, ByVal d As String) As Variant
     If mLin.Count = 0 Then Exit Function
     ReDim res(1 To mLin.Count, 1 To mMax)
     For r = 1 To mLin.Count
-        lin = mLin(r)
-        For j = 1 To UBound(lin)
-            res(r, j) = lin(j)
+        lin = Split(CStr(mLin.Item(r)), SepCampo())
+        For j = 0 To UBound(lin)
+            res(r, j + 1) = lin(j)
         Next j
     Next r
     AnalisarCsv = res
@@ -461,7 +543,7 @@ Private Function PapelSugerido(ByVal nome As String, ByVal jaTemCodigo As Boolea
     Dim n As String
     n = LCase$(nome)
     PapelSugerido = 5
-    If Not jaTemCodigo And (InStr(n, "cod") > 0 Or n = "id" Or InStr(n, "número") > 0 Or InStr(n, "numero") > 0 Or InStr(n, "protocolo") > 0) Then
+    If Not jaTemCodigo And (InStr(n, "cod") > 0 Or InStr(n, "cód") > 0 Or n = "id" Or InStr(n, "número") > 0 Or InStr(n, "numero") > 0 Or InStr(n, "protocolo") > 0) Then
         PapelSugerido = 1
     ElseIf InStr(n, "data") > 0 Or Left$(n, 3) = "dt " Or InStr(n, "date") > 0 Then
         PapelSugerido = 2
@@ -507,11 +589,15 @@ Private Function ObterPapeis(ByRef t As Variant, ByVal nc As Long, ByRef pap() A
                 End If
             End If
         Next k
-        resp = InputBox("Coluna: " & CStr(t(1, j)) & vbCrLf & "Exemplo: " & ex & vbCrLf & vbCrLf & _
-            "1 = Código (identifica o registro)" & vbCrLf & "2 = Data" & vbCrLf & "3 = Categoria (texto para agrupar)" & vbCrLf & _
-            "4 = Valor (número)" & vbCrLf & "5 = Outro (texto)" & vbCrLf & "6 = Ignorar esta coluna" & vbCrLf & vbCrLf & _
-            "Digite o número e confirme (Cancelar para parar este arquivo).", "Esta coluna é o quê?", CStr(sug))
-        If StrPtr(resp) = 0 Then Exit Function
+        If mOficina Then
+            resp = CStr(sug)
+        Else
+            resp = InputBox("Coluna: " & CStr(t(1, j)) & vbCrLf & "Exemplo: " & ex & vbCrLf & vbCrLf & _
+                "1 = Código (identifica o registro)" & vbCrLf & "2 = Data" & vbCrLf & "3 = Categoria (texto para agrupar)" & vbCrLf & _
+                "4 = Valor (número)" & vbCrLf & "5 = Outro (texto)" & vbCrLf & "6 = Ignorar esta coluna" & vbCrLf & vbCrLf & _
+                "Digite o número e confirme (Cancelar para parar este arquivo).", "Esta coluna é o quê?", CStr(sug))
+        End If
+        If Not mOficina Then If StrPtr(resp) = 0 Then Exit Function
         p = CLng(Val(resp))
         If p < 1 Or p > 6 Then p = sug
         If p = 1 And tem Then p = 5
@@ -519,7 +605,7 @@ Private Function ObterPapeis(ByRef t As Variant, ByVal nc As Long, ByRef pap() A
         pap(j) = nomes(p - 1)
     Next j
     If Not tem Then
-        MsgBox "É preciso indicar uma coluna de Código para juntar os registros. Este arquivo não foi importado.", vbExclamation, "Esta coluna é o quê?"
+        Msg "É preciso indicar uma coluna de Código para juntar os registros. Este arquivo não foi importado.", vbExclamation, "Esta coluna é o quê?"
         Exit Function
     End If
     r = ult + 1
@@ -543,7 +629,7 @@ End Sub
 Public Sub EsquecerFormatos()
     Dim ws As Worksheet
     If Not Pronto() Then Exit Sub
-    If MsgBox("Esquecer o que cada coluna significa? Será perguntado de novo no próximo arquivo.", vbYesNo + vbQuestion, "Formatos lembrados") <> vbYes Then Exit Sub
+    If Msg("Esquecer o que cada coluna significa? Será perguntado de novo no próximo arquivo.", vbYesNo + vbQuestion, "Formatos lembrados") <> vbYes Then Exit Sub
     Set ws = Folha(SH_MEM)
     ws.Range("A2:C" & ws.Rows.Count).ClearContents
 End Sub
@@ -568,7 +654,7 @@ Private Function Incorporar(ByRef tbl As Variant) As Long
     Dim nl As Long, nc As Long, j As Long, r As Long, pap() As String
     Dim d As Variant, nr As Long, ncd As Long, nd() As Variant, cap As Long
     Dim mapa() As Long, cCod As Long, dc As Object, dr As Object, nome As String
-    Dim lin As Long, cod As String, v As Variant, saida As Variant
+    Dim lin As Long, chave As String, v As Variant, saida As Variant
     nl = UBound(tbl, 1): nc = UBound(tbl, 2)
     If nl < 2 Then Exit Function
     LimparCabecalho tbl, nc
@@ -607,20 +693,20 @@ Private Function Incorporar(ByRef tbl As Variant) As Long
     Next r
     For r = 2 To nl
         If IsError(tbl(r, cCod)) Then
-            cod = ""
+            chave = ""
         Else
-            cod = Trim$(CStr(tbl(r, cCod)))
+            chave = Trim$(CStr(tbl(r, cCod)))
         End If
-        If Len(cod) > 0 Then
+        If Len(chave) > 0 Then
             gLidos = gLidos + 1
-            If dr.Exists(cod) Then
-                lin = dr(cod)
+            If dr.Exists(chave) Then
+                lin = dr(chave)
                 gAtualizados = gAtualizados + 1
             Else
                 nr = nr + 1
                 lin = nr
-                nd(lin, 1) = cod
-                dr(cod) = lin
+                nd(lin, 1) = chave
+                dr(chave) = lin
                 gNovos = gNovos + 1
             End If
             For j = 1 To nc
@@ -687,7 +773,7 @@ End Sub
 Public Sub ApagarDados()
     Dim ws As Worksheet
     If Not Pronto() Then Exit Sub
-    If MsgBox("Apagar todos os registros importados?", vbYesNo + vbExclamation, "Apagar todos os dados") <> vbYes Then Exit Sub
+    If Msg("Apagar todos os registros importados?", vbYesNo + vbExclamation, "Apagar todos os dados") <> vbYes Then Exit Sub
     Set ws = Folha(SH_DADOS)
     ws.Cells.Clear
     MontarDados
@@ -956,7 +1042,7 @@ Public Sub AtualizarPainel()
     LerDados d, nr, nc
     PrepararCampos d, nc, ic, idt
     AtualizarListas d, nr, nc, ic
-    n = Selecionar d, nr, ic, idt, sel
+    n = Selecionar(d, nr, ic, idt, sel)
     ContarPorCategoria d, sel, n, ic, k, c, nk
     ws.Range("A2").Value = TextoCliente()
     ws.Range("B12").Value = n
@@ -974,7 +1060,7 @@ Public Sub AtualizarPainel()
         ws.Range(ws.Cells(15, 1), ws.Cells(14 + nk, 1)).NumberFormat = "@"
         ws.Range(ws.Cells(15, 1), ws.Cells(14 + nk, 2)).Value = sai
         ws.Range(ws.Cells(15, 2), ws.Cells(14 + nk, 2)).NumberFormat = "#,##0"
-        ws.Range(ws.Cells(15, 2), ws.Cells(14 + nk, 2)).FormatConditions.AddDatabar
+        If Not mOficina Then ws.Range(ws.Cells(15, 2), ws.Cells(14 + nk, 2)).FormatConditions.AddDatabar   ' LibreOffice nao tem barras de dados via VBA
     End If
 End Sub
 
@@ -1000,9 +1086,9 @@ Public Sub GerarRelatorio()
     Set pn = Folha(SH_PAINEL)
     LerDados d, nr, nc
     PrepararCampos d, nc, ic, idt
-    n = Selecionar d, nr, ic, idt, sel
+    n = Selecionar(d, nr, ic, idt, sel)
     If n = 0 Then
-        MsgBox "Não há registros com os filtros atuais.", vbInformation, "Gerar relatório"
+        Msg "Não há registros com os filtros atuais.", vbInformation, "Gerar relatório"
         Exit Sub
     End If
     ContarPorCategoria d, sel, n, ic, k, c, nk
@@ -1086,18 +1172,24 @@ Public Sub GerarRelatorio()
     ws.Range(ws.Cells(1, 1), ws.Cells(n + 1, nc)).Columns.AutoFit
     wb.Worksheets("Capa").Activate
     Application.ScreenUpdating = True
+    If mOficina Then
+        cam = mSaidaOficina
+    Else
     cam = Application.GetSaveAsFilename("Relatorio_" & Format$(Date, "yyyy-mm-dd") & ".xlsx", "Pasta de trabalho do Excel (*.xlsx),*.xlsx", , "Salvar relatório")
+    End If
     If VarType(cam) = vbBoolean Then
-        MsgBox "O relatório está aberto, mas não foi salvo. Use Arquivo > Salvar como.", vbInformation, "Gerar relatório"
+        Msg "O relatório está aberto, mas não foi salvo. Use Arquivo > Salvar como.", vbInformation, "Gerar relatório"
+    ElseIf mOficina Then
+        Msg "Relatório pronto (oficina: quem chamou salva o arquivo em " & CStr(cam) & ")", vbInformation, "Gerar relatório"
     Else
         Application.DisplayAlerts = False
         wb.SaveAs CStr(cam), 51
         Application.DisplayAlerts = True
-        MsgBox "Relatório salvo em:" & vbCrLf & CStr(cam), vbInformation, "Gerar relatório"
+        Msg "Relatório salvo em:" & vbCrLf & CStr(cam), vbInformation, "Gerar relatório"
     End If
     Exit Sub
 falha:
     Application.ScreenUpdating = True
     Application.DisplayAlerts = True
-    MsgBox "Não consegui gerar o relatório: " & Err.Description, vbExclamation, "Gerar relatório"
+    Msg "Não consegui gerar o relatório: " & Err.Description, vbExclamation, "Gerar relatório"
 End Sub
