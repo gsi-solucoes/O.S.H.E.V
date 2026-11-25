@@ -1,0 +1,11 @@
+HEV
+Edmundo
+Vasconcelos
+hospital
+R_ORDEM
+ordem de serviço
+ordens de serviço
+tratativa
+backlog
+especialidade
+homem-hora

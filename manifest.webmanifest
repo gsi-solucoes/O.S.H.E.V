@@ -1,0 +1,15 @@
+{
+  "name": "Raio X do Relatório",
+  "short_name": "Raio X",
+  "description": "Lê relatórios de ordens de serviço e monta painéis e KPIs no próprio aparelho.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#0f2a4a",
+  "lang": "pt-BR",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}

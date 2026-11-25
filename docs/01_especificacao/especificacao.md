@@ -2,7 +2,7 @@
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 Caminho direto (Método 5.5, 1.8.4): **sem encaixes e sem dublês**. Critérios rodam contra dados reais anonimizados em `tests/dados/`, sem rede.
-Status: **esperando Galindo (portão 2)**.
+Status: ✋ **portão 2 aprovado pelo Galindo em 25/11/2026 14h43** (P-03 e P-05 confirmados como estão).
 
 ---
 
@@ -263,6 +263,6 @@ O código atual é um protótipo feito para um caso específico. **Nada do conte
 ## 13. Perguntas abertas (PERGUNTAR AO GALINDO) — com decisão provisória
 - **P-01** ✅ Decidido (Galindo, 25/11/2026 14h28 e 14h34): a macro Excel fica como **versão para baixar e usar no PC**, com link no app e no README, com a mesma estrutura genérica do app no que couber no Excel 2016 (seção 9b).
 - **P-02** ✅ Decidido (Galindo, 25/11/2026 14h25): repositório `gsi-solucoes/raio-x-do-relatorio`, link https://gsi-solucoes.github.io/raio-x-do-relatorio/.
-- **P-03** Meta configurável por indicador percentual (cada cliente tem a sua)? *Provisório: sim, padrão 90%.*
+- **P-03** ✅ Decidido (Galindo, 25/11/2026 14h43): meta configurável por indicador percentual, padrão 90%.
 - **P-04** ✅ Decidido (Galindo, 25/11/2026 14h34): nada do caso de origem no produto; sem modelo pronto com regras de um ramo. Frases padrão começam vazias e cada cliente cadastra as suas.
-- **P-05** Ordem das etapas: 1 → 2 → 3 → 4 → 5 → 6 → 7? Ou trazer a 7 (formatos/OCR) para antes? *Provisório: ordem numérica.*
+- **P-05** ✅ Decidido (Galindo, 25/11/2026 14h43): etapas na ordem 1 → 7.
