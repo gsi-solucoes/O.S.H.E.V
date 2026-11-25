@@ -223,6 +223,8 @@ Sinônimos são lidos de `localStorage` `raiox_sin` (`{apelido: "soma"|"Valor"|.
 Bateria: `tests/pedidos.json` = lista de `{frase, conjunto, esperado}` (≥ 40 frases, ≥ 8 por variação: medida, agrupar, filtro, período, erro de digitação, não entendida); meta 100%.
 **CA-28** (pedido escrito) passa a valer nesta etapa: o `Seu painel` gerado inclui as linhas de `Meus indicadores`.
 
+**Decisões (v1.3.1, dúvidas do Testador):** D-10 CA-31 usa a situação existente nos dados (`entregues` → `Entregue`; no `vendas.csv` não existe "concluído"). D-11 o nome do conjunto em `__entender` é o nome do arquivo sem extensão (`vendas`). D-12 "últimos N dias" = os N dias que terminam na maior data dos registros, inclusive (fora da bateria). D-13 CA-28 na etapa 3 tira o bloco desmarcando em `O que acompanhar`; "Editar layout" fica para a etapa 6. D-14 em `naoEntendi` o trecho é só a palavra/expressão sem a preposição (`por`, `de`, `em`), ex. `zzzzz`.
+
 ---
 
 ## 3. Etapa 3 — Pedido escrito com "É isso?"
