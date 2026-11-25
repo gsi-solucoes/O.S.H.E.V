@@ -91,8 +91,8 @@ var Core = (function () {
   function faixa(ms) { var h = ms / H; return h <= 1 ? 0 : h <= 4 ? 1 : h <= 24 ? 2 : h <= 72 ? 3 : h <= 168 ? 4 : 5; }
   function hm(ms) {
     if (ms == null || isNaN(ms)) return '—';
-    var m = Math.round(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mi = m % 60;
-    return (d ? d + ' d ' : '') + (d || h ? h + ' h ' : '') + (mi < 10 ? '0' : '') + mi + ' min';
+    var m = Math.round(ms / 60000), h = Math.floor(m / 60), mi = m % 60;
+    return h ? h + ' h ' + (mi < 10 ? '0' : '') + mi + ' min' : mi + ' min';
   }
   function mediana(a) { if (!a.length) return null; a = a.slice().sort(function (x, y) { return x - y; }); var m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
   function pctDentro(durs, limiteMs) { return durs.length ? 100 * durs.filter(function (x) { return x <= limiteMs; }).length / durs.length : null; }
@@ -101,7 +101,7 @@ var Core = (function () {
   function meta(pct, alvo) {
     if (pct == null) return { ok: false, txt: '' };
     alvo = alvo == null ? 90 : alvo;
-    return pct >= alvo ? { ok: true, txt: 'Acima da meta de ' + alvo + '%' } : { ok: false, txt: 'Faltam ' + (Math.round((alvo - pct) * 10) / 10).toString().replace('.', ',') + ' pontos para a meta de ' + alvo + '%' };
+    return pct >= alvo ? { ok: true, txt: 'Acima da meta de ' + alvo + '%' } : { ok: false, txt: 'faltam ' + (Math.round((alvo - pct) * 10) / 10).toString().replace('.', ',') + ' pontos para a meta de ' + alvo + '%' };
   }
 
   // ---- semelhança de texto ----

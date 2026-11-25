@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-iqqtiLyRZdPJn8U67nhLWHvKDWRYAmFagL4NuvWMtJ8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-J3FIfcdBP25x7ofRaJOqClmuYH9ZwbxV2wvSjukA9xo='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -248,8 +248,8 @@ var Core = (function () {
   function faixa(ms) { var h = ms / H; return h <= 1 ? 0 : h <= 4 ? 1 : h <= 24 ? 2 : h <= 72 ? 3 : h <= 168 ? 4 : 5; }
   function hm(ms) {
     if (ms == null || isNaN(ms)) return '—';
-    var m = Math.round(ms / 60000), d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mi = m % 60;
-    return (d ? d + ' d ' : '') + (d || h ? h + ' h ' : '') + (mi < 10 ? '0' : '') + mi + ' min';
+    var m = Math.round(ms / 60000), h = Math.floor(m / 60), mi = m % 60;
+    return h ? h + ' h ' + (mi < 10 ? '0' : '') + mi + ' min' : mi + ' min';
   }
   function mediana(a) { if (!a.length) return null; a = a.slice().sort(function (x, y) { return x - y; }); var m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
   function pctDentro(durs, limiteMs) { return durs.length ? 100 * durs.filter(function (x) { return x <= limiteMs; }).length / durs.length : null; }
@@ -258,7 +258,7 @@ var Core = (function () {
   function meta(pct, alvo) {
     if (pct == null) return { ok: false, txt: '' };
     alvo = alvo == null ? 90 : alvo;
-    return pct >= alvo ? { ok: true, txt: 'Acima da meta de ' + alvo + '%' } : { ok: false, txt: 'Faltam ' + (Math.round((alvo - pct) * 10) / 10).toString().replace('.', ',') + ' pontos para a meta de ' + alvo + '%' };
+    return pct >= alvo ? { ok: true, txt: 'Acima da meta de ' + alvo + '%' } : { ok: false, txt: 'faltam ' + (Math.round((alvo - pct) * 10) / 10).toString().replace('.', ',') + ' pontos para a meta de ' + alvo + '%' };
   }
 
   // ---- semelhança de texto ----
@@ -302,7 +302,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
-const VERSAO = "fa1db1ae61";
+const VERSAO = "9e634fbbac";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
