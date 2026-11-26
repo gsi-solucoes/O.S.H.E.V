@@ -49,3 +49,8 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 ## Etapa 3 (F-51, 25/11/2026) — publicada no `main`
 - Pedido escrito com "É isso?", sinônimos, Meus indicadores, CA-28. Suíte: 88 verdes, 3 skip. Revisão: 0 Crítico/Alto, 2 Médios (M-1, M-2) e 4 Baixos em `docs/04_seguranca/revisao-etapa3.md` → F-52 (correção + regressão). Próximo: F-52, depois etapa 4 (Excel seguindo o painel).
 - F-52 feita (25/11): M-1, M-2 e B-1 a B-4 da etapa 3 corrigidos, 9 testes SEG3; suíte 97 verdes, 3 skip. Pendente (decisão de produto): "Somar" no restaurar backup troca ou junta a lista de Meus indicadores? Próximo: etapa 4 (Excel seguindo o painel).
+
+## Etapa 4 (F-53, 26/11/2026) — publicada no `main`
+- Excel segue o painel: planilha `Painel` por conjunto (cartões, tabelas Categoria/Valor/Barra, Meus indicadores, Registros), capa com `Registros de dd/mm/aaaa a dd/mm/aaaa`, sem fórmula nem macro, `window.__abasPainel`. Espec. v1.4 (seção 0.5). CA-40 e CA-44 adiados para a etapa 6.
+- Suíte: etapas 1 a 3 + segurança + etapa 4 verdes (73 + 48 conferidos em duas rodadas; CA-49 ajustado), 5 skip. Revisão: 0 Crítico/Alto, 1 Médio (M-1 nome de planilha duplicado sem diferenciar maiúsculas) e 2 Baixos em `docs/04_seguranca/revisao-etapa4.md` → F-54.
+- Pendente: painel na macro Excel (seção 9b); decisão de produto "Somar" no restaurar (F-52).
