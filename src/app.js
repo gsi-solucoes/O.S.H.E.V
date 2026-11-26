@@ -28,7 +28,7 @@ function acompLimpa(o) {
   return r;
 }
 const primitivo = x => x == null ? null : x instanceof Date ? (isNaN(x) ? null : x) : typeof x === 'number' ? (isFinite(x) ? x : null) : typeof x === 'string' ? x : paraTexto(x);
-const cfgLimpa = (o, base) => { const c = Object.assign({}, base); if (!o || typeof o !== 'object') return c; ['cliente', 'area', 'sinonimos'].forEach(k => { if (typeof o[k] === 'string') c[k] = o[k].slice(0, 5000); }); ['meta', 'prazoH'].forEach(k => { if (typeof o[k] === 'number' && isFinite(o[k])) c[k] = o[k]; }); if (typeof o.logo === 'string' && (o.logo === '' || /^data:image\/png;base64,[A-Za-z0-9+\/=]*$/.test(o.logo))) c.logo = o.logo; return c; };
+const cfgLimpa = (o, base) => { const c = Object.assign({}, base); if (!o || typeof o !== 'object') return c; ['cliente', 'area', 'sinonimos'].forEach(k => { if (typeof o[k] === 'string') c[k] = o[k].slice(0, 5000); }); ['meta', 'prazoH'].forEach(k => { if (typeof o[k] === 'number' && isFinite(o[k])) c[k] = o[k]; }); if (o.meta === null) c.meta = null; if (typeof o.logo === 'string' && (o.logo === '' || /^data:image\/png;base64,[A-Za-z0-9+\/=]*$/.test(o.logo))) c.logo = o.logo; return c; };
 const camposOk = l => Array.isArray(l) && l.every(x => x && typeof x === 'object' && typeof x.n === 'string' && x.n.trim() && TIPOS_OK.has(x.t));
 // valida o backup inteiro e devolve cópias limpas; null se inválido (nada é alterado antes disso)
 function validarBackup(b) {
@@ -1365,7 +1365,7 @@ function renderConfig() {
   $('#infoDados').textContent = regs.length + ' registros guardados neste aparelho.';
 }
 function iniciaConfig() {
-  const lig = (id, k, num) => { const i = $(id); i.value = cfg[k]; i.oninput = () => { cfg[k] = num ? (parseFloat(i.value) || (k === 'meta' ? 90 : 24)) : i.value; salvaCfg(); topo(); render(); }; };
+  const lig = (id, k, num) => { const i = $(id); i.value = cfg[k] == null ? '' : cfg[k]; i.oninput = () => { cfg[k] = num ? (k === 'meta' ? (isFinite(parseFloat(i.value)) ? parseFloat(i.value) : null) : (parseFloat(i.value) || 24)) : i.value; salvaCfg(); topo(); render(); }; };
   lig('#cfgCliente', 'cliente'); lig('#cfgArea', 'area'); lig('#cfgMeta', 'meta', true); lig('#cfgPrazo', 'prazoH', true); lig('#cfgSin', 'sinonimos');
   $('#cfgLogo').onchange = e => { const f = e.target.files[0]; if (!f) return; if (f.size > LIM.logo) { toast('Logo grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.logo) + ').'); e.target.value = ''; return; } const img = new Image(); img.onload = () => { const k = Math.min(1, 240 / Math.max(img.width, img.height)), cv = document.createElement('canvas'); cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); cfg.logo = cv.toDataURL('image/png'); salvaCfg(); topo(); URL.revokeObjectURL(img.src); }; img.onerror = () => toast('Não consegui ler essa imagem.'); img.src = URL.createObjectURL(f); e.target.value = ''; };
   $('#cfgLogoX').onclick = () => { cfg.logo = ''; salvaCfg(); topo(); };
@@ -1392,7 +1392,7 @@ function iniciaConfig() {
     if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); contas = nulo(); salvaContas(); layouts = nulo(); salvaLay(); modoEd = false; F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
   };
 }
-function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
+function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta == null ? '' : cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
 
 /* ---------- partida ---------- */
 function abas(qual) { $('#painel').hidden = qual !== 'painel'; $('#config').hidden = qual !== 'config'; $('#tPainel').classList.toggle('on', qual === 'painel'); $('#tConfig').classList.toggle('on', qual === 'config'); window.scrollTo(0, 0); }

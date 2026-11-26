@@ -32,7 +32,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | Abre **Config → Empresa / cliente** e escreve **Cliente** e **Área** | Salva sozinho a cada letra, sem botão Salvar ⚖️ D-02; o topo passa a mostrar "Raio X do Relatório · Área · Cliente" |
 | Toca em **Escolher logo** e escolhe uma imagem | Reduz a imagem e mostra no topo, na impressão e na capa do Excel ⚖️ D-03 |
 | Toca em **Apagar logo** | Tira o logo do topo e da capa |
-| Em **Metas**, muda a meta (padrão 90%) e o prazo "dentro do prazo" (padrão 24 h) | O bloco **Tempo entre duas datas** (só ele) mostra "Dentro de 24 h: X%" e, embaixo, "Acima da meta de 90%" ou "faltam X pontos para a meta de 90%"; o prazo novo muda o "dentro de". Sem esse bloco, a meta não aparece |
+| Em **Metas**, muda a meta (padrão 90%) e o prazo "dentro do prazo" (padrão 24 h) | O bloco **Tempo entre duas datas** (só ele) mostra "Dentro de 24 h: X%" e, embaixo, "Acima da meta de 90%" ou "faltam X pontos para a meta de 90%"; o prazo novo muda o "dentro de". Sem esse bloco, a meta não aparece. Meta vazia: some a frase da meta |
 
 **Regras e limites:** logo até 2 MB (vira imagem de até 240 px). Config fica só neste aparelho e entra no backup.
 
@@ -206,7 +206,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 **Regras e limites:** a primeira vez precisa de internet **uma vez** para o aparelho guardar o leitor (cerca de 9 MB, uma só vez); depois funciona sem internet. Sem tabela na imagem: "Não encontrei uma tabela neste arquivo". Até 20 imagens por vez e 120 segundos por imagem ⚖️ D-62. Só português ⚖️ D-63. Modelo de idioma leve ⚖️ D-61: erra um pouco mais, por isso a conferência é obrigatória.
 
 ## Anotações da leitura com o Galindo (26/11/2026)
-**Meta (P-b), versão atual, depois do teste:** hoje não dá para ficar sem meta: campo vazio ou **0** volta para 90 (defeito). Ideia: campo vazio = sem meta (o bloco mostra só o percentual). O Galindo quer **testar antes** com um relatório de vendas (`tests/dados/vendas.csv`) e só então decidir (F-71).
+**Meta (P-b), corrigida na F-71 (26/11):** campo da meta **vazio = sem meta** (o bloco mostra só o percentual dentro do prazo); **0** vale 0%; quem não mexe continua com 90%.
 
 **Versão 2.0 (mudanças grandes, não entram agora; F-72):**
 0. **Macro do Excel (`excel/RaioX_Relatorio.bas`, P-z, D-24, F-49):** inteira para a V2; o Galindo não vai testar no Excel real agora. O botão **Gerar Excel do app** (P-g) continua na versão atual.

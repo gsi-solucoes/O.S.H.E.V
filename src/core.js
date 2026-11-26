@@ -102,7 +102,8 @@ var Core = (function () {
   // meta: acima da meta fica verde; senão "faltam X para a meta"
   function meta(pct, alvo) {
     if (pct == null) return { ok: false, txt: '' };
-    alvo = alvo == null ? 90 : alvo;
+    if (alvo === null) return { ok: false, txt: '' };
+    alvo = alvo === undefined ? 90 : alvo;
     return pct >= alvo ? { ok: true, txt: 'Acima da meta de ' + alvo + '%' } : { ok: false, txt: 'faltam ' + (Math.round((alvo - pct) * 10) / 10).toString().replace('.', ',') + ' pontos para a meta de ' + alvo + '%' };
   }
 

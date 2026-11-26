@@ -350,3 +350,31 @@ def test_f70_depois_de_nao_o_cartao_nao_mostra_null(page):
     assert "null" not in caixa.inner_text()
     page.get_by_role("button", name="Período", exact=True).click()
     assert "null" not in caixa.inner_text()
+
+
+# ---------- F-71: meta opcional ----------
+def _cartao_tempo(page, meta):
+    abrir_janela_r51(page, "chamados.csv")
+    dlg(page, JANELA).get_by_role("button", name="Cancelar", exact=True).click()
+    page.get_by_text("Config", exact=True).first.click()
+    page.locator("#cfgMeta").fill(meta)
+    page.get_by_text("Painel", exact=True).first.click()
+    page.wait_for_timeout(400)
+    return page.locator("#cartaoTempo").inner_text()
+
+
+def test_f71_meta_vazia_nao_mostra_frase_da_meta(page):
+    t = _cartao_tempo(page, "")
+    assert "Dentro de" in t and "meta" not in t.lower(), t
+
+
+def test_f71_meta_zero_vale_zero_e_nao_volta_para_90(page):
+    t = _cartao_tempo(page, "0")
+    assert "meta de 0%" in t and "90" not in t.replace("Dentro de 24", ""), t
+
+
+def test_f71_padrao_continua_90(page):
+    abrir_janela_r51(page, "chamados.csv")
+    dlg(page, JANELA).get_by_role("button", name="Cancelar", exact=True).click()
+    page.wait_for_timeout(300)
+    assert "meta de 90%" in page.locator("#cartaoTempo").inner_text()
