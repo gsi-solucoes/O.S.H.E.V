@@ -60,3 +60,10 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 - Contas personalizadas: Config → `Contas personalizadas` (nome, fórmula, prévia, `Salvar conta`, `Remover`), interpretador próprio em `src/core.js` (`compilaFormula`/`avaliaFormula`, sem eval), conta no `O que acompanhar`, `Seu painel`, planilha `Painel`, pedido escrito ("ticket médio por região", `medida: "conta"`) e backup (`contas`). Espec. v1.5 (seção 0.6, decisões D-20 a D-23).
 - Suíte: 151 verdes, 5 skip (37 novos em `tests/test_etapa5.py`). Revisão: 0 Crítico/Alto/Médio, 3 Baixos em `docs/04_seguranca/revisao-etapa5.md` → F-62. POP atualizado (P-y, D-20 a D-23).
 - Próximo: F-62 (Baixos), F-56 (painel na macro), F-57 (etapa 6).
+
+## Etapas 6 e 7 e painel na macro (26/11/2026) — publicadas no `main`
+- F-56 painel na macro Excel (indicadores no painel e no relatório; 11 testes na oficina). F-57/F-63 etapa 6 editar layout (51 testes). F-58/F-66 etapa 7a (xlsx, xls, ods, JSON, XML, zip; SheetJS 0.20.3). F-64/F-67 etapa 7b (PDF com texto e tela de conferência; pdf.js 5.7.284). F-65/F-68 etapa 7c (OCR no aparelho; tesseract.js 7.0.0, 98,6% das células certas antes da conferência).
+- Suíte: 280 verdes, 5 skip; o teste de tempo `SEG2_B2` (digitar na busca < 60 ms) oscila entre 61 e 81 ms nesta máquina e falha igual sem as mudanças. Os 11 testes da macro rodam com `PYTHONPATH=/usr/lib/python3/dist-packages` (uno); com esse caminho os testes de PDF forjado falham por conflito do PIL: rode os dois grupos em separado.
+- Revisões de segurança etapas 6, 7a, 7b e 7c: 0 Crítico/Alto; Médios e Baixos corrigidos (F-63, F-66, F-67, F-68).
+- Pendente do Galindo: F-69 homologação (POP primeiro), F-49 Excel real, F-59 decisão "Somar", design final, brilho/produção.
+
