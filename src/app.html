@@ -139,6 +139,14 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
     <div class="row"><label class="f">Apelido<input type="text" id="sinAp" maxlength="100"></label><label class="f">Significa<select id="sinSig"></select></label><button type="button" id="sinAdd">Adicionar sinônimo</button></div>
     <div id="listaSin" style="margin-top:10px"></div>
   </div>
+  <div class="card"><h3>Contas personalizadas</h3>
+    <p class="muted">Crie uma conta com os campos do relatório aberto. Use <code>+ - * /</code>, parênteses e as funções <code>quantidade()</code>, <code>soma(campo)</code>, <code>media(campo)</code>, <code>mediana(campo)</code>, <code>dias(data1, data2)</code> e <code>distintos(campo)</code>. Filtro opcional: <code>quantidade(situação = cancelado)</code>.</p>
+    <div class="grid2"><label class="f">Nome da conta<input type="text" id="contaNome" maxlength="60" autocomplete="off"></label><label class="f">Fórmula<input type="text" id="contaFormula" maxlength="300" autocomplete="off" spellcheck="false"></label></div>
+    <p class="muted" id="contaErro" role="alert"></p>
+    <h4>Prévia da conta</h4><p><b id="contaPrevia" data-testid="conta-previa">—</b></p>
+    <div class="row"><button type="button" id="contaSalvar" class="prim">Salvar conta</button></div>
+    <h4>Suas contas</h4><div id="listaContas"></div>
+  </div>
   <div class="card"><h3>Palavras parecidas</h3>
     <p class="muted">Uma regra por linha, no formato <code>palavra = outra palavra</code>. Usados na semelhança de texto. Começa vazio.</p>
     <textarea id="cfgSin" spellcheck="false"></textarea>

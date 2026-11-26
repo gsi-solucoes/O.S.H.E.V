@@ -55,3 +55,8 @@ Atualizado em 25/11/2026 pelo Construtor. Branch `etapa-1`. Nada publicado, nada
 - Suíte: etapas 1 a 3 + segurança + etapa 4 verdes (73 + 48 conferidos em duas rodadas; CA-49 ajustado), 5 skip. Revisão: 0 Crítico/Alto, 1 Médio (M-1 nome de planilha duplicado sem diferenciar maiúsculas) e 2 Baixos em `docs/04_seguranca/revisao-etapa4.md` → F-54.
 - Pendente: painel na macro Excel (seção 9b); decisão de produto "Somar" no restaurar (F-52).
 - F-54 feita (26/11): M-1, B-1 e B-2 da etapa 4 corrigidos, 3 testes SEG4; suíte 113 verdes, 5 skip; no `main`. Próximo: etapa 5 (contas personalizadas), painel na macro Excel (9b), decisão "Somar" no restaurar.
+
+## Etapa 5 (F-55, 26/11/2026) — publicada no `main`
+- Contas personalizadas: Config → `Contas personalizadas` (nome, fórmula, prévia, `Salvar conta`, `Remover`), interpretador próprio em `src/core.js` (`compilaFormula`/`avaliaFormula`, sem eval), conta no `O que acompanhar`, `Seu painel`, planilha `Painel`, pedido escrito ("ticket médio por região", `medida: "conta"`) e backup (`contas`). Espec. v1.5 (seção 0.6, decisões D-20 a D-23).
+- Suíte: 151 verdes, 5 skip (37 novos em `tests/test_etapa5.py`). Revisão: 0 Crítico/Alto/Médio, 3 Baixos em `docs/04_seguranca/revisao-etapa5.md` → F-62. POP atualizado (P-y, D-20 a D-23).
+- Próximo: F-62 (Baixos), F-56 (painel na macro), F-57 (etapa 6).

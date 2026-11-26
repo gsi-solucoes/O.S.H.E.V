@@ -47,10 +47,11 @@ function validarBackup(b) {
     if (b.cfg != null && (typeof b.cfg !== 'object' || Array.isArray(b.cfg))) return null;
     const ac = nulo();
     if (b.acomp != null) { if (typeof b.acomp !== 'object' || Array.isArray(b.acomp)) return null; const r = acompLimpa(b.acomp); if (!r) return null; Object.assign(ac, r); }
-    let sn = nulo(), mu = nulo();
+    let sn = nulo(), mu = nulo(), co = nulo();
     if (b.sin != null) { sn = sinLimpo(b.sin); if (!sn) return null; }
     if (b.meus != null) { mu = meusLimpo(b.meus); if (!mu) return null; }
-    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac, sin: sn, meus: mu };
+    if (b.contas != null) { co = contasLimpo(b.contas); if (!co) return null; }
+    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac, sin: sn, meus: mu, contas: co };
   } catch (e) { return null; }
 }
 let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' });
@@ -350,6 +351,10 @@ function catalogo(c, soIds) {
       ex: L => { const l = lista(L); return l.length ? 'Mais antigo: ' + fmtData(l[0].v[dat()]) : null; },
       desenha: L => { const l = lista(L); return cartao({ nome: 'Mais antigos em aberto' }, kpiBtn('Mais antigo: ', l.length ? fmtData(l[0].v[dat()]) : '—', '', () => abrir('Mais antigos em aberto', l)), el('p', { class: 'muted', text: fmtI(l.length) + ' em aberto' })); } });
   }
+  (contas[c] || []).forEach(x => { const f = compilaConta(c, x.formula); if (!f.ok) return; const cf = camposFormula(f.ast);
+    out.push({ id: 'conta' + SEP + x.nome, grupo: 'num', nome: x.nome, oque: 'a conta personalizada ' + x.nome, conta: x.formula, campos: cf.length ? cf.join(', ') : 'nenhum campo específico, conta os registros',
+      ex: L => fmtConta(valorConta(c, x.nome, L)),
+      desenha: L => cartao({ nome: x.nome }, kpiBtn('', fmtConta(valorConta(c, x.nome, L)), '', () => abrir(x.nome, L))) }); });
   return (soIds ? out.filter(x => soIds.indexOf(x.id) >= 0) : out).filter(x => x.ex(todos) != null);
 }
 // blocos escolhidos do conjunto, na ordem da especificação: números, gráficos (cada grupo na ordem em que foram marcados); [] = painel da etapa 1
@@ -414,7 +419,7 @@ function sinLimpo(o) {
 }
 function pedLimpo(p) {
   if (!p || typeof p !== 'object' || Array.isArray(p)) return null;
-  if (p.medida !== null && MEDS.indexOf(p.medida) < 0) return null;
+  if (p.medida !== null && p.medida !== 'conta' && MEDS.indexOf(p.medida) < 0) return null;
   if (!(p.campo === null || txtOk(p.campo)) || !(p.agrupar === null || txtOk(p.agrupar))) return null;
   if (!Array.isArray(p.filtros) || p.filtros.length > 10 || !p.filtros.every(f => f && typeof f === 'object' && txtOk(f.campo) && txtOk(f.valor))) return null;
   let per = null; const q = p.periodo;
@@ -436,6 +441,47 @@ let meus = meusLimpo(store.get('raiox_meus', {})) || nulo();   // conjunto -> [p
 const salvaMeus = () => store.set('raiox_meus', meus);
 const sinMap = () => sinLimpo(store.get('raiox_sin', {})) || nulo();
 
+/* ---------- etapa 5: contas personalizadas (raiox_contas: conjunto -> [{nome, formula}]) ---------- */
+function contasLimpo(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const r = nulo();
+  for (const k of Object.keys(o).slice(0, 200)) {
+    const l = o[k]; if (!Array.isArray(l)) return null; const vis = new Set(), out = [];
+    for (const x of l.slice(0, 50)) {
+      if (!x || typeof x !== 'object' || typeof x.nome !== 'string' || typeof x.formula !== 'string') return null;
+      const n = x.nome.trim(); if (!n || n.length > 60 || /[\u0000-\u001f]/.test(n) || !x.formula.trim() || x.formula.length > 300) return null;
+      const nk = Core.norm(n); if (vis.has(nk)) continue; vis.add(nk); out.push({ nome: n, formula: x.formula });
+    }
+    r[k] = out;
+  }
+  return r;
+}
+let contas = contasLimpo(store.get('raiox_contas', {})) || nulo();
+const salvaContas = () => store.set('raiox_contas', contas);
+const contaDe = (c, nome) => (contas[c] || []).find(x => x.nome === nome) || null;
+// compila a conta com os campos do conjunto: { ok, ast } ou { ok:false, erro }
+const compilaConta = (c, formula) => Core.compilaFormula(formula, (conjs[c] || {}).campos || []);
+// valor da conta sobre uma lista de registros: número, ou null = "sem dados"
+function valorConta(c, nome, L) {
+  const x = contaDe(c, nome); if (!x) return null; const f = compilaConta(c, x.formula); if (!f.ok) return null;
+  return Core.avaliaFormula(f.ast, L, (r, k) => r.v[k]);
+}
+function camposFormula(ast, out) { out = out || []; if (!ast) return out; if (ast.t === 'f') { ast.campos.forEach(k => { if (out.indexOf(k) < 0) out.push(k); }); if (ast.filtro && out.indexOf(ast.filtro.campo) < 0) out.push(ast.filtro.campo); } else if (ast.t === 'op') { camposFormula(ast.a, out); camposFormula(ast.b, out); } else if (ast.t === 'neg') camposFormula(ast.a, out); return out; }
+const fmtConta = v => v == null ? 'sem dados' : fmtN(v);
+// o nome de uma conta na frase do pedido (igual ou parecido ≥ 80%); devolve { nome, resto } com a frase sem o nome
+function acharConta(frase, c) {
+  const cs = (contas[c] || []).slice().sort((a, b) => b.nome.length - a.nome.length); if (!cs.length) return null;
+  const tk = String(frase).split(/\s+/).filter(Boolean), nt = tk.map(t => Core.norm(t.replace(/^[("'“‘¿¡]+|[)"'”’,.;:!?]+$/g, '')));
+  for (const x of cs) {
+    const w = Core.norm(x.nome).split(' ').filter(Boolean), n = w.length; if (!n) continue;
+    for (let i = 0; i + n <= tk.length; i++) {
+      const g = nt.slice(i, i + n).join(' '), a = w.join(' ');
+      if (g === a || (a.length >= 4 && Core.semelhanca(g, a) >= 0.8)) return { nome: x.nome, resto: tk.slice(0, i).concat(tk.slice(i + n)).join(' ') };
+    }
+  }
+  return null;
+}
+
 function ctxPedido(c) {
   const L = doConj(c), valores = nulo(), meses = new Set(); let hoje = '';
   camposDe(c, 'categoria').forEach(k => { const s = new Set(); L.forEach(r => { const v = r.v[k.n]; if (v) s.add(v); }); valores[k.n] = [...s].slice(0, 500); });
@@ -443,7 +489,12 @@ function ctxPedido(c) {
   return { campos: ((conjs[c] || {}).campos || []).map(k => ({ n: k.n, t: k.t })), valores, hoje: hoje || null, meses: [...meses], sin: sinMap() };
 }
 const achaConj = nome => { if (conjs[nome]) return nome; const n = Core.norm(nome || ''); return Object.keys(conjs).find(k => Core.norm(k) === n) || F.conjunto; };
-const entenderPed = (frase, c) => Core.entender(frase, ctxPedido(c));
+function entenderPed(frase, c) {
+  frase = String(frase == null ? '' : frase).slice(0, 300); const a = acharConta(frase, c);
+  if (!a) return Core.entender(frase, ctxPedido(c));
+  const e = a.resto.trim() ? Core.entender(a.resto, ctxPedido(c)) : { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [] };
+  e.medida = 'conta'; e.campo = a.nome; e.percentual = undefined; delete e.percentual; return e;
+}
 window.__entender = (frase, nome) => { frase = String(frase == null ? '' : frase).slice(0, 300); const c = achaConj(nome); return JSON.parse(JSON.stringify(c && conjs[c] ? entenderPed(frase, c) : { medida: null, campo: null, agrupar: null, filtros: [], periodo: null, naoEntendi: [String(frase || '')] })); };
 
 const perTxt = p => !p ? '' : p.tipo === 'mes' ? MESES[p.mes - 1] + '/' + p.ano : p.tipo === 'ano' ? String(p.ano) : p.de === p.ate ? fmtD(p.de) : 'de ' + fmtD(p.de) + ' a ' + fmtD(p.ate);
@@ -456,12 +507,14 @@ function partesFiltro(ped, c) {
 const filtrosPedTxt = (ped, c) => partesFiltro(ped, c).grupos.map(g => 'só ' + g.campo.toLowerCase() + ' ' + g.vals.join(' ou ')).join('; ');
 function medidaTxt(ped, c) {
   if (!ped.medida) return '(escolha a medida)';
+  if (ped.medida === 'conta') return ped.campo;
   if (ped.medida === 'quantidade') return 'Quantidade de registros';
   if (ped.medida === 'percentual') { const pf = partesFiltro(ped, c); return 'Percentual de registros' + (pf.cn ? ' com ' + pf.cn + ' ' + pf.nums.join(' ou ') : ' (escolha a situação em Filtro)'); }
   return MED_NOME[ped.medida] + ' de ' + (ped.campo || '(escolha o campo)');
 }
 const resumoPed = (ped, c) => [medidaTxt(ped, c), ped.agrupar ? 'por ' + ped.agrupar : '', filtrosPedTxt(ped, c), perTxt(ped.periodo)].filter(Boolean).join(' · ');
-function faltaPed(ped) {
+function faltaPed(ped, c) {
+  if (ped.medida === 'conta') return contaDe(c, ped.campo) ? '' : 'A conta “' + ped.campo + '” não existe mais. Crie de novo em Config → Contas personalizadas.';
   if (!ped.medida) return 'Falta a medida. Toque em Não e escolha em Medida.';
   if (ped.medida === 'percentual') return ped.filtros.length ? '' : 'Falta a situação cuja fatia você quer. Toque em Não e escolha em Filtro.';
   if (ped.medida !== 'quantidade' && !ped.campo) return 'Falta o campo. Toque em Não e escolha em Campo.';
@@ -473,11 +526,12 @@ function listaPed(ped, L, c) {
   const pf = partesFiltro(ped, c); pf.grupos.forEach(g => { B = B.filter(r => g.vals.indexOf(r.v[g.campo]) >= 0); });
   return { base: B, nset: new Set(pf.cn ? B.filter(r => pf.nums.indexOf(r.v[pf.cn]) >= 0) : []) };
 }
-const fmtVal = (ped, v) => v == null ? '—' : ped.medida === 'quantidade' ? fmtI(v) : ped.medida === 'percentual' ? fmtP(v) : fmtN(v);
+const fmtVal = (ped, v) => ped.medida === 'conta' ? fmtConta(v) : v == null ? '—' : ped.medida === 'quantidade' ? fmtI(v) : ped.medida === 'percentual' ? fmtP(v) : fmtN(v);
 function calcPed(ped, L, c) {
   const { base, nset } = listaPed(ped, L, c), cd = campoData(c);
   const val = l => {
     if (ped.medida === 'quantidade') return l.length;
+    if (ped.medida === 'conta') return valorConta(c, ped.campo, l);
     if (ped.medida === 'percentual') return l.length ? 100 * l.filter(r => nset.has(r)).length / l.length : null;
     const v = numeros(l, ped.campo); if (!v.length) return null; const s = v.reduce((a, b) => a + b, 0);
     return ped.medida === 'soma' ? s : ped.medida === 'media' ? s / v.length : ped.medida === 'mediana' ? Core.mediana(v) : ped.medida === 'minimo' ? v.reduce((a, b) => Math.min(a, b)) : v.reduce((a, b) => Math.max(a, b));
@@ -494,7 +548,7 @@ function calcPed(ped, L, c) {
 }
 // corpo do bloco (número ou gráfico); na prévia o valor leva data-testid="previa-valor" e nada abre janela
 function corpoPed(ped, L, c, previa, titulo) {
-  const f = faltaPed(ped); if (f) return el('p', { class: 'muted', text: f });
+  const f = faltaPed(ped, c); if (f) return el('p', { class: 'muted', text: f });
   const r = calcPed(ped, L, c);
   if (!ped.agrupar) {
     const b = el('b', { text: fmtVal(ped, r.valor) }); if (previa) b.setAttribute('data-testid', 'previa-valor');
@@ -506,13 +560,15 @@ function corpoPed(ped, L, c, previa, titulo) {
 }
 function contaPed(ped, c) {
   const por = ped.agrupar ? ', separada por ' + ped.agrupar : '', k = ped.campo || '(campo)';
+  if (ped.medida === 'conta') { const x = contaDe(c, ped.campo); return 'conta personalizada ' + ped.campo + (x ? ' (' + x.formula + ')' : '') + por; }
   if (ped.medida === 'quantidade') return 'contagem de registros' + (ped.agrupar ? ' por ' + ped.agrupar : '');
   if (ped.medida === 'percentual') { const pf = partesFiltro(ped, c); return 'percentual de registros com ' + pf.cn + ' ' + pf.nums.join(' ou ') + (ped.agrupar ? ', por ' + ped.agrupar : ''); }
   return { soma: 'soma do campo ', media: 'média do campo ', mediana: 'mediana do campo ', minimo: 'menor valor do campo ', maximo: 'maior valor do campo ' }[ped.medida] + k + por;
 }
 function camposPed(ped, c) {
   const l = []; const add = x => { if (x && l.indexOf(x) < 0) l.push(x); };
-  if (ped.medida && ped.medida !== 'quantidade' && ped.medida !== 'percentual') add(ped.campo);
+  if (ped.medida === 'conta') { const x = contaDe(c, ped.campo), f = x && compilaConta(c, x.formula); if (f && f.ok) camposFormula(f.ast).forEach(add); }
+  else if (ped.medida && ped.medida !== 'quantidade' && ped.medida !== 'percentual') add(ped.campo);
   if (ped.agrupar) add(ped.agrupar === 'mês' ? campoData(c) : ped.agrupar); ped.filtros.forEach(f => add(f.campo)); if (ped.periodo) add(campoData(c));
   return l.length ? l.join(', ') : 'nenhum campo específico, conta os registros';
 }
@@ -569,7 +625,7 @@ function abrirPedido(frase, c) {
     if (erro) box.append(el('p', { class: 'muted', role: 'alert', text: erro }));
     box.append(el('div', { class: 'row', style: 'margin:12px 0' }, el('span', { text: 'É isso?' }),
       el('button', { type: 'button', class: 'prim', text: 'Sim', onclick: () => {
-        const f = faltaPed(ped); if (f) { erro = f; pinta(); return; }
+        const f = faltaPed(ped, c); if (f) { erro = f; pinta(); return; }
         const lim = pedLimpo(ped), l = meus[c] || (meus[c] = []);
         if (!lim) { erro = 'Pedido grande demais: use até 10 filtros e textos de até 200 caracteres.'; pinta(); return; }
         if (l.length >= 50) { erro = 'Limite de 50 indicadores por relatório. Remova algum antes.'; toast('Limite de 50 indicadores por relatório.'); pinta(); return; }
@@ -591,6 +647,32 @@ function renderSin() {
   const l = $('#listaSin'); l.textContent = ''; const m = sinMap(), ks = Object.keys(m);
   if (!ks.length) l.append(el('p', { class: 'muted', text: 'Nenhum sinônimo ainda.' }));
   ks.forEach(k => l.append(el('div', { class: 'row', style: 'margin-bottom:6px' }, el('span', { text: k + ' = ' + m[k] }), el('button', { type: 'button', text: 'Remover', onclick: () => { const n = sinMap(); delete n[k]; store.set('raiox_sin', n); renderSin(); } }))));
+}
+
+/* Config → Contas personalizadas: valida na hora, mostra a prévia e só salva sem erro */
+function conferirConta() {
+  const c = F.conjunto, nome = $('#contaNome').value.trim(), fx = $('#contaFormula').value, er = $('#contaErro'), pv = $('#contaPrevia'); er.textContent = ''; pv.textContent = '—';
+  if (!c || !conjs[c]) { er.textContent = 'Carregue um relatório primeiro.'; return null; }
+  if (!fx.trim()) return null;
+  const f = compilaConta(c, fx); if (!f.ok) { er.textContent = f.erro; return null; }
+  pv.textContent = fmtConta(Core.avaliaFormula(f.ast, filtrar(c), (r, k) => r.v[k])); return f;
+}
+function renderContas() {
+  const c = F.conjunto, l = $('#listaContas'), cs = (c && contas[c]) || []; l.textContent = '';
+  if (!cs.length) l.append(el('p', { class: 'muted', text: 'Nenhuma conta ainda.' }));
+  cs.forEach(x => l.append(el('li', { class: 'row', style: 'margin-bottom:6px;list-style:none' }, el('span', { text: x.nome + ' = ' + x.formula }), el('button', { type: 'button', text: 'Remover', onclick: () => { contas[c] = contas[c].filter(y => y !== x); salvaContas(); renderContas(); render(); } }))));
+  conferirConta();
+}
+function salvarConta() {
+  const c = F.conjunto, nome = $('#contaNome').value.trim(), er = $('#contaErro');
+  if (!c || !conjs[c]) { er.textContent = 'Carregue um relatório primeiro.'; return; }
+  if (!nome) { er.textContent = 'escreva o nome da conta'; return; }
+  if (nome.length > 60 || /[\u0000-\u001f]/.test(nome)) { er.textContent = 'o nome da conta deve ter até 60 caracteres'; return; }
+  const f = conferirConta(); if (!f) { if (!er.textContent) er.textContent = 'escreva a fórmula'; return; }
+  const l = (contas[c] || (contas[c] = [])).slice(), nk = Core.norm(nome), i = l.findIndex(x => Core.norm(x.nome) === nk);
+  if (i < 0 && l.length >= 50) { er.textContent = 'Limite de 50 contas por relatório. Remova alguma antes.'; return; }
+  const nova = { nome, formula: $('#contaFormula').value }; if (i >= 0) l[i] = nova; else l.push(nova);
+  contas[c] = l; salvaContas(); $('#contaNome').value = ''; $('#contaFormula').value = ''; renderContas(); render(); toast('Conta salva.');
 }
 
 /* ---------- janelas flutuantes ---------- */
@@ -687,6 +769,7 @@ function xlBloco(b, c, L) {
   const SEP = '\u0001', T = b.nome, p = b.ped ? [] : String(b.id || '').split(SEP), t = b.ped ? 'meu' : p[0], k = p[1];
   const cart = (rot, val) => ({ titulo: T, rot, val }), graf = linhas => ({ titulo: T, linhas });
   if (t === 'total') return cart(['Registros'], [XI(L.length)]);
+  if (t === 'conta') { const v = valorConta(c, k, L); return cart(['Valor'], [v == null ? 'sem dados' : XD(v)]); }
   if (t === 'cat') return graf(top10(ordenaGrupos(agrupa(L, r => r.v[k]))).map(([n, v]) => [n, XI(v), v]));
   if (t === 'num') { const v = numeros(L, k), s = v.reduce((a, x) => a + x, 0); return cart(['Soma', 'Média', 'Mediana'], v.length ? [XD(s), XD(s / v.length), XD(Core.mediana(v))] : ['—', '—', '—']); }
   if (t === 'numcat') {
@@ -707,8 +790,8 @@ function xlBloco(b, c, L) {
     return cart(['Mais antigo', 'Em aberto'], [l.length ? fmtData(l[0].v[dat]) : '—', XI(l.length)]);
   }
   if (t === 'meu') {
-    const ped = b.ped, f = faltaPed(ped); if (f) return { titulo: T, aviso: f };
-    const r = calcPed(ped, L, c), tv = v => v == null ? '—' : ped.medida === 'quantidade' ? XI(v) : ped.medida === 'percentual' ? fmtP(v) : XD(v);
+    const ped = b.ped, f = faltaPed(ped, c); if (f) return { titulo: T, aviso: f };
+    const r = calcPed(ped, L, c), tv = v => ped.medida === 'conta' ? (v == null ? 'sem dados' : XD(v)) : v == null ? '—' : ped.medida === 'quantidade' ? XI(v) : ped.medida === 'percentual' ? fmtP(v) : XD(v);
     if (!ped.agrupar) return cart(['Valor', 'Registros considerados'], [tv(r.valor), XI(r.base.length)]);
     if (!r.itens.length) return { titulo: T, aviso: 'Nenhum registro para este pedido.' };
     return graf(r.itens.map(([n, v]) => [n, tv(v), v == null ? 0 : v]));
@@ -798,7 +881,7 @@ function renderConfig() {
   const l = $('#listaFmt'); l.textContent = '';
   const ks = Object.keys(fmts); if (!ks.length) l.append(el('p', { class: 'muted', text: 'Nenhum formato lembrado ainda.' }));
   ks.forEach(k => l.append(el('div', { class: 'row', style: 'margin-bottom:6px' }, el('span', { text: fmts[k].conjunto + ' (' + fmts[k].cols.length + ' colunas)' }), el('button', { type: 'button', text: 'Esquecer', onclick: () => { delete fmts[k]; store.set('raiox_fmt', fmts); renderConfig(); } }))));
-  renderSin();
+  renderSin(); renderContas();
   $('#infoDados').textContent = regs.length + ' registros guardados neste aparelho.';
 }
 function iniciaConfig() {
@@ -808,8 +891,9 @@ function iniciaConfig() {
   $('#cfgLogoX').onclick = () => { cfg.logo = ''; salvaCfg(); topo(); };
   document.querySelectorAll('.passosBas').forEach(p => { const d = el('details', null, el('summary', { text: 'Como instalar a versão Excel (4 passos)' }), el('ol', { class: 'passos' }, PASSOS.map(x => el('li', { text: x })))); p.append(d); });
   document.querySelectorAll('[data-baixar-bas]').forEach(a => a.addEventListener('click', () => document.querySelectorAll('.passosBas details').forEach(d => { d.open = true; })));
+  $('#contaFormula').oninput = conferirConta; $('#contaFormula').onchange = conferirConta; $('#contaSalvar').onclick = salvarConta;
   $('#sinAdd').onclick = () => { const ap = $('#sinAp').value.trim(), sg = $('#sinSig').value; if (!ap || ap.length > 100 || !sg) { toast('Escreva o apelido e escolha o que ele significa.'); return; } const n = sinMap(); if (!(ap in n) && Object.keys(n).length >= 200) { toast('Limite de 200 sinônimos atingido. Remova algum antes.'); return; } n[ap] = sg; store.set('raiox_sin', n); $('#sinAp').value = ''; renderSin(); };
-  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
+  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, contas, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
   $('#bkArq').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (f.size > LIM.backup) { toast('Backup grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.backup) + '). Nada foi alterado.'); return; }
@@ -817,15 +901,15 @@ function iniciaConfig() {
     if (!b) { toast('Esse arquivo não é um backup do Raio X (ou está com a estrutura errada). Nada foi alterado.'); return; }
     const r = await perguntar('Restaurar backup', 'O backup tem ' + b.registros.length + ' registros. Somar aos dados atuais ou substituir tudo?', [{ t: 'Somar', v: 'somar', prim: true }, { t: 'Substituir', v: 'subst' }, { t: 'Cancelar', v: null }]);
     if (!r) return;
-    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
+    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); contas = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
     Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp();
-    { let cheioM = false; Object.keys(b.meus).forEach(k => { const at = meus[k] || [], ch = at.map(x => JSON.stringify(x)); const l = at.slice(); b.meus[k].forEach(x => { const j = JSON.stringify(x); if (ch.indexOf(j) >= 0) return; if (l.length >= 50) { cheioM = true; return; } l.push(x); ch.push(j); }); meus[k] = l; }); if (cheioM) setTimeout(() => toast('Limite de 50 indicadores: alguns do backup ficaram de fora.'), 0); } salvaMeus(); { const sn = sinMap(); let cheio = false; Object.keys(b.sin).forEach(k => { if (k in sn || Object.keys(sn).length < 200) sn[k] = b.sin[k]; else cheio = true; }); store.set('raiox_sin', sn); if (cheio) setTimeout(() => toast('Limite de 200 sinônimos: alguns do backup ficaram de fora.'), 0); }
+    { let cheioM = false; Object.keys(b.meus).forEach(k => { const at = meus[k] || [], ch = at.map(x => JSON.stringify(x)); const l = at.slice(); b.meus[k].forEach(x => { const j = JSON.stringify(x); if (ch.indexOf(j) >= 0) return; if (l.length >= 50) { cheioM = true; return; } l.push(x); ch.push(j); }); meus[k] = l; }); if (cheioM) setTimeout(() => toast('Limite de 50 indicadores: alguns do backup ficaram de fora.'), 0); } salvaMeus(); { Object.keys(b.contas).forEach(k => { const at = (contas[k] || []).slice(), ks = new Set(at.map(x => Core.norm(x.nome))); b.contas[k].forEach(x => { const nk = Core.norm(x.nome); if (!ks.has(nk) && at.length < 50) { at.push(x); ks.add(nk); } }); contas[k] = at; }); salvaContas(); } { const sn = sinMap(); let cheio = false; Object.keys(b.sin).forEach(k => { if (k in sn || Object.keys(sn).length < 200) sn[k] = b.sin[k]; else cheio = true; }); store.set('raiox_sin', sn); if (cheio) setTimeout(() => toast('Limite de 200 sinônimos: alguns do backup ficaram de fora.'), 0); }
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };
   $('#apagarTudo').onclick = async () => {
     const r = await perguntar('Apagar todos os dados', 'Isso apaga os ' + regs.length + ' registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]);
-    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
+    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); contas = nulo(); salvaContas(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
   };
 }
 function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
@@ -834,7 +918,7 @@ function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea')
 function abas(qual) { $('#painel').hidden = qual !== 'painel'; $('#config').hidden = qual !== 'config'; $('#tPainel').classList.toggle('on', qual === 'painel'); $('#tConfig').classList.toggle('on', qual === 'config'); window.scrollTo(0, 0); }
 $('#tPainel').onclick = () => abas('painel'); $('#tConfig').onclick = () => abas('config');
 $('#arquivo').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) carregar(fs); };
-$('#fConj').onchange = e => { $('#pedCard').hidden = true; F.conjunto = e.target.value; F.cat = F.val = F.cd = ''; mostrar = 50; render(); };
+$('#fConj').onchange = e => { $('#pedCard').hidden = true; F.conjunto = e.target.value; F.cat = F.val = F.cd = ''; mostrar = 50; render(); renderContas(); };
 $('#fPer').onchange = e => { F.per = e.target.value; render(); };
 $('#fMes').oninput = e => { F.mes = e.target.value; render(); }; $('#fDe').oninput = e => { F.de = e.target.value; render(); }; $('#fAte').oninput = e => { F.ate = e.target.value; render(); };
 $('#fCD').onchange = e => { F.cd = e.target.value; render(); }; $('#fCat').onchange = e => { F.cat = e.target.value; F.val = ''; render(); }; $('#fVal').onchange = e => { F.val = e.target.value; render(); };

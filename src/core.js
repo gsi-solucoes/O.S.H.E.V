@@ -307,8 +307,99 @@ var Core = (function () {
     return out;
   }
 
+  // ---- etapa 5: contas personalizadas (interpretador próprio; nunca eval/Function) ----
+  var FUNC = { quantidade: [0, 0, 1], soma: [1, 1, 1], media: [1, 1, 1], mediana: [1, 1, 1], distintos: [1, 1, 1], dias: [2, 2, 1] };   // nome: [mín campos, máx campos, aceita filtro]
+  function compilaFormula(txt, campos) {
+    txt = String(txt == null ? '' : txt);
+    if (!txt.trim()) return { ok: false, erro: 'escreva a fórmula' };
+    if (txt.length > 300) return { ok: false, erro: 'a fórmula passa de 300 caracteres' };
+    var mapa = Object.create(null), nomes = [];
+    (campos || []).forEach(function (k) { if (k.t === 'ignorar') return; mapa[norm(k.n)] = k.n; nomes.push(k.n); });
+    var tk = [], i = 0, m, s = txt;
+    while (i < s.length) {
+      var c = s[i];
+      if (/\s/.test(c)) { i++; continue; }
+      if ((m = /^\d+(\.\d+)?/.exec(s.slice(i)))) { tk.push({ k: 'n', v: parseFloat(m[0]), raw: m[0] }); i += m[0].length; continue; }
+      if ((m = /^[\p{L}_][\p{L}\p{N}_]*/u.exec(s.slice(i)))) { tk.push({ k: 'id', v: m[0], raw: m[0] }); i += m[0].length; continue; }
+      if (c === '"' || c === '“' || c === '”') { var j = s.slice(i + 1).search(/["“”]/); if (j < 0) return { ok: false, erro: 'falta fechar as aspas' }; tk.push({ k: 'str', v: s.slice(i + 1, i + 1 + j), raw: s.slice(i, i + j + 2) }); i += j + 2; continue; }
+      if ('+-*/(),='.indexOf(c) >= 0) { tk.push({ k: c, raw: c }); i++; continue; }
+      return { ok: false, erro: "não entendi '" + c + "' na fórmula" };
+    }
+    var p = 0, prof = 0;
+    function campo(t) {
+      if (!t || (t.k !== 'id' && t.k !== 'str')) throw new Error('esperava o nome de um campo');
+      var n = mapa[norm(t.v)]; if (n) return n;
+      var best = null, bs = 0.6; nomes.forEach(function (x) { var sm = semelhanca(t.v, x); if (sm >= bs) { bs = sm; best = x; } });
+      throw new Error("campo '" + t.v + "' não existe" + (best ? "; você quis dizer '" + best.toLowerCase() + "'?" : ''));
+    }
+    function filtro(g) {
+      if (g.length !== 3 || g[1].k !== '=' || (g[2].k !== 'id' && g[2].k !== 'str' && g[2].k !== 'n')) throw new Error('o filtro deve ser no formato campo = valor');
+      return { campo: campo(g[0]), valor: g[2].k === 'n' ? g[2].raw : g[2].v };
+    }
+    function chamada(nome) {
+      var f = FUNC[nome]; p++; var grupos = [[]], dep = 0, fechou = false;
+      while (p < tk.length) {
+        var t = tk[p];
+        if (t.k === '(') dep++;
+        if (t.k === ')') { if (!dep) { fechou = true; break; } dep--; }
+        if (t.k === ',' && !dep) grupos.push([]); else grupos[grupos.length - 1].push(t);
+        p++;
+      }
+      if (!fechou) throw new Error('falta fechar o parêntese'); p++;
+      if (grupos.length === 1 && !grupos[0].length) grupos = [];
+      var nf = grupos.length - f[1];
+      if (grupos.length < f[0] || grupos.length > f[1] + f[2]) throw new Error("a função '" + nome + "' pede " + (f[1] ? f[1] + ' campo' + (f[1] > 1 ? 's' : '') : 'nenhum campo') + (f[2] ? ' e, se quiser, um filtro' : ''));
+      var no = { t: 'f', nome: nome, campos: grupos.slice(0, f[1]).map(function (g) { if (g.length !== 1) throw new Error('esperava o nome de um campo'); return campo(g[0]); }), filtro: null };
+      if (nf > 0) no.filtro = filtro(grupos[f[1]]);
+      return no;
+    }
+    function prim() {
+      var t = tk[p]; if (!t) throw new Error('a fórmula termina antes da hora');
+      if (t.k === 'n') { p++; return { t: 'n', v: t.v }; }
+      if (t.k === '(') { if (++prof > 40) throw new Error('fórmula complicada demais'); p++; var e = soma(); if (!tk[p] || tk[p].k !== ')') throw new Error('falta fechar o parêntese'); p++; prof--; return e; }
+      if (t.k === 'id' && tk[p + 1] && tk[p + 1].k === '(') {
+        var nome = norm(t.v).toLowerCase();
+        if (!Object.prototype.hasOwnProperty.call(FUNC, nome)) throw new Error("função '" + t.v + "' não existe");
+        p++; return chamada(nome);
+      }
+      if (t.k === ')') throw new Error('parêntese fechado sem abrir');
+      throw new Error("não entendi '" + t.raw + "' na fórmula");
+    }
+    function un() { var t = tk[p]; if (t && t.k === '-') { if (++prof > 40) throw new Error('fórmula complicada demais'); p++; var a = un(); prof--; return { t: 'neg', a: a }; } return prim(); }
+    function prod() { var a = un(); while (tk[p] && (tk[p].k === '*' || tk[p].k === '/')) { var o = tk[p++].k; a = { t: 'op', o: o, a: a, b: un() }; } return a; }
+    function soma() { var a = prod(); while (tk[p] && (tk[p].k === '+' || tk[p].k === '-')) { var o = tk[p++].k; a = { t: 'op', o: o, a: a, b: prod() }; } return a; }
+    try {
+      var ast = soma();
+      if (p < tk.length) throw new Error(tk[p].k === ')' ? 'parêntese fechado sem abrir' : "não entendi '" + tk[p].raw + "' na fórmula");
+      return { ok: true, ast: ast };
+    } catch (e) { return { ok: false, erro: e.message === 'Maximum call stack size exceeded' ? 'fórmula complicada demais' : e.message }; }
+  }
+  // lista = registros; get(registro, campo) -> texto. Devolve número ou null ("sem dados").
+  function avaliaFormula(ast, lista, get) {
+    function sel(no) { if (!no.filtro) return lista; var v = norm(no.filtro.valor); return lista.filter(function (r) { return norm(get(r, no.filtro.campo)) === v; }); }
+    function ms(v) { var x = msISO(v); if (x != null) return x; var d = /^(\d{4})-(\d{2})-(\d{2})/.exec(v || ''); return d ? new Date(+d[1], +d[2] - 1, +d[3]).getTime() : null; }
+    function nums(L, f) { return L.map(function (r) { return numero(get(r, f)); }).filter(function (x) { return x != null && isFinite(x); }); }
+    function ev(n) {
+      if (n.t === 'n') return n.v;
+      if (n.t === 'neg') { var a0 = ev(n.a); return a0 == null ? null : -a0; }
+      if (n.t === 'op') {
+        var a = ev(n.a), b = ev(n.b); if (a == null || b == null) return null;
+        var r = n.o === '+' ? a + b : n.o === '-' ? a - b : n.o === '*' ? a * b : (b === 0 ? null : a / b);
+        return r != null && isFinite(r) ? r : null;
+      }
+      var L = sel(n), v;
+      if (n.nome === 'quantidade') return L.length;
+      if (n.nome === 'distintos') { var u = Object.create(null), q = 0; L.forEach(function (r) { var x = String(get(r, n.campos[0]) || '').trim(); if (x && !u[norm(x)]) { u[norm(x)] = 1; q++; } }); return q; }
+      if (n.nome === 'dias') { var ds = []; L.forEach(function (r) { var d1 = ms(get(r, n.campos[0])), d2 = ms(get(r, n.campos[1])); if (d1 != null && d2 != null) ds.push((d2 - d1) / 86400000); }); return ds.length ? ds.reduce(function (x, y) { return x + y; }, 0) / ds.length : null; }
+      v = nums(L, n.campos[0]); if (!v.length) return null;
+      if (n.nome === 'mediana') return mediana(v);
+      var sm = v.reduce(function (x, y) { return x + y; }, 0); return n.nome === 'soma' ? sm : sm / v.length;
+    }
+    var out = ev(ast); return out != null && isFinite(out) ? out : null;
+  }
+
   return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
-    lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
+    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
 if (typeof module !== 'undefined') module.exports = Core;
