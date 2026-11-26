@@ -502,7 +502,7 @@ def test_CA49_registros_filtrados_por_regiao(page, tmp_path):
     page.get_by_role("combobox", name="Valor", exact=True).select_option(label="Sul")
     page.wait_for_timeout(500)
     cab_tela, lin_tela = tabela_da_tela(page)
-    ic = cab_tela.index("Cliente")   # a tela não mostra a coluna Código
+    ic = [x.lower() for x in cab_tela].index("cliente")   # a tela não mostra a coluna Código
     cinco_tela = [l[ic] for l in lin_tela[:5]]
     assert len(cinco_tela) == 5
     wb = gerar(page, tmp_path)
