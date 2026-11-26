@@ -57,7 +57,7 @@ def gerar_varios(page, tmp_path, formato):
     abrir_painel(page)
     escolhe_formato(page, formato)
     baixados = []
-    page.on("download", baixados.append)
+    page.on("download", lambda d: baixados.append(d))
     page.get_by_role("button", name="Gerar Excel").click()
     page.wait_for_timeout(3000)
     wbs = []
@@ -502,7 +502,7 @@ def test_CA49_registros_filtrados_por_regiao(page, tmp_path):
     page.get_by_role("combobox", name="Valor", exact=True).select_option(label="Sul")
     page.wait_for_timeout(500)
     cab_tela, lin_tela = tabela_da_tela(page)
-    ic = cab_tela.index("Código")
+    ic = cab_tela.index("Cliente")   # a tela não mostra a coluna Código
     cinco_tela = [l[ic] for l in lin_tela[:5]]
     assert len(cinco_tela) == 5
     wb = gerar(page, tmp_path)
@@ -516,7 +516,9 @@ def test_CA49_registros_filtrados_por_regiao(page, tmp_path):
     ic_x = reg["cab"].index("Código")
     codigos = [str(l[ic_x].value) for l in reg["linhas"]]
     assert set(codigos) == {r["Código"] for r in sul}
-    assert codigos[:5] == cinco_tela, (codigos[:5], cinco_tela)
+    ic_c = reg["cab"].index("Cliente")
+    clientes = [str(l[ic_c].value) for l in reg["linhas"]]
+    assert clientes[:5] == cinco_tela, (clientes[:5], cinco_tela)
     ir = reg["cab"].index("Região")
     assert {l[ir].value for l in reg["linhas"]} == {"Sul"}
 
