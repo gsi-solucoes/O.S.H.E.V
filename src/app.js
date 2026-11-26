@@ -51,12 +51,15 @@ function validarBackup(b) {
     if (b.sin != null) { sn = sinLimpo(b.sin); if (!sn) return null; }
     if (b.meus != null) { mu = meusLimpo(b.meus); if (!mu) return null; }
     if (b.contas != null) { co = contasLimpo(b.contas); if (!co) return null; }
-    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac, sin: sn, meus: mu, contas: co };
+    let la = nulo(); if (b.layout != null) { la = layoutsLimpo(b.layout); if (!la) return null; }
+    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac, sin: sn, meus: mu, contas: co, layout: la };
   } catch (e) { return null; }
 }
 let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' });
 let fmts = copiaNula(store.get('raiox_fmt', {}));     // formato lembrado: assinatura das colunas -> {conjunto, cols:[{n,t}]}
 let conjs = copiaNula(store.get('raiox_conj', {}));   // conjunto -> {campos:[{n,t}]}
+// nome de conta/aba: sem controle, invisíveis nem marcas de direção do texto
+const NOME_RUIM = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
 let acomp = acompLimpa(store.get('raiox_acomp', {})) || nulo();   // conjunto -> [id dos indicadores escolhidos, na ordem em que foram marcados]
 let regs = [];                             // {conjunto, codigo, v:{campo:valor}}
 let mapa = new Map();
@@ -252,7 +255,8 @@ function render() {
   const escolhidos = blocosEscolhidos(c); $('#kpis').hidden = $('#blocos').hidden = !!escolhidos.length; $('#blocosEsc').hidden = !escolhidos.length;
   const meusB = blocosMeus(c); $('#btnEntender').hidden = !(escolhidos.length || meusB.length); $('#blocosEsc').textContent = '';
   $('#meusInd').hidden = !meusB.length; $('#meusGrade').textContent = ''; meusB.forEach(b => $('#meusGrade').append(b.desenha(L, c)));
-  if (escolhidos.length) escolhidos.forEach(b => $('#blocosEsc').append(b.desenha(L, c)));
+  const ed = modoEd && !!escolhidos.length; $('#btnLay').hidden = !escolhidos.length; $('#btnLay').textContent = ed ? 'Concluir edição' : 'Editar layout'; $('#abasPainel').hidden = $('#layFerr').hidden = true; $('#blocosEsc').className = 'grid2';
+  if (escolhidos.length) { if (layouts[c] || ed) renderLay(c, L, ed); else escolhidos.forEach(b => $('#blocosEsc').append(b.desenha(L, c))); }
   const bl = $('#blocos'); bl.textContent = '';
   if (!escolhidos.length) cats.slice(0, 3).forEach(cat => {
     const g = [...agrupa(L, r => r.v[cat.n])].sort((a, b) => b[1].length - a[1].length).slice(0, 8).map(([k, l]) => [k, l.length, l]);
@@ -321,6 +325,7 @@ function catalogo(c, soIds) {
     desenha: L => cartao({ nome: 'Total de registros' }, kpiBtn('', fmtI(L.length), L.length === 1 ? ' registro' : ' registros', () => abrir('Todos os registros', L))) });
   cs.forEach(k => out.push({ id: 'cat' + SEP + k.n, grupo: 'graf', nome: 'Por ' + k.n, oque: 'quantos registros há em cada ' + k.n + ' (os 10 maiores; o resto em Outros)', conta: 'contagem de registros por ' + k.n, campos: k.n,
     ex: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])); return g.length ? k.n + ': ' + g[0][0] + ' lidera com ' + fmtI(g[0][1].length) : null; },
+    graf: L => ({ itens: top10(ordenaGrupos(agrupa(L, r => r.v[k.n]))), abrir: (n, l) => abrir(k.n + ': ' + n, l) }),
     desenha: L => cartao({ nome: 'Por ' + k.n }, barras(top10(ordenaGrupos(agrupa(L, r => r.v[k.n]))), (n, l) => abrir(k.n + ': ' + n, l))) }));
   ns.forEach(k => out.push({ id: 'num' + SEP + k.n, grupo: 'num', nome: k.n + ' (soma, média e mediana)', oque: 'a soma, a média e a mediana de ' + k.n, conta: 'soma, média e mediana do campo ' + k.n, campos: k.n,
     ex: L => { const v = numeros(L, k.n); return v.length ? 'Soma: ' + fmtN(v.reduce((a, b) => a + b, 0)) + ' · Média: ' + fmtN(v.reduce((a, b) => a + b, 0) / v.length) + ' · Mediana: ' + fmtN(Core.mediana(v)) : null; },
@@ -328,10 +333,12 @@ function catalogo(c, soIds) {
       return cartao({ nome: k.n + ' (soma, média e mediana)' }, kpiBtn('Soma: ', v.length ? fmtN(soma) : '—', '', ab), kpiBtn('Média: ', v.length ? fmtN(soma / v.length) : '—', '', ab), kpiBtn('Mediana: ', v.length ? fmtN(Core.mediana(v)) : '—', '', ab)); } }));
   ns.forEach(k => cs.forEach(g => out.push({ id: 'numcat' + SEP + k.n + SEP + g.n, grupo: 'graf', nome: k.n + ' por ' + g.n, oque: 'quanto ' + k.n + ' soma em cada ' + g.n + ' (os 10 maiores; o resto em Outros)', conta: 'soma do campo ' + k.n + ', separada por ' + g.n, campos: k.n + ', ' + g.n,
     ex: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]); return m.length ? 'Maior soma: ' + m[0][0] + ' (' + fmtN(m[0][2]) + ')' : null; },
+    graf: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]); return { itens: top10(m.map(x => [x[0], x[1]]), l => numeros(l, k.n).reduce((a, b) => a + b, 0)).map(x => [x[0], x[1], x[2], fmtN(x[1])]), abrir: (n, l) => abrir(k.n + ' por ' + g.n + ': ' + n, l) }; },
     desenha: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]);
       return cartao({ nome: k.n + ' por ' + g.n }, barras(top10(m.map(x => [x[0], x[1]]), l => numeros(l, k.n).reduce((a, b) => a + b, 0)).map(x => [x[0], x[1], x[2], fmtN(x[1])]), (n, l) => abrir(k.n + ' por ' + g.n + ': ' + n, l))); } })));
   ds.forEach(k => out.push({ id: 'mes' + SEP + k.n, grupo: 'graf', nome: 'Evolução por mês (' + k.n + ')', oque: 'quantos registros há em cada mês', conta: 'registros por mês do campo ' + k.n, campos: k.n, dataCampo: k.n,
     ex: L => { const g = [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1)); return g.length ? 'Mês com mais registros: ' + fmtM(g[0][0]) + ' (' + fmtI(g[0][1].length) + ')' : null; },
+    graf: L => ({ itens: [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).map(([m, l]) => [fmtM(m), l.length, l]), abrir: (m, l) => abrir('Mês ' + m, l) }),
     desenha: L => { const g = [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).map(([m, l]) => [fmtM(m), l.length, l]);
       return cartao({ nome: 'Evolução por mês (' + k.n + ')' }, barras(g, (m, l) => abrir('Mês ' + m, l))); } }));
   if (ds.length >= 2) out.push({ id: 'tempo', grupo: 'num', nome: 'Tempo entre duas datas', get oque() { const p = parTempo(ds); return 'o tempo que passa entre ' + p[0] + ' e ' + p[1] + ', em faixas e dentro do prazo'; }, get conta() { const p = parTempo(ds); return 'mediana do tempo entre ' + p[0] + ' e ' + p[1]; }, get campos() { return parTempo(ds).join(', '); }, get dataCampo() { return parTempo(ds)[0]; },
@@ -339,6 +346,7 @@ function catalogo(c, soIds) {
     desenha: L => cartaoTempo(L, c, ds, 'Tempo entre duas datas') });
   ss.forEach(k => out.push({ id: 'sit' + SEP + k.n, grupo: 'num', nome: '% por ' + k.n, oque: 'a parte de cada ' + k.n + ' no total', conta: 'percentual de registros por ' + k.n, campos: k.n,
     ex: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0); return g.length ? g[0][0] + ': ' + fmtP(100 * g[0][1].length / n) : null; },
+    graf: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0); return { itens: g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), abrir: (v, l) => abrir(k.n + ': ' + v, l) }; },
     desenha: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0);
       return cartao({ nome: '% por ' + k.n }, barras(g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), (v, l) => abrir(k.n + ': ' + v, l))); } }));
   campos.filter(k => k.t !== 'codigo' && k.t !== 'ignorar').forEach(k => out.push({ id: 'vazio' + SEP + k.n, grupo: 'num', nome: 'Sem valor em ' + k.n, oque: 'quantos registros estão sem ' + k.n, conta: 'registros com o campo ' + k.n + ' vazio', campos: k.n,
@@ -397,7 +405,7 @@ function janelaAcomp(c) {
       cx.onchange = () => { const i = sel.indexOf(b.id); if (cx.checked && i < 0) sel.push(b.id); if (!cx.checked && i >= 0) sel.splice(i, 1); erro.textContent = ''; };
       ul.append(el('li', null, el('label', null, cx, el('span', { class: 'acNome', text: b.nome }), el('span', { class: 'acEx muted', text: b.ex(todos) }))));
     });
-    $('#acompOk').onclick = () => { if (!sel.length) { erro.textContent = 'Marque pelo menos um indicador.'; return; } acomp[c] = sel.slice(); salvaAcomp(); d.close('ok'); };
+    $('#acompOk').onclick = () => { if (!sel.length) { erro.textContent = 'Marque pelo menos um indicador.'; return; } acomp[c] = sel.slice(); salvaAcomp(); if (layouts[c]) { layouts[c] = layGet(c); salvaLay(); } d.close('ok'); };
     $('#acompCancela').onclick = () => d.close('cancela');
     d.onclose = () => { const salvou = d.returnValue === 'ok'; d.returnValue = ''; if (salvou) { render(); abrirPainel(c); } ok(salvou); };
     d.showModal();
@@ -461,7 +469,160 @@ const salvaContas = () => store.set('raiox_contas', contas);
 const contaDe = (c, nome) => (contas[c] || []).find(x => x.nome === nome) || null;
 // compila a conta com os campos do conjunto: { ok, ast } ou { ok:false, erro }
 // nome de conta: sem controle, invisíveis nem marcas de direção do texto
-const NOME_RUIM = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
+
+/* ---------- etapa 6: editar layout (raiox_layout: conjunto -> { abas:[{id,nome}], itens:[{k,id,aba,tam,oculto,forma}] }) ---------- */
+const LAY_TAM = ['p', 'm', 'g'], LAY_FORMAS = ['numero', 'barras', 'linha', 'pizza', 'tabela'];
+const TAM_NOME = { p: 'Pequeno', m: 'Médio', g: 'Grande' }, FORMA_NOME = { numero: 'Número', barras: 'Barras', linha: 'Linha', pizza: 'Pizza', tabela: 'Tabela' };
+const nomeAbaOk = n => typeof n === 'string' && n.length >= 1 && n.length <= 30 && !NOME_RUIM.test(n);
+const chaveNome = n => Core.norm(n) || n.toLowerCase();
+// valida o layout vindo de fora (backup, localStorage): até 200 conjuntos, 20 abas e 200 itens por conjunto; formato errado = null (rejeita tudo)
+function layoutsLimpo(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const ks = Object.keys(o); if (ks.length > 200) return null; const r = nulo();
+  for (const c of ks) {
+    const x = o[c]; if (!x || typeof x !== 'object' || !Array.isArray(x.abas) || !Array.isArray(x.itens) || !x.abas.length || x.abas.length > 20 || x.itens.length > 200) return null;
+    const ids = new Set(), nomes = new Set(), abas = [], kk = new Set(), itens = [];
+    for (const a of x.abas) {
+      if (!a || typeof a !== 'object' || typeof a.id !== 'string' || !a.id || a.id.length > 50 || typeof a.nome !== 'string') return null;
+      const n = a.nome.trim(), nk = n && chaveNome(n); if (!nomeAbaOk(n) || ids.has(a.id) || nomes.has(nk)) return null;
+      ids.add(a.id); nomes.add(nk); abas.push({ id: a.id, nome: n });
+    }
+    for (const i of x.itens) {
+      if (!i || typeof i !== 'object' || typeof i.k !== 'string' || !i.k || i.k.length > 1000 || typeof i.id !== 'string' || !i.id || i.id.length > 1000 || typeof i.aba !== 'string' || !ids.has(i.aba) || kk.has(i.k)) return null;
+      const tam = i.tam === undefined ? 'm' : i.tam, oc = i.oculto === undefined ? false : i.oculto, fo = i.forma == null ? '' : i.forma;
+      if (LAY_TAM.indexOf(tam) < 0 || typeof oc !== 'boolean' || (fo !== '' && LAY_FORMAS.indexOf(fo) < 0)) return null;
+      kk.add(i.k); itens.push({ k: i.k, id: i.id, aba: i.aba, tam, oculto: oc, forma: fo });
+    }
+    r[c] = { abas, itens };
+  }
+  return r;
+}
+let layouts = layoutsLimpo(store.get('raiox_layout', {})) || nulo();
+const salvaLay = () => store.set('raiox_layout', layouts);
+let modoEd = false, arrasta = null; const abaAb = nulo();   // modo edição e aba aberta ficam só na memória (recarregar volta ao normal)
+const tipoBloco = b => String(b.id || '').split('\u0001')[0];
+const formaOrig = b => ['cat', 'numcat', 'sit', 'mes'].indexOf(tipoBloco(b)) >= 0 ? 'barras' : 'numero';
+const formasDe = b => { const t = tipoBloco(b); return t === 'mes' ? ['barras', 'linha', 'pizza', 'tabela'] : ['cat', 'numcat', 'sit'].indexOf(t) >= 0 ? ['barras', 'pizza', 'tabela'] : ['numero']; };
+const novoK = (L, id) => { if (!L.itens.some(x => x.k === id)) return id; let n = 1; while (L.itens.some(x => x.k === id + '\u0002' + n)) n++; return id + '\u0002' + n; };
+// layout efetivo do conjunto (cópia): o salvo, ou o padrão da etapa 2; sempre em dia com "O que acompanhar" (desmarcado sai; novo entra no fim da 1ª aba)
+function layGet(c) {
+  const ids = Array.isArray(acomp[c]) ? acomp[c] : [], raw = layouts[c];
+  const L = raw ? { abas: raw.abas.map(a => Object.assign({}, a)), itens: raw.itens.map(i => Object.assign({}, i)) } : { abas: [{ id: 'a1', nome: 'Painel' }], itens: [] };
+  const ab = new Set(L.abas.map(a => a.id)); L.itens = L.itens.filter(i => ids.indexOf(i.id) >= 0); L.itens.forEach(i => { if (!ab.has(i.aba)) i.aba = L.abas[0].id; });
+  blocosEscolhidos(c).forEach(b => { if (!L.itens.some(i => i.id === b.id)) L.itens.push({ k: novoK(L, b.id), id: b.id, aba: L.abas[0].id, tam: 'm', oculto: false, forma: '' }); });
+  return L;
+}
+const layMut = (c, fn) => { const L = layGet(c); fn(L); layouts[c] = L; salvaLay(); render(); };
+const abaAberta = (c, L) => L.abas.find(a => a.id === abaAb[c]) || L.abas[0];
+const blocosLay = (c, L) => { const m = new Map(catalogo(c, L.itens.map(i => i.id)).map(b => [b.id, b])); return L.itens.map(i => ({ i, b: m.get(i.id) })).filter(x => x.b); };
+// blocos visíveis na ordem do layout (abas em ordem, itens em ordem, escondidos fora); null = sem layout editado
+function blocosVis(c) {
+  if (!layouts[c] || !blocosEscolhidos(c).length) return null;
+  const L = layGet(c), bs = blocosLay(c, L); return L.abas.flatMap(a => bs.filter(x => x.i.aba === a.id && !x.i.oculto).map(x => x.b));
+}
+const moveFim = (L, k, aba) => { const ix = L.itens.findIndex(x => x.k === k); if (ix < 0) return; const [it] = L.itens.splice(ix, 1); it.aba = aba; L.itens.push(it); };
+const vizinho = (L, i, d) => { let j = L.itens.findIndex(x => x.k === i.k) + d; while (j >= 0 && j < L.itens.length && L.itens[j].aba !== i.aba) j += d; return j >= 0 && j < L.itens.length ? j : -1; };
+const troca = (L, i, d) => { const a = L.itens.findIndex(x => x.k === i.k), j = vizinho(L, i, d); if (j >= 0) { const t = L.itens[a]; L.itens[a] = L.itens[j]; L.itens[j] = t; } };
+
+const sv = (tag, p, ...kids) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [a, v] of Object.entries(p || {})) e.setAttribute(a, String(v)); kids.forEach(k => e.append(k)); return e; };
+const COR_PZ = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2', '#db2777', '#65a30d'];
+const rotI = x => x[3] != null ? x[3] : x[1];
+function pizzaSvg(it, abrir) {
+  const tot = it.reduce((a, x) => a + Math.max(0, x[1]), 0); if (!tot) return barras(it, abrir);
+  const svg = sv('svg', { viewBox: '-1 -1 2 2', width: 160, height: 160, role: 'img', 'aria-label': 'Gráfico de pizza' }); let ang = -Math.PI / 2;
+  it.forEach((x, ix) => {
+    const f = Math.max(0, x[1]) / tot; if (!f) return; const a2 = ang + f * 2 * Math.PI, cor = COR_PZ[ix % 8];
+    const p = f >= 0.9999 ? sv('circle', { cx: 0, cy: 0, r: 1, fill: cor }) : sv('path', { d: 'M0 0 L' + Math.cos(ang) + ' ' + Math.sin(ang) + ' A1 1 0 ' + (f > 0.5 ? 1 : 0) + ' 1 ' + Math.cos(a2) + ' ' + Math.sin(a2) + ' Z', fill: cor });
+    p.append(sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.onclick = () => abrir(x[0], x[2]); p.style.cursor = 'pointer'; svg.append(p); ang = a2;
+  });
+  return el('div', { class: 'pizza' }, svg, el('div', { class: 'bars' }, it.map((x, ix) => el('button', { class: 'bar', type: 'button', onclick: () => abrir(x[0], x[2]) }, el('span', { text: x[0] }), el('i', { style: 'width:14px;background:' + COR_PZ[ix % 8] }), el('b', { text: rotI(x) })))));
+}
+function linhaSvg(it, abrir) {
+  const W = 300, H = 100, P = 8, n = it.length, mx = Math.max(1, ...it.map(x => x[1])), X = i => n === 1 ? W / 2 : P + i * (W - 2 * P) / (n - 1), Y = v => H - P - (H - 2 * P) * Math.max(0, v) / mx;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': 'Gráfico de linha' });
+  svg.append(sv('polyline', { points: it.map((x, i) => X(i) + ',' + Y(x[1])).join(' '), fill: 'none', stroke: '#2563eb', 'stroke-width': 2 }));
+  it.forEach((x, i) => { const p = sv('circle', { cx: X(i), cy: Y(x[1]), r: 4, fill: '#2563eb' }, sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.onclick = () => abrir(x[0], x[2]); p.style.cursor = 'pointer'; svg.append(p); });
+  return el('div', { class: 'linha' }, svg, el('p', { class: 'muted', text: it.length ? it[0][0] + ' a ' + it[n - 1][0] : '' }));
+}
+const tabelaForma = (it, abrir) => el('div', { class: 'tw' }, el('table', null, el('thead', null, el('tr', null, el('th', { text: 'Categoria' }), el('th', { text: 'Valor' }))),
+  el('tbody', null, it.map(x => el('tr', null, el('td', null, el('button', { type: 'button', text: x[0], onclick: () => abrir(x[0], x[2]) })), el('td', { text: String(rotI(x)) }))))));
+// desenha o bloco na forma escolhida (a de origem usa o desenho de sempre)
+function desenhaItem(b, i, L, c) {
+  const f = formasDe(b).indexOf(i.forma) >= 0 ? i.forma : formaOrig(b);
+  if (f === formaOrig(b) || !b.graf) return b.desenha(L, c);
+  const g = b.graf(L), it = g.itens, kids = []; let forma = f;
+  if (f === 'pizza' && it.length > 8) { forma = 'barras'; kids.push(el('p', { class: 'muted', text: 'Pizza com mais de 8 fatias: mostrando barras' })); }
+  const corpo = forma === 'barras' ? barras(it, g.abrir) : forma === 'tabela' ? tabelaForma(it, g.abrir) : forma === 'linha' ? linhaSvg(it, g.abrir) : pizzaSvg(it, g.abrir);
+  const card = cartao(b, ...kids, corpo); card.setAttribute('data-forma', forma); return card;
+}
+function renderLay(c, L, ed) {
+  const lay = layGet(c), aberta = abaAberta(c, lay), nav = $('#abasPainel'), grade = $('#blocosEsc'); abaAb[c] = aberta.id;
+  nav.hidden = !(lay.abas.length >= 2 || ed); nav.textContent = ''; $('#layFerr').hidden = !ed;
+  lay.abas.forEach(a => {
+    const on = a.id === aberta.id, bt = el('button', Object.assign({ type: 'button', class: on ? 'on' : '', 'data-testid': 'aba', text: a.nome, onclick: () => { abaAb[c] = a.id; render(); } }, on ? { 'aria-current': 'true' } : {}));
+    if (ed) { bt.ondragover = e => { if (arrasta) e.preventDefault(); }; bt.ondrop = e => { e.preventDefault(); const k = arrasta; arrasta = null; if (k) layMut(c, X => moveFim(X, k, a.id)); }; }
+    nav.append(bt);
+  });
+  if (ed) {
+    const i0 = lay.abas.findIndex(a => a.id === aberta.id);
+    $('#layApagaAba').disabled = lay.abas.length < 2; $('#layEsq').disabled = i0 < 1; $('#layDir').disabled = i0 >= lay.abas.length - 1; $('#layNova').disabled = false;
+  }
+  grade.className = 'lay'; grade.textContent = '';
+  const daAba = blocosLay(c, lay).filter(x => x.i.aba === aberta.id);
+  daAba.forEach(({ i, b }, pos) => {
+    if (i.oculto && !ed) return;
+    const w = el('div', { class: 'layItem t' + i.tam, 'data-k': i.k, 'data-tam': { p: 'pequeno', m: 'medio', g: 'grande' }[i.tam] });
+    if (i.oculto) w.setAttribute('data-escondido', 'true');
+    w.append(desenhaItem(b, i, L, c));
+    if (ed) {
+      const bt = (t, fn, dis) => el('button', Object.assign({ type: 'button', text: t, onclick: fn }, dis ? { disabled: '' } : {}));
+      const sel = (rot, ops, val, fn) => { const s = el('select', { 'aria-label': rot }, ops.map(([v, t]) => el('option', { value: v, text: t }))); s.value = val; s.onchange = () => fn(s.value); return s; };
+      const fo = formasDe(b), forma = fo.indexOf(i.forma) >= 0 ? i.forma : formaOrig(b);
+      w.append(el('div', { class: 'layCtl', role: 'group', 'aria-label': 'Controles de ' + b.nome },
+        bt('Subir', () => layMut(c, X => troca(X, i, -1)), pos === 0), bt('Descer', () => layMut(c, X => troca(X, i, 1)), pos === daAba.length - 1),
+        bt(i.oculto ? 'Mostrar' : 'Esconder', () => layMut(c, X => { const t = X.itens.find(x => x.k === i.k); if (t) t.oculto = !t.oculto; })),
+        bt('Duplicar', () => { if (lay.itens.length >= 200) { toast('Limite de 200 blocos no layout.'); return; } layMut(c, X => { const ix = X.itens.findIndex(x => x.k === i.k); if (ix >= 0) X.itens.splice(ix + 1, 0, Object.assign({}, X.itens[ix], { k: novoK(X, i.id) })); }); }),
+        sel('Mover para…', [['', 'Mover para…']].concat(lay.abas.filter(a => a.id !== aberta.id).map(a => [a.id, a.nome])), '', v => { if (v) layMut(c, X => moveFim(X, i.k, v)); }),
+        sel('Tamanho', LAY_TAM.map(t => [t, TAM_NOME[t]]), i.tam, v => layMut(c, X => { const t = X.itens.find(x => x.k === i.k); if (t) t.tam = v; })),
+        sel('Forma', fo.map(f => [f, FORMA_NOME[f]]), forma, v => layMut(c, X => { const t = X.itens.find(x => x.k === i.k); if (t) t.forma = v === formaOrig(b) ? '' : v; }))));
+      w.draggable = true;
+      w.ondragstart = e => { arrasta = i.k; try { e.dataTransfer.setData('text/plain', i.k); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* sem dataTransfer: segue */ } };
+      w.ondragend = () => { arrasta = null; }; w.ondragover = e => { if (arrasta) e.preventDefault(); };
+      w.ondrop = e => { e.preventDefault(); e.stopPropagation(); const k = arrasta; arrasta = null; if (!k || k === i.k) return;
+        layMut(c, X => { const a = X.itens.find(x => x.k === k), t = X.itens.findIndex(x => x.k === i.k); if (!a || t < 0 || a.aba !== X.itens[t].aba) return; X.itens.splice(X.itens.indexOf(a), 1); X.itens.splice(t, 0, a); }); };
+    }
+    grade.append(w);
+  });
+}
+// janela do nome da aba (nova/renomear): devolve o nome ou null
+function pedeNomeAba(ini, lay, selfId) {
+  return new Promise(ok => {
+    const d = $('#dlgAba'), inp = $('#abaNome'), er = $('#abaErro'); inp.value = ini; er.textContent = ''; er.hidden = true; let fim = false;
+    const sai = v => { if (fim) return; fim = true; if (d.open) d.close(); ok(v); };
+    $('#abaSalvar').onclick = () => {
+      const n = inp.value.trim().slice(0, 30); let m = '';
+      if (!n || NOME_RUIM.test(n)) m = 'escreva o nome da aba'; else if (lay.abas.some(a => a.id !== selfId && chaveNome(a.nome) === chaveNome(n))) m = 'já existe uma aba com esse nome';
+      if (m) { er.textContent = m; er.hidden = false; inp.focus(); return; } sai(n);
+    };
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); $('#abaSalvar').click(); } };
+    $('#abaCancela').onclick = () => sai(null); d.oncancel = () => sai(null); d.showModal(); inp.focus();
+  });
+}
+function iniciaLay() {
+  const cc = () => F.conjunto;
+  $('#btnLay').onclick = () => { modoEd = !modoEd; render(); };
+  $('#layNova').onclick = async () => { const c = cc(), lay = layGet(c); if (lay.abas.length >= 20) { toast('Limite de 20 abas.'); return; } const n = await pedeNomeAba('', lay, null); if (!n) return;
+    layMut(c, X => { let q = X.abas.length + 1; while (X.abas.some(a => a.id === 'a' + q)) q++; X.abas.push({ id: 'a' + q, nome: n }); abaAb[c] = 'a' + q; }); };
+  $('#layRenomeia').onclick = async () => { const c = cc(), lay = layGet(c), ab = abaAberta(c, lay), n = await pedeNomeAba(ab.nome, lay, ab.id); if (!n) return; layMut(c, X => { const a = X.abas.find(x => x.id === ab.id); if (a) a.nome = n; }); };
+  $('#layApagaAba').onclick = async () => {
+    const c = cc(), lay = layGet(c); if (lay.abas.length < 2) return; const ab = abaAberta(c, lay), n = lay.itens.filter(i => i.aba === ab.id).length;
+    const r = await perguntar('Apagar a aba ' + ab.nome + '?', n ? 'Os ' + n + ' blocos dela vão para a primeira aba.' : '', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]); if (!r) return;
+    layMut(c, X => { const resto = X.abas.filter(a => a.id !== ab.id), dest = resto[0].id, mv = X.itens.filter(i => i.aba === ab.id); X.itens = X.itens.filter(i => i.aba !== ab.id); mv.forEach(i => { i.aba = dest; X.itens.push(i); }); X.abas = resto; abaAb[c] = dest; });
+  };
+  const anda = d => { const c = cc(); layMut(c, X => { const ab = abaAberta(c, X), i = X.abas.findIndex(a => a.id === ab.id), j = i + d; if (j < 0 || j >= X.abas.length) return; const t = X.abas[i]; X.abas[i] = X.abas[j]; X.abas[j] = t; }); };
+  $('#layEsq').onclick = () => anda(-1); $('#layDir').onclick = () => anda(1);
+  $('#layPadrao').onclick = async () => { const c = cc(), r = await perguntar('Voltar ao padrão?', 'A ordem, as abas, os tamanhos, os blocos escondidos e as formas voltam ao padrão.', [{ t: 'Voltar ao padrão', v: true, prim: true }, { t: 'Cancelar', v: null }]); if (!r) return; delete layouts[c]; salvaLay(); abaAb[c] = null; render(); };
+}
 // fórmula compilada guardada por (conjunto, campos, fórmula): não recompila a cada valor
 const cacheConta = new Map();
 function compilaConta(c, formula) {
@@ -588,7 +749,7 @@ function blocoMeu(c, ped, idx) {
     desenha: L => cartao({ nome }, corpoPed(ped, L, c, false, nome), el('button', { type: 'button', text: 'Remover', onclick: () => { meus[c].splice(idx, 1); salvaMeus(); render(); } })) };
 }
 const blocosMeus = c => (conjs[c] && meus[c] || []).map((p, i) => blocoMeu(c, p, i));
-const blocosPainel = c => blocosEscolhidos(c).concat(blocosMeus(c));
+const blocosPainel = c => (blocosVis(c) || blocosEscolhidos(c)).concat(blocosMeus(c));
 
 const nomeMesAno = k => MESES[+k.slice(5, 7) - 1] + '/' + k.slice(0, 4);
 function exemplosPed(c) {
@@ -819,11 +980,16 @@ function xlPadrao(c, L) {
 }
 // lista de abas do painel de um conjunto: [{ nome, escondida, blocos }]; a etapa 6 só passa a lista nova
 function abasPainelXl(c, L) {
-  const esc = blocosEscolhidos(c), bl = esc.length ? esc.map(b => xlBloco(b, c, L)) : xlPadrao(c, L);
+  const esc = blocosEscolhidos(c);
+  if (esc.length && layouts[c]) {   // etapa 6: uma planilha por aba do layout (escondidos ficam de fora; os "meus indicadores" vão na 1ª aba)
+    const lay = layGet(c), bs = blocosLay(c, lay);
+    return lay.abas.map((a, ix) => { const bl = bs.filter(x => x.i.aba === a.id && !x.i.oculto).map(x => xlBloco(x.b, c, L)); if (!ix) blocosMeus(c).forEach(b => bl.push(Object.assign(xlBloco(b, c, L), { meu: true }))); return { nome: a.nome, escondida: !bl.length, blocos: bl }; });
+  }
+  const bl = esc.length ? esc.map(b => xlBloco(b, c, L)) : xlPadrao(c, L);
   return [{ nome: 'Painel', escondida: false, blocos: bl.concat(blocosMeus(c).map(b => Object.assign(xlBloco(b, c, L), { meu: true }))) }];
 }
 window.__abasPainel = nome => { const c = achaConj(nome); return c && conjs[c] ? JSON.parse(JSON.stringify(abasPainelXl(c, filtrar(c)).filter(a => !a.escondida).map(a => ({ nome: a.nome, blocos: a.blocos.map(b => b.titulo) })))) : []; };
-function abaPainel(wb, nomeFinal, c, ab, L, campos) {
+function abaPainel(wb, nomeFinal, c, ab, L, campos, semReg) {
   const ws = wb.addWorksheet(nomeFinal); ws.columns = [{ width: 38 }, { width: 22 }, { width: 26 }, { width: 22 }];
   const put = (row, col, v) => { const cl = ws.getCell(row, col); if (v && typeof v === 'object' && !(v instanceof Date)) { cl.value = isFinite(v.n) ? v.n : '—'; cl.numFmt = v.f; } else cl.value = primitivoXL(v); return cl; };
   const neg = cl => { cl.font = { bold: true }; return cl; };
@@ -841,14 +1007,16 @@ function abaPainel(wb, nomeFinal, c, ab, L, campos) {
     }
     r++;
   });
+  if (!semReg) fimReg(); function fimReg() {
   neg(put(r++, 1, 'Registros')); const cd = campoData(c);
   campos.forEach((k, i) => neg(put(r, 1 + i, k.n))); r++;
   L.slice().sort((a, b2) => cd ? (b2.v[cd] || '').localeCompare(a.v[cd] || '') : a.codigo.localeCompare(b2.codigo, 'pt', { numeric: true })).forEach(x => {
     campos.forEach((k, i) => { const v = celulaReg(k, x), cl = ws.getCell(r, 1 + i); cl.value = v; if (v instanceof Date) cl.numFmt = 'dd/mm/yyyy hh:mm'; }); r++;
   });
+  }
   ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
 }
-function abasDoArquivo(wb, grupos) { grupos.forEach(g => abasPainelXl(g.c, g.lista).filter(a => !a.escondida).forEach(a => abaPainel(wb, nomeAba(wb, grupos.length > 1 ? a.nome + ' - ' + g.c : a.nome), g.c, a, g.lista, g.campos))); }
+function abasDoArquivo(wb, grupos) { grupos.forEach(g => abasPainelXl(g.c, g.lista).filter(a => !a.escondida).forEach((a, ix) => abaPainel(wb, nomeAba(wb, grupos.length > 1 ? a.nome + ' - ' + g.c : a.nome), g.c, a, g.lista, g.campos, ix > 0))); }
 function aba(wb, nome, campos, linhas, comRel) {
   const ws = wb.addWorksheet(nomeAba(wb, nome)), cols = (comRel ? [{ n: 'Relatório', t: 'texto' }] : []).concat(campos);
   ws.addRow(cols.map(c => primitivoXL(c.n))); const h = ws.getRow(1); h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; });
@@ -902,7 +1070,7 @@ function iniciaConfig() {
   document.querySelectorAll('[data-baixar-bas]').forEach(a => a.addEventListener('click', () => document.querySelectorAll('.passosBas details').forEach(d => { d.open = true; })));
   $('#contaFormula').oninput = conferirConta; $('#contaFormula').onchange = conferirConta; $('#contaSalvar').onclick = salvarConta;
   $('#sinAdd').onclick = () => { const ap = $('#sinAp').value.trim(), sg = $('#sinSig').value; if (!ap || ap.length > 100 || !sg) { toast('Escreva o apelido e escolha o que ele significa.'); return; } const n = sinMap(); if (!(ap in n) && Object.keys(n).length >= 200) { toast('Limite de 200 sinônimos atingido. Remova algum antes.'); return; } n[ap] = sg; store.set('raiox_sin', n); $('#sinAp').value = ''; renderSin(); };
-  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, contas, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
+  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, contas, layout: layouts, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
   $('#bkArq').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (f.size > LIM.backup) { toast('Backup grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.backup) + '). Nada foi alterado.'); return; }
@@ -910,15 +1078,15 @@ function iniciaConfig() {
     if (!b) { toast('Esse arquivo não é um backup do Raio X (ou está com a estrutura errada). Nada foi alterado.'); return; }
     const r = await perguntar('Restaurar backup', 'O backup tem ' + b.registros.length + ' registros. Somar aos dados atuais ou substituir tudo?', [{ t: 'Somar', v: 'somar', prim: true }, { t: 'Substituir', v: 'subst' }, { t: 'Cancelar', v: null }]);
     if (!r) return;
-    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); contas = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
-    Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp();
+    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); contas = nulo(); layouts = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
+    Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp(); Object.keys(b.layout).forEach(k => { if (!layouts[k]) layouts[k] = b.layout[k]; }); salvaLay();
     { let cheioM = false; Object.keys(b.meus).forEach(k => { const at = meus[k] || [], ch = at.map(x => JSON.stringify(x)); const l = at.slice(); b.meus[k].forEach(x => { const j = JSON.stringify(x); if (ch.indexOf(j) >= 0) return; if (l.length >= 50) { cheioM = true; return; } l.push(x); ch.push(j); }); meus[k] = l; }); if (cheioM) setTimeout(() => toast('Limite de 50 indicadores: alguns do backup ficaram de fora.'), 0); } salvaMeus(); { let cheioC = false; Object.keys(b.contas).forEach(k => { const at = (contas[k] || []).slice(), ks = new Set(at.map(x => Core.norm(x.nome))); b.contas[k].forEach(x => { const nk = Core.norm(x.nome); if (ks.has(nk)) return; if (at.length < 50) { at.push(x); ks.add(nk); } else cheioC = true; }); contas[k] = at; }); salvaContas(); if (cheioC) setTimeout(() => toast('Limite de 50 contas: algumas do backup ficaram de fora.'), 0); } { const sn = sinMap(); let cheio = false; Object.keys(b.sin).forEach(k => { if (k in sn || Object.keys(sn).length < 200) sn[k] = b.sin[k]; else cheio = true; }); store.set('raiox_sin', sn); if (cheio) setTimeout(() => toast('Limite de 200 sinônimos: alguns do backup ficaram de fora.'), 0); }
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };
   $('#apagarTudo').onclick = async () => {
     const r = await perguntar('Apagar todos os dados', 'Isso apaga os ' + regs.length + ' registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]);
-    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); contas = nulo(); salvaContas(); F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
+    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); contas = nulo(); salvaContas(); layouts = nulo(); salvaLay(); modoEd = false; F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
   };
 }
 function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
@@ -933,7 +1101,7 @@ $('#fMes').oninput = e => { F.mes = e.target.value; render(); }; $('#fDe').oninp
 $('#fCD').onchange = e => { F.cd = e.target.value; render(); }; $('#fCat').onchange = e => { F.cat = e.target.value; F.val = ''; render(); }; $('#fVal').onchange = e => { F.val = e.target.value; render(); };
 $('#fQ').oninput = e => { F.q = e.target.value; mostrar = 50; render(); };
 $('#gerarXlsx').onclick = gerarExcel;
-$('#btnAcomp').onclick = () => { if (F.conjunto) janelaAcomp(F.conjunto); };
+iniciaLay(); $('#btnAcomp').onclick = () => { if (F.conjunto) janelaAcomp(F.conjunto); };
 $('#fPed').onsubmit = e => { e.preventDefault(); const f = $('#pedTxt').value.trim(); if (f && F.conjunto) abrirPedido(f, F.conjunto); };
 $('#btnEntender').onclick = () => abrirPainel(F.conjunto);
 $('#painelFechar').onclick = () => $('#dlgPainel').close();
