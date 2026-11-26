@@ -214,8 +214,11 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 1. **Clientes ou contratos separados:** seletor "Cliente ▾" no topo, com "+ Novo cliente"; cada um com relatórios, nome, logo, metas, painel e backup próprios; trocar com um toque, sem misturar (hoje é um cliente por aparelho e códigos iguais de clientes diferentes se juntam, D-05).
 2. **Histórico de alterações:** a cada carga, comparar registro a registro com o guardado; onde algum campo mudou, guardar a data da carga, o campo, o valor antigo e o novo. Mostrar ao passar o mouse no registro, botão "Exibir histórico" (todas as versões na lista) e extrair no Excel. Só aparece em registro que teve alteração (D-06, "Se mudar").
 3. **Compartilhar aprendizado com a GSI:** janela com campo de texto e print colado com Ctrl+V (só texto e print; nenhum outro arquivo; o app redesenha a imagem antes; aviso para não mandar dado pessoal; quem tem imagem salva abre, tira print e cola). Vai junto um arquivo só com as configurações (formatos de coluna, indicadores, sinônimos, contas), nunca os registros. Envio por e-mail para **solucaogsi@gmail.com**: no celular pelo compartilhar do aparelho (anexo junto); no computador baixa o pacote e abre o e-mail pronto. O app continua sem servidor.
+4. **OCR em outros idiomas** (D-63).
+5. **Fotos pela câmera, várias de uma vez:** tirar várias fotos seguidas e enviar juntas; na tela das fotos, "Adicionar outra foto", "Retirar" a que não ficou boa e um X no canto para fechar.
 
 ## Quadro das decisões (marcar na homologação)
+*Marcado pelo Galindo em 26/11/2026, na leitura com a conversa: 35 Fica, 2 Muda (D-35, D-51 → F-73), 2 V2 (D-24, D-63).*
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
 | D-01 | Backup e restaurar | "Somar" junta "Meus indicadores" (sem repetir, até 50). Espec. seção 13, P-06; implementado na F-60 (26/11/2026, com teste) | Não perde o que o usuário já escolheu | "Troca": tarefa pequena, com teste | Sim | **Fica** (26/11) |
@@ -242,18 +245,18 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | D-30 | Editar layout | A primeira aba chama `Painel` | Mesmo nome da planilha do Excel (etapa 4) | Outro nome: trivial | Não | **Fica** (26/11) |
 | D-31 | Editar layout | Duplicar cria a cópia na mesma aba, logo depois do original | Espec. não dizia onde | Cópia na aba escolhida: tarefa pequena | Sim | **Fica** (26/11) |
 | D-32 | Editar layout / Backup | Restaurar com "Somar" só traz layout de relatório sem layout | Evita desfazer o arranjo atual | Sobrescrever: trivial | Sim | **Fica** (26/11) |
-| D-33 | Editar layout | Tamanho não muda o Excel | Planilha não tem largura de bloco | Nenhum efeito possível | Não | |
-| D-34 | Editar layout | Formas permitidas por tipo de bloco: número só Número; por categoria Barras/Pizza/Tabela; por mês também Linha | "quando o tipo de dado permite" | Liberar mais formas: tarefa média | Sim | |
-| D-35 | Editar layout | A mensagem de apagar aba diz "Os N blocos dela vão para a primeira aba." (inclusive com 1 bloco) | Texto literal da espec. | Singular: trivial | Sim | |
-| D-36 | Editar layout / Excel | A tabela de registros só aparece na primeira planilha de painel de cada relatório | Não repetir milhares de linhas em cada aba | Repetir em todas: trivial | Sim | |
-| D-40 | Carregar planilha | Cada aba da planilha vira um relatório à parte, "arquivo - aba" | Espec. 7: "cada aba vira um conjunto candidato" | Juntar abas num só: tarefa média | Sim | |
-| D-41 | Carregar planilha/JSON/XML | Número com vírgula e sem milhar, data dd/mm/aaaa, para o formato lembrado do CSV servir | Reaproveitar o que o usuário já respondeu | Perguntar de novo por tipo de arquivo: trivial | Sim | |
-| D-42 | Carregar planilha | .xlsm, .xlsb e planilha com senha não são lidos | Segurança (macros) e simplicidade | Aceitar .xlsb: tarefa pequena | Sim | |
-| D-43 | Carregar zip | Até 50 arquivos e 200 MB depois de aberto; acima disso nada do zip entra | Proteção contra arquivo-bomba | Mudar os números: trivial | Sim | |
-| D-50 | Carregar PDF | PDF sempre abre a conferência, mesmo sem nenhuma célula marcada | Espec. 7: tudo de PDF/OCR passa pela conferência | Pular a conferência quando tudo parece certo: tarefa pequena | Não | |
-| D-51 | Carregar PDF | Até 200 páginas e 20 mil linhas; acima disso corta em silêncio | Proteção do aparelho | Mudar os números: trivial | Sim | |
-| D-52 | Carregar PDF | Colunas achadas pela posição do texto; tabelas desenhadas só por linhas (sem alinhamento de texto) podem não ser lidas | Simplicidade, sem IA | Melhorar a leitura: tarefa maior | Sim | |
-| D-60 | Foto/OCR | Confusões do leitor (O por 0, I por 1…) são corrigidas sozinhas só em colunas de código e número, mas a célula fica marcada | Reduz erro sem esconder a mudança | Não corrigir sozinho: trivial | Sim | |
-| D-61 | Foto/OCR | Modelo de idioma leve (1,4 MB) | Rápido e leve no celular | Modelo completo (6,7 MB): tarefa pequena | Sim | |
-| D-62 | Foto/OCR | Até 20 imagens por vez e 120 s por imagem; fotos do mesmo envio com o mesmo cabeçalho viram uma conferência só | Proteção do aparelho | Mudar os números: trivial | Sim | |
-| D-63 | Foto/OCR | Só português | Espec. 7 | Outros idiomas: tarefa pequena | Não | |
+| D-33 | Editar layout | Tamanho não muda o Excel | Planilha não tem largura de bloco | Nenhum efeito possível | Não | **Fica** (26/11) |
+| D-34 | Editar layout | Formas permitidas por tipo de bloco: número só Número; por categoria Barras/Pizza/Tabela; por mês também Linha | "quando o tipo de dado permite" | Liberar mais formas: tarefa média | Sim | **Fica** (26/11) |
+| D-35 | Editar layout | A mensagem de apagar aba diz "Os N blocos dela vão para a primeira aba." (inclusive com 1 bloco) | Texto literal da espec. | Singular: trivial | Sim | **Muda** (26/11): com 1 bloco, "O bloco dela vai para a primeira aba." (F-73) |
+| D-36 | Editar layout / Excel | A tabela de registros só aparece na primeira planilha de painel de cada relatório | Não repetir milhares de linhas em cada aba | Repetir em todas: trivial | Sim | **Fica** (26/11) |
+| D-40 | Carregar planilha | Cada aba da planilha vira um relatório à parte, "arquivo - aba" | Espec. 7: "cada aba vira um conjunto candidato" | Juntar abas num só: tarefa média | Sim | **Fica** (26/11) |
+| D-41 | Carregar planilha/JSON/XML | Número com vírgula e sem milhar, data dd/mm/aaaa, para o formato lembrado do CSV servir | Reaproveitar o que o usuário já respondeu | Perguntar de novo por tipo de arquivo: trivial | Sim | **Fica** (26/11) |
+| D-42 | Carregar planilha | .xlsm, .xlsb e planilha com senha não são lidos | Segurança (macros) e simplicidade | Aceitar .xlsb: tarefa pequena | Sim | **Fica** (26/11) |
+| D-43 | Carregar zip | Até 50 arquivos e 200 MB depois de aberto; acima disso nada do zip entra | Proteção contra arquivo-bomba | Mudar os números: trivial | Sim | **Fica** (26/11) |
+| D-50 | Carregar PDF | PDF sempre abre a conferência, mesmo sem nenhuma célula marcada | Espec. 7: tudo de PDF/OCR passa pela conferência | Pular a conferência quando tudo parece certo: tarefa pequena | Não | **Fica** (26/11) |
+| D-51 | Carregar PDF | Até 200 páginas e 20 mil linhas; acima disso corta em silêncio | Proteção do aparelho | Mudar os números: trivial | Sim | **Muda** (26/11): continua cortando, mas avisa "O arquivo foi cortado em 200 páginas / 20 mil linhas." (F-73) |
+| D-52 | Carregar PDF | Colunas achadas pela posição do texto; tabelas desenhadas só por linhas (sem alinhamento de texto) podem não ser lidas | Simplicidade, sem IA | Melhorar a leitura: tarefa maior | Sim | **Fica** (26/11) |
+| D-60 | Foto/OCR | Confusões do leitor (O por 0, I por 1…) são corrigidas sozinhas só em colunas de código e número, mas a célula fica marcada | Reduz erro sem esconder a mudança | Não corrigir sozinho: trivial | Sim | **Fica** (26/11) |
+| D-61 | Foto/OCR | Modelo de idioma leve (1,4 MB) | Rápido e leve no celular | Modelo completo (6,7 MB): tarefa pequena | Sim | **Fica** (26/11) |
+| D-62 | Foto/OCR | Até 20 imagens por vez e 120 s por imagem; fotos do mesmo envio com o mesmo cabeçalho viram uma conferência só | Proteção do aparelho | Mudar os números: trivial | Sim | **Fica** (26/11) |
+| D-63 | Foto/OCR | Só português | Espec. 7 | Outros idiomas: tarefa pequena | Não | **V2** (26/11): ler outros idiomas |
