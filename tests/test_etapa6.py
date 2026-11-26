@@ -879,3 +879,23 @@ def test_CA66_celular_nova_aba_e_mover_funcionam_sem_arrastar(celular):
     mover(page, TOTAL, "Reunião")
     abrir_aba(page, "Reunião")
     assert ordem(page) == [TOTAL]
+
+
+# ---------- F-63: Médio e Baixos da revisão de segurança da etapa 6 (regressão) ----------
+def test_f63_layout_invalido_no_navegador_descarta_so_o_relatorio_ruim(page):
+    carregar(page, "vendas.csv")
+    r = page.evaluate("""() => {
+      const ok = { abas: [{ id: 'a1', nome: 'Painel' }], itens: [] };
+      const ruim = { abas: [{ id: 'a1', nome: 'Painel' }], itens: Array.from({ length: 201 }, (_, i) => ({ k: 'k' + i, id: 'x' + i, aba: 'a1' })) };
+      const t = layoutsLimpo({ A: ok, B: ruim }, true), s = layoutsLimpo({ A: ok, B: ruim });
+      return [Object.keys(t || {}), s];
+    }""")
+    assert r[0] == ["A"] and r[1] is None
+
+
+def test_f63_nome_de_aba_sem_invisiveis_nem_emoji_partido(page):
+    carregar(page, "vendas.csv")
+    r = page.evaluate("""() => [NOME_RUIM.test('a\\u2028b'), NOME_RUIM.test('a\\u061cb'), NOME_RUIM.test('a\\ud800b'), NOME_RUIM.test('ok \\ud83d\\ude00'),
+      nomeAba({ worksheets: [] }, '\\ud83d\\ude00'.repeat(40))]""")
+    assert r[:4] == [True, True, True, False]
+    assert "�" not in r[4] and len(list(r[4])) <= 28

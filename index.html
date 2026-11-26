@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-FFzWVfcbM8TVbhExCzLEwtuyHRSmcQwltXERS8b9Jj4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-CeYTaVS1pySF2GMUQuYloGslHnkXQwMh+14GXYOCbE8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -597,7 +597,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
-const VERSAO = "4608a35fe0";
+const VERSAO = "741a13b910";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -659,7 +659,7 @@ let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', 
 let fmts = copiaNula(store.get('raiox_fmt', {}));     // formato lembrado: assinatura das colunas -> {conjunto, cols:[{n,t}]}
 let conjs = copiaNula(store.get('raiox_conj', {}));   // conjunto -> {campos:[{n,t}]}
 // nome de conta/aba: sem controle, invisíveis nem marcas de direção do texto
-const NOME_RUIM = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
+const NOME_RUIM = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2028\u2029\u2060-\u2069\u061c\ufeff]|[\ud800-\udbff](?![\udc00-\udfff])|(?<![\ud800-\udbff])[\udc00-\udfff]/;
 let acomp = acompLimpa(store.get('raiox_acomp', {})) || nulo();   // conjunto -> [id dos indicadores escolhidos, na ordem em que foram marcados]
 let regs = [];                             // {conjunto, codigo, v:{campo:valor}}
 let mapa = new Map();
@@ -1076,28 +1076,30 @@ const TAM_NOME = { p: 'Pequeno', m: 'Médio', g: 'Grande' }, FORMA_NOME = { nume
 const nomeAbaOk = n => typeof n === 'string' && n.length >= 1 && n.length <= 30 && !NOME_RUIM.test(n);
 const chaveNome = n => Core.norm(n) || n.toLowerCase();
 // valida o layout vindo de fora (backup, localStorage): até 200 conjuntos, 20 abas e 200 itens por conjunto; formato errado = null (rejeita tudo)
-function layoutsLimpo(o) {
+function layoutsLimpo(o, tolera) {   // tolera (só a carga do navegador): layout inválido de um relatório é descartado sozinho; o backup continua rejeitando tudo
   if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
   const ks = Object.keys(o); if (ks.length > 200) return null; const r = nulo();
   for (const c of ks) {
-    const x = o[c]; if (!x || typeof x !== 'object' || !Array.isArray(x.abas) || !Array.isArray(x.itens) || !x.abas.length || x.abas.length > 20 || x.itens.length > 200) return null;
+    const x = o[c]; if (!x || typeof x !== 'object' || !Array.isArray(x.abas) || !Array.isArray(x.itens) || !x.abas.length || x.abas.length > 20 || x.itens.length > 200) { if (tolera) continue; return null; }
+    let ruim = false;
     const ids = new Set(), nomes = new Set(), abas = [], kk = new Set(), itens = [];
     for (const a of x.abas) {
-      if (!a || typeof a !== 'object' || typeof a.id !== 'string' || !a.id || a.id.length > 50 || typeof a.nome !== 'string') return null;
-      const n = a.nome.trim(), nk = n && chaveNome(n); if (!nomeAbaOk(n) || ids.has(a.id) || nomes.has(nk)) return null;
+      if (!a || typeof a !== 'object' || typeof a.id !== 'string' || !a.id || a.id.length > 50 || typeof a.nome !== 'string') { if (tolera) { ruim = true; break; } return null; }
+      const n = a.nome.trim(), nk = n && chaveNome(n); if (!nomeAbaOk(n) || ids.has(a.id) || nomes.has(nk)) { if (tolera) { ruim = true; break; } return null; }
       ids.add(a.id); nomes.add(nk); abas.push({ id: a.id, nome: n });
     }
     for (const i of x.itens) {
-      if (!i || typeof i !== 'object' || typeof i.k !== 'string' || !i.k || i.k.length > 1000 || typeof i.id !== 'string' || !i.id || i.id.length > 1000 || typeof i.aba !== 'string' || !ids.has(i.aba) || kk.has(i.k)) return null;
+      if (!i || typeof i !== 'object' || typeof i.k !== 'string' || !i.k || i.k.length > 200 || typeof i.id !== 'string' || !i.id || i.id.length > 200 || typeof i.aba !== 'string' || !ids.has(i.aba) || kk.has(i.k)) { if (tolera) { ruim = true; break; } return null; }
       const tam = i.tam === undefined ? 'm' : i.tam, oc = i.oculto === undefined ? false : i.oculto, fo = i.forma == null ? '' : i.forma;
-      if (LAY_TAM.indexOf(tam) < 0 || typeof oc !== 'boolean' || (fo !== '' && LAY_FORMAS.indexOf(fo) < 0)) return null;
+      if (LAY_TAM.indexOf(tam) < 0 || typeof oc !== 'boolean' || (fo !== '' && LAY_FORMAS.indexOf(fo) < 0)) { if (tolera) { ruim = true; break; } return null; }
       kk.add(i.k); itens.push({ k: i.k, id: i.id, aba: i.aba, tam, oculto: oc, forma: fo });
     }
+    if (ruim) continue;
     r[c] = { abas, itens };
   }
   return r;
 }
-let layouts = layoutsLimpo(store.get('raiox_layout', {})) || nulo();
+let layouts = layoutsLimpo(store.get('raiox_layout', {}), true) || nulo();
 const salvaLay = () => store.set('raiox_layout', layouts);
 let modoEd = false, arrasta = null; const abaAb = nulo();   // modo edição e aba aberta ficam só na memória (recarregar volta ao normal)
 const tipoBloco = b => String(b.id || '').split('\u0001')[0];
@@ -1110,6 +1112,7 @@ function layGet(c) {
   const L = raw ? { abas: raw.abas.map(a => Object.assign({}, a)), itens: raw.itens.map(i => Object.assign({}, i)) } : { abas: [{ id: 'a1', nome: 'Painel' }], itens: [] };
   const ab = new Set(L.abas.map(a => a.id)); L.itens = L.itens.filter(i => ids.indexOf(i.id) >= 0); L.itens.forEach(i => { if (!ab.has(i.aba)) i.aba = L.abas[0].id; });
   blocosEscolhidos(c).forEach(b => { if (!L.itens.some(i => i.id === b.id)) L.itens.push({ k: novoK(L, b.id), id: b.id, aba: L.abas[0].id, tam: 'm', oculto: false, forma: '' }); });
+  L.itens = L.itens.slice(0, 200);   // mesmo teto do validador: o app nunca grava layout que ele mesmo recusaria
   return L;
 }
 const layMut = (c, fn) => { const L = layGet(c); fn(L); layouts[c] = L; salvaLay(); render(); };
@@ -1491,9 +1494,9 @@ function imprimir(titulo, lista, campos, sel) {
 /* ---------- Excel ---------- */
 function baixar(blob, nome) { const a = el('a', { href: URL.createObjectURL(blob), download: nome }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 function nomeAba(wb, n) {   // M-1 (etapa 4): o ExcelJS recusa nome repetido sem diferenciar maiúsculas, com ' nas pontas e "History"
-  let b = n.replace(/[\[\]:*?\/\\]/g, ' ').replace(/^'+|'+$/g, '').trim().slice(0, 28) || 'Aba', x = b, i = 2;
+  let b = n.replace(/[\[\]:*?\/\\]/g, ' ').replace(/^'+|'+$/g, '').trim(), x, i = 2; b = Array.from(b).slice(0, 28).join('').trim() || 'Aba'; x = b;
   const usado = k => k.toLowerCase() === 'history' || wb.worksheets.some(w => w.name.toLowerCase() === k.toLowerCase());
-  while (usado(x)) x = b.slice(0, 26) + ' ' + i++; return x; }
+  while (usado(x)) x = Array.from(b).slice(0, 26).join('') + ' ' + i++; return x; }
 const agoraTxt = () => { const d = new Date(); return z2(d.getDate()) + '/' + z2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z2(d.getHours()) + ':' + z2(d.getMinutes()); };
 // R-87: cada ponta vem do filtro quando ele a define; senão, da menor/maior data dos registros filtrados
 function periodoCapa(datas) {

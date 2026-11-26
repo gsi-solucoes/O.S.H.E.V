@@ -67,3 +67,6 @@
 
 - `window.__abasPainel` é um gancho de teste exposto na página; não abre nada novo (mesma origem, só leitura), mas pode sair do build de produção.
 - A forma "Tabela" de `% por …` e `Evolução por mês` lista todos os grupos, como o desenho antigo já fazia; com campo de muitos valores distintos a tabela fica muito grande.
+
+## Correção (F-63, 26/11/2026)
+M-1 (teto de 200 em `layGet`; carga do navegador descarta só o layout inválido de um relatório), B-1 (`NOME_RUIM` com U+2028/2029, U+061C e surrogate solto), B-2 (nome de planilha cortado por caractere inteiro) e B-3 (chaves de item até 200 caracteres) corrigidos, com 2 testes de regressão (`test_f63_*`). Backup continua rejeitando o arquivo inteiro com layout inválido.
