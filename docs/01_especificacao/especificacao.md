@@ -1,8 +1,9 @@
-# Raio X do Relatório — Especificação v1.8
+# Raio X do Relatório — Especificação v1.9
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v1.9 (26/11/2026, tarefa F-65, coordenador): seção 0.10 "etapa 7c: imagem e PDF escaneado com OCR" (R-130 a R-134, regras, CA-74 a CA-77b, CA-110z, decisões D-60 a D-63).
 - v1.8 (26/11/2026, tarefa F-64, coordenador): seção 0.9 "etapa 7b: PDF com texto e tela de conferência" (R-120 a R-125, regras, CA-73, CA-73b a d, CA-77, decisões D-50 a D-52).
 - v1.7 (26/11/2026, tarefa F-58, coordenador): seção 0.8 "etapa 7a: planilhas, JSON, XML e zip" (R-110 a R-112, regras, CA-70 a CA-72 e CA-75a, decisões D-40 a D-43).
 - v1.6 (26/11/2026, tarefa F-57, coordenador): seção 0.7 "Nomes e regras — etapa 6" (R-100 a R-108, modelo do layout, regras, decisões D-30 a D-34).
@@ -517,6 +518,32 @@ Foto/PDF escaneado com OCR **não** entram aqui (7c, F-65), mas a **tela de conf
 **Critérios (v1.8).** CA-73 `vendas.pdf` (relatório de impressão de 500 vendas em várias páginas, cabeçalho repetido, título e rodapé em cada página): janela `Conferir leitura` com 500 linhas, **0 células marcadas**, cabeçalho `Código, Data, Cliente, Região, Vendedor, Valor, Situação`; após `Confirmar` (e responder `Esta coluna é o quê?`) os mesmos resultados do CSV (total, por cliente, soma). CA-73b: editar uma célula na conferência (ex.: trocar o cliente de uma linha) e confirmar → o valor corrigido entra. CA-73c: `Descartar` → nada entra (backup sem registros). CA-77 `contrato.pdf` → toast `Não encontrei uma tabela neste arquivo` e nenhuma janela. CA-73d: o mesmo `vendas.pdf` dentro de um `.zip` com um CSV → o CSV entra e o PDF abre a conferência. CA-110y: PDF corrompido (bytes cortados) → `Não consegui ler <arquivo>.`; offline (rede bloqueada) o PDF é lido igual.
 
 **Decisões (v1.8):** D-50 PDF abre sempre a conferência, mesmo sem célula marcada (espec. 7: "tudo que vem por OCR ou PDF passa pela tela de conferência"). D-51 limites de 200 páginas/20 mil linhas. D-52 colunas pela posição do texto (sem aprender de tabelas desenhadas por linhas).
+
+### 0.10 Nomes e regras — etapa 7c: imagem e PDF escaneado com OCR (v1.9, 26/11/2026, F-65)
+
+Reaproveita a tela `Conferir leitura` (0.9) e `Core.tabelaPdf` (colunas pela posição). OCR **no aparelho**, sem rede, sem servidor: `vendor/ocr/` (tesseract.js 7.0.0, núcleo `tesseract-core` 6.1.2 nas versões `lstm` e `simd-lstm`, dados de idioma `por` 4.0.0 best_int). Os arquivos de `vendor/ocr/` **não** entram no cache de instalação do service worker: são guardados no cache **na primeira vez que o OCR é usado** (runtime) e depois valem offline (CA-76). Mesmas regras da 0.1.
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-130 | `Carregar relatório` (R-02) aceita também `.jpg .jpeg .png` (e `.pdf` escaneado, regra 6) | botão | também dentro de `.zip` |
+| R-131 | texto de progresso `Lendo a imagem… <n>%` (e `Lendo a página <p> de <n>…` para PDF escaneado) | texto no toast/janela | só informativo; atualiza durante o OCR; some ao terminar |
+| R-132 | janela `Conferir leitura` (0.9) com células de baixa confiança marcadas (`data-baixa="true"`) | janela | **sempre** abre depois do OCR; nada entra sem `Confirmar`. Para imagem, mostra também a imagem reduzida ao lado da tabela, com `alt` = `Imagem lida: <nome>` |
+| R-133 | `Várias fotos` : ao escolher 2 ou mais imagens (ou PDFs escaneados) **no mesmo envio** com o mesmo cabeçalho, uma única janela `Conferir leitura` com as linhas de todas na ordem dos arquivos (cabeçalho uma vez) | regra | cabeçalho diferente: uma janela por grupo de cabeçalho igual |
+| R-134 | mensagens (toast), exatas | texto | imagem sem tabela: `Não encontrei uma tabela neste arquivo` (sem ponto final); imagem corrompida/vazia: `Não consegui ler <arquivo>.`; OCR indisponível (arquivos do leitor não carregaram, ex.: offline antes do 1º uso): `O leitor de imagens ainda não está disponível neste aparelho. Use uma vez com internet.` |
+
+**Regras.**
+1. **Melhoria de imagem** antes do OCR (no aparelho, em canvas): cinza, ajuste de contraste, redução para no máximo 3000 px no maior lado (e ampliação para pelo menos 1600 px se menor), e endireitar (estimar o giro entre −5° e +5° pelo alinhamento das linhas de texto e girar de volta). Foto de 12 megapixels não pode travar a aba (processar em partes ou reduzir antes).
+2. **OCR:** português, modo de página em bloco (`psm 6`), palavras com caixa e confiança. As palavras viram itens `{x, y, w, h, t}` e passam por `Core.tabelaPdf` (mesmas regras de linhas, colunas e cabeçalho da 0.9; o cabeçalho repetido é descartado).
+3. **Confusões do OCR:** numa coluna em que ≥ 60% das células têm o formato `letra + dígitos` (códigos) ou só dígitos/`,`/`.`/`/`/`:` (números e datas), as letras `O o Q D` viram `0`, `I l |` viram `1`, `S` vira `5`, `B` vira `8` e `Z` vira `2` **só nas células dessa coluna** (e a célula corrigida fica marcada como baixa confiança). Texto de colunas de texto nunca é alterado.
+4. **Baixa confiança** (`data-baixa="true"`): célula com palavra de confiança < 75, as regras 3 da 0.9 e as células alteradas pela regra 3 acima.
+5. **Várias páginas/fotos do mesmo relatório** (R-133): cabeçalho repetido descartado; a numeração de linhas da conferência segue contínua.
+6. **PDF escaneado:** PDF em que a leitura de texto (0.9) não acha tabela e as páginas não têm texto é desenhado página a página em canvas (até 20 páginas) e passa pelo mesmo OCR.
+7. **Limites:** imagem até 50 MB; até 20 imagens/páginas por envio (o excedente é ignorado com `<arquivo>: limite de 20 imagens.`); OCR passado de 120 s por imagem é abandonado com `Não consegui ler <arquivo>.`. Nada é enviado à internet; os arquivos do leitor são só os de `vendor/ocr/`.
+8. O resultado confirmado segue o caminho de sempre (`Esta coluna é o quê?`, formato lembrado, junção por código). Datas e números entram como texto da célula.
+
+**Critérios (v1.9).** CA-74 `vendas_foto_1.jpg` + `vendas_foto_2.jpg` (fotos de impressão com leve giro e ruído, 30 vendas cada, cabeçalho `Código Data Cliente Região Vendedor Valor Situação`, escolhidas no mesmo envio) → **uma** janela `Conferir leitura` com 60 linhas; **≥ 95% das células** (60 x 7 = 420) iguais às de `vendas.csv` (linhas 1 a 60) **antes de corrigir**; após corrigir as marcadas (o teste edita só células marcadas para o valor do CSV) e `Confirmar`, os 60 registros do CSV entram com os mesmos valores. CA-75 `.zip` com CSV + XLSX + JPG → os três lidos; o JPG passa pela conferência. CA-76 depois de 1 uso do OCR, com a rede bloqueada (contexto offline) e a página recarregada, o OCR de `vendas_foto_1.jpg` funciona igual. CA-77b `contrato_foto.jpg` (texto sem tabela) → toast `Não encontrei uma tabela neste arquivo`, nenhuma janela, nada entra. CA-110z: imagem corrompida (bytes cortados) → `Não consegui ler <arquivo>.`; nenhuma requisição a outro host; foto de 12 MP (gerada no teste) lida sem travar a aba (a página continua respondendo). PDF escaneado: um PDF feito de `vendas_foto_1.jpg` (gerado no teste com reportlab, só imagem, sem texto) → mesma conferência do CA-74 (linhas 1 a 30).
+
+**Decisões (v1.9):** D-60 correções por padrão da coluna (regra 3) são automáticas mas sempre marcadas e sempre passam pela conferência. D-61 modelo de idioma `best_int` (1,4 MB; menos preciso que o `best` completo, de 6,7 MB, mas leve para o celular). D-62 limite de 20 imagens/páginas e 120 s. D-63 só português.
 
 ---
 

@@ -1,0 +1,8 @@
+9a93bf51c3387f945d10a24bf8b3a4bf2e45c7c7161b8242aafbaf9d3c4b606a  tesseract.js-7.0.0.tgz
+1b5863e7d912de9fc639222a38ede7876b2344565f8ad8d9527b242b0d793e24  tesseract.js-core-6.1.2.tgz
+e9d54a379afab14fbd18530fc6a6e6cc8f7c0be2799c74be854eda920aabddac  tesseract.js-data-por-1.0.0.tgz
+000c27d9cd0def655f77b36c72a389c0ab13793aa31cb4d7aab56d09c0afbc7e  tesseract.min.js
+576b7df7e3393e137e51849357c9adb53fe7ac1bb69bfa06cf3d61520f182c6d  worker.min.js
+775a35df6f2ae100e02609443e6bd5cafcd07983dd6175454ca4a432a7730687  core/tesseract-core-lstm.wasm.js
+9d7c43fb206dc9f48475228b46bf35f888fa9e6259da2e67d5a75c77049f2dc7  core/tesseract-core-simd-lstm.wasm.js
+dacebc1386ddaaf8389f81094236cca0d690897cde693d48cbdaa881c86e2b4c  lang/por.traineddata.gz

@@ -10,3 +10,13 @@
 O tarball do npm `@e965/xlsx@0.20.3` tem SHA-256 `f93cd23533d5356f34d4b24ea48431f8cf8945d1ae1bd2045ab5d92163c82bb2` (conferido em 26/11/2026; `npm audit` sem alertas). O `cdn.sheetjs.com` (origem oficial) não é alcançável do ambiente da fábrica, por isso o espelho do npm; compare com o oficial quando possível. Para atualizar: `npm pack @e965/xlsx@<versão>`, copie o arquivo, atualize esta tabela e rode a suíte da etapa 7a.
 
 O tarball do npm `pdfjs-dist@5.7.284` tem SHA-256 `f14db72530dec74fe666910e246242b9bb698df30f0e06622c4471b340a0413d`. O build não usa `eval` e a CSP do app não permite `unsafe-eval` (a opção `isEvalSupported` não existe nesta versão). O app lê no máximo 200 páginas, 200 colunas e 60 segundos por PDF.
+
+## OCR (`vendor/ocr/`)
+
+| Arquivo | Origem (npm) | Versão | Licença |
+|---|---|---|---|
+| `tesseract.min.js`, `worker.min.js` | `tesseract.js` (`dist/`) | 7.0.0 | Apache-2.0 (`tesseract.LICENSE.md`) |
+| `core/tesseract-core-lstm.wasm.js`, `core/tesseract-core-simd-lstm.wasm.js` | `tesseract.js-core` | 6.1.2 | Apache-2.0 (`core/LICENSE`) |
+| `lang/por.traineddata.gz` | `@tesseract.js-data/por` (`4.0.0_best_int`) | 1.0.0 | Apache-2.0 |
+
+SHA-256 dos tarballs do npm (conferidos em 26/11/2026): ver `vendor/ocr/SHA256.txt`.

@@ -178,3 +178,44 @@ try:
     _c.save()
 except ImportError:
     pass
+
+
+# ---------- etapa 7c: fotos de teste (F-65): "fotos" de impressão das vendas, com leve giro, ruído e JPEG ----------
+try:
+    from PIL import Image as _Im, ImageDraw as _Dr, ImageFont as _Ft, ImageFilter as _Fl
+    _fonte = next((f for f in ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf") if pathlib.Path(f).exists()), None)
+    _fonteb = next((f for f in ("/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf") if pathlib.Path(f).exists()), None)
+    if _fonte:
+        def _foto(nome, ini, fim, giro, semente):
+            r = random.Random(semente)
+            fn, fb = _Ft.truetype(_fonte, 40), _Ft.truetype(_fonteb or _fonte, 40)
+            xs = [30, 210, 480, 920, 1120, 1450, 1680]
+            alt = 70 + 58 * (fim - ini + 1) + 40
+            im = _Im.new("L", (1980, alt), 245)
+            d = _Dr.Draw(im)
+            d.text((30, 14), "Relatório de vendas", font=fb, fill=20)
+            y = 70
+            for x, t in zip(xs, CAB_V):
+                d.text((x, y), t, font=fb, fill=15)
+            y += 58
+            for lin in vendas[ini - 1:fim]:
+                for x, t in zip(xs, lin):
+                    d.text((x, y), str(t), font=fn, fill=20)
+                y += 58
+            im = im.rotate(giro, resample=_Im.BICUBIC, expand=True, fillcolor=240)
+            px = im.load()
+            for _ in range(im.size[0] * im.size[1] // 90):
+                x, yy = r.randrange(im.size[0]), r.randrange(im.size[1])
+                px[x, yy] = max(0, min(255, px[x, yy] + r.randint(-40, 40)))
+            im = im.filter(_Fl.GaussianBlur(0.6))
+            im.convert("RGB").save(D / nome, "JPEG", quality=82)
+        _foto("vendas_foto_1.jpg", 1, 30, 0.8, 11)
+        _foto("vendas_foto_2.jpg", 31, 60, -0.6, 12)
+        # imagem sem tabela (só um texto): CA-77 também vale para imagem
+        _im = _Im.new("L", (900, 300), 245)
+        _dd = _Dr.Draw(_im)
+        _dd.text((40, 40), "Contrato de prestacao de servicos", font=_Ft.truetype(_fonte, 34), fill=20)
+        _dd.text((40, 120), "Este texto nao e uma tabela.", font=_Ft.truetype(_fonte, 34), fill=20)
+        _im.convert("RGB").save(D / "contrato_foto.jpg", "JPEG", quality=85)
+except ImportError:
+    pass
