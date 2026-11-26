@@ -387,3 +387,37 @@ def test_nome_solto_que_e_campo_nao_vira_funcao(page):
     assert erro(page) != ""
     digitar(page, "Solto", "xyz(1)")
     assert "função 'xyz' não existe" in erro(page).lower()
+
+
+# ---------- F-62: Baixos da revisao de seguranca da etapa 5 (regressao) ----------
+def test_f62_nome_com_marca_de_direcao_e_recusado_ao_salvar(page):
+    abrir_contas(page)
+    digitar(page, "Ticket‮medio", "soma(valor)")
+    salvar(page)
+    assert not conta_salva(page, "Ticket‮medio")
+
+
+def test_f62_backup_forjado_com_nome_invisivel_e_rejeitado(page):
+    abrir_contas(page)
+    criar(page, "Ticket médio", "soma(valor) / quantidade()")
+    _, txt = backup(page)
+    b = json.loads(txt)
+    k = next(iter(b["contas"]))
+    b["contas"][k][0]["nome"] = "Ticket‮medio"
+    abrir_config(page)
+    linha_conta(page, "Ticket médio").first.get_by_role("button", name="Remover", exact=True).click()
+    page.wait_for_timeout(300)
+    with page.expect_file_chooser() as fc:
+        page.get_by_role("button", name="Restaurar backup").click()
+    fc.value.set_files([{"name": "b.json", "mimeType": "application/json", "buffer": json.dumps(b).encode()}])
+    page.wait_for_timeout(500)
+    assert page.get_by_role("button", name="Substituir", exact=True).count() == 0
+    assert "Nada foi alterado" in page.locator("body").inner_text()
+
+
+def test_f62_estouro_de_pilha_em_qualquer_navegador_vira_mensagem_amigavel(page):
+    # o Firefox diz "too much recursion"; o interpretador nao pode depender do texto do Chrome
+    msg = page.evaluate("""() => { const o = Core.compilaFormula('(' .repeat(60) + '1' + ')'.repeat(60), []); return o.erro; }""")
+    assert "complicada demais" in msg
+    r = page.evaluate("""() => { const f = Core.compilaFormula('1+1', []); return f.ok; }""")
+    assert r is True

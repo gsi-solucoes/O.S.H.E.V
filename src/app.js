@@ -449,7 +449,7 @@ function contasLimpo(o) {
     const l = o[k]; if (!Array.isArray(l)) return null; const vis = new Set(), out = [];
     for (const x of l.slice(0, 50)) {
       if (!x || typeof x !== 'object' || typeof x.nome !== 'string' || typeof x.formula !== 'string') return null;
-      const n = x.nome.trim(); if (!n || n.length > 60 || /[\u0000-\u001f]/.test(n) || !x.formula.trim() || x.formula.length > 300) return null;
+      const n = x.nome.trim(); if (!n || n.length > 60 || NOME_RUIM.test(n) || !x.formula.trim() || x.formula.length > 300) return null;
       const nk = Core.norm(n); if (vis.has(nk)) continue; vis.add(nk); out.push({ nome: n, formula: x.formula });
     }
     r[k] = out;
@@ -460,7 +460,16 @@ let contas = contasLimpo(store.get('raiox_contas', {})) || nulo();
 const salvaContas = () => store.set('raiox_contas', contas);
 const contaDe = (c, nome) => (contas[c] || []).find(x => x.nome === nome) || null;
 // compila a conta com os campos do conjunto: { ok, ast } ou { ok:false, erro }
-const compilaConta = (c, formula) => Core.compilaFormula(formula, (conjs[c] || {}).campos || []);
+// nome de conta: sem controle, invisíveis nem marcas de direção do texto
+const NOME_RUIM = /[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
+// fórmula compilada guardada por (conjunto, campos, fórmula): não recompila a cada valor
+const cacheConta = new Map();
+function compilaConta(c, formula) {
+  const campos = (conjs[c] || {}).campos || [], chv = c + '\u0001' + campos.map(k => k.n + ':' + k.t).join('|') + '\u0001' + formula;
+  let f = cacheConta.get(chv);
+  if (!f) { f = Core.compilaFormula(formula, campos); if (cacheConta.size > 500) cacheConta.clear(); cacheConta.set(chv, f); }
+  return f;
+}
 // valor da conta sobre uma lista de registros: número, ou null = "sem dados"
 function valorConta(c, nome, L) {
   const x = contaDe(c, nome); if (!x) return null; const f = compilaConta(c, x.formula); if (!f.ok) return null;
@@ -667,7 +676,7 @@ function salvarConta() {
   const c = F.conjunto, nome = $('#contaNome').value.trim(), er = $('#contaErro');
   if (!c || !conjs[c]) { er.textContent = 'Carregue um relatório primeiro.'; return; }
   if (!nome) { er.textContent = 'escreva o nome da conta'; return; }
-  if (nome.length > 60 || /[\u0000-\u001f]/.test(nome)) { er.textContent = 'o nome da conta deve ter até 60 caracteres'; return; }
+  if (nome.length > 60 || NOME_RUIM.test(nome)) { er.textContent = 'o nome da conta deve ter até 60 caracteres'; return; }
   const f = conferirConta(); if (!f) { if (!er.textContent) er.textContent = 'escreva a fórmula'; return; }
   const l = (contas[c] || (contas[c] = [])).slice(), nk = Core.norm(nome), i = l.findIndex(x => Core.norm(x.nome) === nk);
   if (i < 0 && l.length >= 50) { er.textContent = 'Limite de 50 contas por relatório. Remova alguma antes.'; return; }
@@ -903,7 +912,7 @@ function iniciaConfig() {
     if (!r) return;
     if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); contas = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
     Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp();
-    { let cheioM = false; Object.keys(b.meus).forEach(k => { const at = meus[k] || [], ch = at.map(x => JSON.stringify(x)); const l = at.slice(); b.meus[k].forEach(x => { const j = JSON.stringify(x); if (ch.indexOf(j) >= 0) return; if (l.length >= 50) { cheioM = true; return; } l.push(x); ch.push(j); }); meus[k] = l; }); if (cheioM) setTimeout(() => toast('Limite de 50 indicadores: alguns do backup ficaram de fora.'), 0); } salvaMeus(); { Object.keys(b.contas).forEach(k => { const at = (contas[k] || []).slice(), ks = new Set(at.map(x => Core.norm(x.nome))); b.contas[k].forEach(x => { const nk = Core.norm(x.nome); if (!ks.has(nk) && at.length < 50) { at.push(x); ks.add(nk); } }); contas[k] = at; }); salvaContas(); } { const sn = sinMap(); let cheio = false; Object.keys(b.sin).forEach(k => { if (k in sn || Object.keys(sn).length < 200) sn[k] = b.sin[k]; else cheio = true; }); store.set('raiox_sin', sn); if (cheio) setTimeout(() => toast('Limite de 200 sinônimos: alguns do backup ficaram de fora.'), 0); }
+    { let cheioM = false; Object.keys(b.meus).forEach(k => { const at = meus[k] || [], ch = at.map(x => JSON.stringify(x)); const l = at.slice(); b.meus[k].forEach(x => { const j = JSON.stringify(x); if (ch.indexOf(j) >= 0) return; if (l.length >= 50) { cheioM = true; return; } l.push(x); ch.push(j); }); meus[k] = l; }); if (cheioM) setTimeout(() => toast('Limite de 50 indicadores: alguns do backup ficaram de fora.'), 0); } salvaMeus(); { let cheioC = false; Object.keys(b.contas).forEach(k => { const at = (contas[k] || []).slice(), ks = new Set(at.map(x => Core.norm(x.nome))); b.contas[k].forEach(x => { const nk = Core.norm(x.nome); if (ks.has(nk)) return; if (at.length < 50) { at.push(x); ks.add(nk); } else cheioC = true; }); contas[k] = at; }); salvaContas(); if (cheioC) setTimeout(() => toast('Limite de 50 contas: algumas do backup ficaram de fora.'), 0); } { const sn = sinMap(); let cheio = false; Object.keys(b.sin).forEach(k => { if (k in sn || Object.keys(sn).length < 200) sn[k] = b.sin[k]; else cheio = true; }); store.set('raiox_sin', sn); if (cheio) setTimeout(() => toast('Limite de 200 sinônimos: alguns do backup ficaram de fora.'), 0); }
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };

@@ -372,7 +372,7 @@ var Core = (function () {
       var ast = soma();
       if (p < tk.length) throw new Error(tk[p].k === ')' ? 'parêntese fechado sem abrir' : "não entendi '" + tk[p].raw + "' na fórmula");
       return { ok: true, ast: ast };
-    } catch (e) { return { ok: false, erro: e.message === 'Maximum call stack size exceeded' ? 'fórmula complicada demais' : e.message }; }
+    } catch (e) { return { ok: false, erro: (e instanceof RangeError || /recursion|call stack/i.test(String(e.message))) ? 'fórmula complicada demais' : e.message }; }
   }
   // lista = registros; get(registro, campo) -> texto. Devolve número ou null ("sem dados").
   function avaliaFormula(ast, lista, get) {
