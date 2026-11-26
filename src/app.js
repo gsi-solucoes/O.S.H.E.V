@@ -268,22 +268,31 @@ function conferir(arquivo, rows, baixas) {
     $('#cfArq').textContent = 'Arquivo: ' + arquivo + '.'; $('#cfCont').textContent = 'Linhas lidas: ' + (rows.length - 1) + ' · Células marcadas: ' + ba.size;
     const frag = document.createDocumentFragment(), cab = el('tr'), lin = (r, i) => { const tr = el('tr'), v = []; for (let j = 0; j < nc; j++) { const x = el('input', { type: 'text', value: Core.t(r[j]), 'aria-label': i ? 'Linha ' + i + ', ' + (hdr[j] || 'coluna ' + (j + 1)) : 'Cabeçalho, coluna ' + (j + 1) }); if (ba.has(i + ',' + j)) x.setAttribute('data-baixa', 'true'); v.push(x); tr.append(el('td', null, x)); } cel.push(v); return tr; };
     cab.append(...lin(rows[0], 0).children); frag.append(el('thead', null, cab));
-    const corpo = el('tbody'); for (let i = 1; i < rows.length; i++) corpo.append(lin(rows[i], i)); frag.append(corpo);
-    tb.textContent = ''; tb.append(frag);
+    // tabela grande (mais de 30 mil células): só as primeiras linhas viram campos de edição; o botão "Mostrar mais linhas" acrescenta o resto aos poucos
+    const corpo = el('tbody'), passo = Math.max(100, Math.floor(30000 / Math.max(1, nc))); let prox = 1;
+    const mais = () => { const fim = Math.min(rows.length, prox + passo), f = document.createDocumentFragment(); for (; prox < fim; prox++) f.append(lin(rows[prox], prox)); corpo.append(f); bm.hidden = prox >= rows.length; };
+    const bm = el('button', { type: 'button', id: 'cfMais', text: 'Mostrar mais linhas', onclick: mais }); frag.append(corpo);
+    tb.textContent = ''; tb.append(frag); tb.parentNode.querySelector('#cfMais') && tb.parentNode.querySelector('#cfMais').remove(); tb.after(bm); mais();
     let res = null; d.onclose = () => { tb.textContent = ''; ok(res); };
-    $('#cfOk').onclick = () => { res = cel.map(v => v.map(x => x.value)); d.close(); }; $('#cfNao').onclick = () => d.close();
+    $('#cfOk').onclick = () => { res = rows.map((r, i) => cel[i] ? cel[i].map(x => x.value) : r.slice()); d.close(); }; $('#cfNao').onclick = () => d.close();
     d.showModal();
   });
 }
 let pdfjs;
 async function lerPdf(buf) {   // texto com posição de cada página -> tabela {rows, baixas} ou null (nada executado, sem rede)
   if (!pdfjs) { const m = await import('./vendor/pdf.min.mjs'); m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; pdfjs = m; }
-  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), isEvalSupported: false, disableFontFace: true, useSystemFonts: false, enableXfa: false }).promise;
+  toast('Lendo o PDF…');
+  const tarefa = pdfjs.getDocument({ data: new Uint8Array(buf), disableFontFace: true, useSystemFonts: false, enableXfa: false }); let tempo = null, esgotou = false;
+  const doc = await tarefa.promise;
   try {
-    const pgs = [];
-    for (let i = 1; i <= Math.min(doc.numPages, PDFPAG); i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); pgs.push(tc.items.filter(x => typeof x.str === 'string').map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); }
-    return Core.tabelaPdf(pgs, 20000);
-  } finally { doc.destroy(); }
+    const lim = new Promise((_, no) => { tempo = setTimeout(() => { esgotou = true; tarefa.destroy(); no(new Error('tempo')); }, 60000); });   // PDF-bomba: passou de 60 s, desiste
+    const ler = (async () => {
+      const pgs = []; let tot = 0;
+      for (let i = 1; i <= Math.min(doc.numPages, PDFPAG) && !esgotou; i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); const it = tc.items.filter(x => typeof x.str === 'string').slice(0, 100000); tot += it.length; pgs.push(it.map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); if (tot > 400000) break; }
+      return Core.tabelaPdf(pgs, 20000);
+    })();
+    return await Promise.race([ler, lim]);
+  } finally { clearTimeout(tempo); doc.destroy(); }
 }
 async function processar(arq, nome, rows) {
   const hi = Core.acharCabecalho(rows);

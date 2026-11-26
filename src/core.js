@@ -402,8 +402,9 @@ var Core = (function () {
   // rows[0] é o cabeçalho; baixas indexa rows (0 = cabeçalho). Linha = mesmo y (± metade do corpo); coluna = x de início (± 6 pt).
   function tabelaPdf(paginas, maxLin) {
     maxLin = maxLin || 20000;
-    var linhas = []; // por página: [[{x, t}]] (células já coladas)
+    var linhas = [], totItens = 0; // por página: [[{x, t}]] (células já coladas)
     paginas.forEach(function (itens) {
+      if (totItens > 400000) return; totItens += itens.length; itens = itens.length > 100000 ? itens.slice(0, 100000) : itens;   // teto de pedaços de texto
       var its = itens.filter(function (i) { return t(i.t); }).sort(function (a, b) { return b.y - a.y; }), ls = [];
       its.forEach(function (i) { var l = ls[ls.length - 1]; if (l && Math.abs(l.y - i.y) <= (l.h || 10) / 2) l.its.push(i); else ls.push({ y: i.y, h: i.h, its: [i] }); });
       linhas.push(ls.map(function (l) {
@@ -424,9 +425,9 @@ var Core = (function () {
     xs.sort(function (a, b) { return a - b; });
     var gr = [];
     xs.forEach(function (x) { var g = gr[gr.length - 1]; if (g && x - g.ult <= 6) { g.n++; g.ult = x; g.soma += x; } else gr.push({ n: 1, ult: x, soma: x, ini: x }); });
-    var cols = gr.filter(function (g) { return g.n >= Math.max(2, tab.length * 0.25); }).map(function (g) { return g.ini; });
+    var cols = gr.filter(function (g) { return g.n >= Math.max(2, tab.length * 0.25); }).map(function (g) { return g.ini; }).slice(0, 200);   // teto de colunas
     if (cols.length < 2) return null;
-    var colDe = function (x) { var j = 0; cols.forEach(function (c, k) { if (c <= x + 6) j = k; }); return j; };
+    var colDe = function (x) { var lo = 0, hi = cols.length - 1, j = 0; while (lo <= hi) { var md = (lo + hi) >> 1; if (cols[md] <= x + 6) { j = md; lo = md + 1; } else hi = md - 1; } return j; };   // busca binária (cols está em ordem)
     var cabP = linhas[0] || [], hdr = null, hdrT = '', rows = [], baixas = [], lm = [];
     // monta cada linha de tabela: texto por coluna + marcas (colisão de duas células na mesma coluna)
     var monta = function (l) { var r = cols.map(function () { return ''; }), col = {}; l.forEach(function (c) { var j = colDe(c.x); if (r[j]) { r[j] += ' ' + c.t; col[j] = 1; } else r[j] = c.t; }); return { r: r, col: col, n: l.length }; };
@@ -437,7 +438,7 @@ var Core = (function () {
       ls.forEach(function (l, k) {
         if (l.length < 2 || (p === 0 && k <= cabP.desde)) return;
         var m = monta(l); if (m.r.join('\u0001') === hdrT) return;
-        if (rows.length > maxLin) return;
+        if (rows.length > maxLin || rows.length * cols.length > 1000000) return;   // teto de linhas e de células
         rows.push(m.r); lm.push(m);
       });
     });

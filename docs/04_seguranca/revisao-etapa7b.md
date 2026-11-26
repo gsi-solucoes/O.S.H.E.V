@@ -67,3 +67,6 @@
 
 ## Correção
 (a preencher pela fábrica)
+
+## Correção (F-67, 26/11/2026)
+M-1 (teto de 200 colunas, 1 milhão de células e 400 mil pedaços de texto; busca binária em `colDe`; conferência de tabela grande com `Mostrar mais linhas`), B-1 (limite de 60 s com `destroy()` e aviso `Lendo o PDF…`) e a documentação do `isEvalSupported` corrigidos, com 2 testes de regressão (`test_f67_*`); 7a + 7b: 68 verdes.

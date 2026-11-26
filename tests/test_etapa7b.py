@@ -427,3 +427,30 @@ def test_regra5_conteudo_do_pdf_so_entra_como_texto(page, tmp_path):
     assert page.evaluate("window.__x") is None
     assert page.locator("img[src='x']").count() == 0
     vivo(page)
+
+
+# ---------- F-67: Médio e Baixo da revisão de segurança da etapa 7b (regressão) ----------
+def test_f67_tabela_pdf_com_muitas_colunas_e_linhas_nao_trava(page):
+    r = page.evaluate("""() => {
+      const t0 = performance.now(), pgs = [];
+      for (let p = 0; p < 30; p++) { const it = []; for (let l = 0; l < 100; l++) for (let c = 0; c < 400; c++) it.push({ x: 10 + c * 40, y: 800 - l * 8, w: 20, h: 8, t: 'c' + c + 'l' + l }); pgs.push(it); }
+      const t = Core.tabelaPdf(pgs, 20000);
+      return [performance.now() - t0, t ? t.rows[0].length : -1];
+    }""")
+    assert r[0] < 15000, f"tabelaPdf levou {r[0]:.0f} ms"
+    assert r[1] <= 200
+
+
+def test_f67_conferencia_grande_mostra_primeiras_linhas_e_mais(page):
+    carregar_vazio = None  # a janela é chamada direto, sem arquivo
+    n = page.evaluate("""async () => {
+      const rows = [Array.from({ length: 50 }, (_, j) => 'Col' + j)];
+      for (let i = 1; i <= 2000; i++) rows.push(Array.from({ length: 50 }, (_, j) => 'v' + i + '_' + j));
+      conferir('grande.pdf', rows, []);
+      await new Promise(r => setTimeout(r, 300));
+      const antes = document.querySelectorAll('#cfTab input').length;
+      document.querySelector('#cfMais').click();
+      const depois = document.querySelectorAll('#cfTab input').length;
+      return [antes, depois, document.querySelector('#cfMais').hidden];
+    }""")
+    assert n[0] < 2001 * 50 and n[0] > 0 and n[1] > n[0]

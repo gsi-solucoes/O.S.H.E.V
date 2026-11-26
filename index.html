@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-wChWh0NzqFOEMlUsp8FXsKIIQTq1rbatx76pc4rbwIM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uRgnFLQw/4j0cYkJQX+S6Bxy4QcTYeUi3gj92KN1CuQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -601,8 +601,9 @@ var Core = (function () {
   // rows[0] é o cabeçalho; baixas indexa rows (0 = cabeçalho). Linha = mesmo y (± metade do corpo); coluna = x de início (± 6 pt).
   function tabelaPdf(paginas, maxLin) {
     maxLin = maxLin || 20000;
-    var linhas = []; // por página: [[{x, t}]] (células já coladas)
+    var linhas = [], totItens = 0; // por página: [[{x, t}]] (células já coladas)
     paginas.forEach(function (itens) {
+      if (totItens > 400000) return; totItens += itens.length; itens = itens.length > 100000 ? itens.slice(0, 100000) : itens;   // teto de pedaços de texto
       var its = itens.filter(function (i) { return t(i.t); }).sort(function (a, b) { return b.y - a.y; }), ls = [];
       its.forEach(function (i) { var l = ls[ls.length - 1]; if (l && Math.abs(l.y - i.y) <= (l.h || 10) / 2) l.its.push(i); else ls.push({ y: i.y, h: i.h, its: [i] }); });
       linhas.push(ls.map(function (l) {
@@ -623,9 +624,9 @@ var Core = (function () {
     xs.sort(function (a, b) { return a - b; });
     var gr = [];
     xs.forEach(function (x) { var g = gr[gr.length - 1]; if (g && x - g.ult <= 6) { g.n++; g.ult = x; g.soma += x; } else gr.push({ n: 1, ult: x, soma: x, ini: x }); });
-    var cols = gr.filter(function (g) { return g.n >= Math.max(2, tab.length * 0.25); }).map(function (g) { return g.ini; });
+    var cols = gr.filter(function (g) { return g.n >= Math.max(2, tab.length * 0.25); }).map(function (g) { return g.ini; }).slice(0, 200);   // teto de colunas
     if (cols.length < 2) return null;
-    var colDe = function (x) { var j = 0; cols.forEach(function (c, k) { if (c <= x + 6) j = k; }); return j; };
+    var colDe = function (x) { var lo = 0, hi = cols.length - 1, j = 0; while (lo <= hi) { var md = (lo + hi) >> 1; if (cols[md] <= x + 6) { j = md; lo = md + 1; } else hi = md - 1; } return j; };   // busca binária (cols está em ordem)
     var cabP = linhas[0] || [], hdr = null, hdrT = '', rows = [], baixas = [], lm = [];
     // monta cada linha de tabela: texto por coluna + marcas (colisão de duas células na mesma coluna)
     var monta = function (l) { var r = cols.map(function () { return ''; }), col = {}; l.forEach(function (c) { var j = colDe(c.x); if (r[j]) { r[j] += ' ' + c.t; col[j] = 1; } else r[j] = c.t; }); return { r: r, col: col, n: l.length }; };
@@ -636,7 +637,7 @@ var Core = (function () {
       ls.forEach(function (l, k) {
         if (l.length < 2 || (p === 0 && k <= cabP.desde)) return;
         var m = monta(l); if (m.r.join('\u0001') === hdrT) return;
-        if (rows.length > maxLin) return;
+        if (rows.length > maxLin || rows.length * cols.length > 1000000) return;   // teto de linhas e de células
         rows.push(m.r); lm.push(m);
       });
     });
@@ -658,7 +659,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, t: t };
 })();
-const VERSAO = "3e8fa9aa50";
+const VERSAO = "5b2f4ddf3f";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -929,22 +930,31 @@ function conferir(arquivo, rows, baixas) {
     $('#cfArq').textContent = 'Arquivo: ' + arquivo + '.'; $('#cfCont').textContent = 'Linhas lidas: ' + (rows.length - 1) + ' · Células marcadas: ' + ba.size;
     const frag = document.createDocumentFragment(), cab = el('tr'), lin = (r, i) => { const tr = el('tr'), v = []; for (let j = 0; j < nc; j++) { const x = el('input', { type: 'text', value: Core.t(r[j]), 'aria-label': i ? 'Linha ' + i + ', ' + (hdr[j] || 'coluna ' + (j + 1)) : 'Cabeçalho, coluna ' + (j + 1) }); if (ba.has(i + ',' + j)) x.setAttribute('data-baixa', 'true'); v.push(x); tr.append(el('td', null, x)); } cel.push(v); return tr; };
     cab.append(...lin(rows[0], 0).children); frag.append(el('thead', null, cab));
-    const corpo = el('tbody'); for (let i = 1; i < rows.length; i++) corpo.append(lin(rows[i], i)); frag.append(corpo);
-    tb.textContent = ''; tb.append(frag);
+    // tabela grande (mais de 30 mil células): só as primeiras linhas viram campos de edição; o botão "Mostrar mais linhas" acrescenta o resto aos poucos
+    const corpo = el('tbody'), passo = Math.max(100, Math.floor(30000 / Math.max(1, nc))); let prox = 1;
+    const mais = () => { const fim = Math.min(rows.length, prox + passo), f = document.createDocumentFragment(); for (; prox < fim; prox++) f.append(lin(rows[prox], prox)); corpo.append(f); bm.hidden = prox >= rows.length; };
+    const bm = el('button', { type: 'button', id: 'cfMais', text: 'Mostrar mais linhas', onclick: mais }); frag.append(corpo);
+    tb.textContent = ''; tb.append(frag); tb.parentNode.querySelector('#cfMais') && tb.parentNode.querySelector('#cfMais').remove(); tb.after(bm); mais();
     let res = null; d.onclose = () => { tb.textContent = ''; ok(res); };
-    $('#cfOk').onclick = () => { res = cel.map(v => v.map(x => x.value)); d.close(); }; $('#cfNao').onclick = () => d.close();
+    $('#cfOk').onclick = () => { res = rows.map((r, i) => cel[i] ? cel[i].map(x => x.value) : r.slice()); d.close(); }; $('#cfNao').onclick = () => d.close();
     d.showModal();
   });
 }
 let pdfjs;
 async function lerPdf(buf) {   // texto com posição de cada página -> tabela {rows, baixas} ou null (nada executado, sem rede)
   if (!pdfjs) { const m = await import('./vendor/pdf.min.mjs'); m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; pdfjs = m; }
-  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), isEvalSupported: false, disableFontFace: true, useSystemFonts: false, enableXfa: false }).promise;
+  toast('Lendo o PDF…');
+  const tarefa = pdfjs.getDocument({ data: new Uint8Array(buf), disableFontFace: true, useSystemFonts: false, enableXfa: false }); let tempo = null, esgotou = false;
+  const doc = await tarefa.promise;
   try {
-    const pgs = [];
-    for (let i = 1; i <= Math.min(doc.numPages, PDFPAG); i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); pgs.push(tc.items.filter(x => typeof x.str === 'string').map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); }
-    return Core.tabelaPdf(pgs, 20000);
-  } finally { doc.destroy(); }
+    const lim = new Promise((_, no) => { tempo = setTimeout(() => { esgotou = true; tarefa.destroy(); no(new Error('tempo')); }, 60000); });   // PDF-bomba: passou de 60 s, desiste
+    const ler = (async () => {
+      const pgs = []; let tot = 0;
+      for (let i = 1; i <= Math.min(doc.numPages, PDFPAG) && !esgotou; i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); const it = tc.items.filter(x => typeof x.str === 'string').slice(0, 100000); tot += it.length; pgs.push(it.map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); if (tot > 400000) break; }
+      return Core.tabelaPdf(pgs, 20000);
+    })();
+    return await Promise.race([ler, lim]);
+  } finally { clearTimeout(tempo); doc.destroy(); }
 }
 async function processar(arq, nome, rows) {
   const hi = Core.acharCabecalho(rows);
