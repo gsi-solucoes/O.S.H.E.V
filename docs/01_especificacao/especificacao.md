@@ -1,8 +1,9 @@
-# Raio X do Relatório — Especificação v1.4
+# Raio X do Relatório — Especificação v1.5
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v1.5 (26/11/2026, tarefa F-55, Especificador): seção 0.6 "Nomes e regras — etapa 5" (R-90 a R-95, fórmula, textos de erro, pedido escrito com conta, decisões D-20 a D-23).
 - v1.4 (26/11/2026, tarefa F-53, Especificador): seção 0.5 "Nomes e estrutura — etapa 4" (R-80 a R-89: planilha de painel, células-âncora, tipos e formatos de célula, capa); seção 4 completada (CA-41 a CA-43 detalhados, CA-45 a CA-50 novos; CA-40 e CA-44 adiados para a etapa 6 com teste `skip`). Na etapa 4 o painel tem uma única aba implícita, `Painel`. Nenhuma regra de negócio nova além das decisões de formato registradas na 0.5.
 - v1.3 (25/11/2026): seção 0.4 "Nomes na tela — etapa 3".
 - v1.2 (25/11/2026, tarefa F-46, coordenador): seção 0.3 "Nomes na tela — etapa 2" (rótulos, formatos de exemplo, regra de "em aberto", texto do "Seu painel"); CA-28 só vale quando existirem pedido escrito (etapa 3) e Editar layout (etapa 6): na etapa 2 fica marcado como adiado. Nenhuma regra de negócio mudou.
@@ -337,6 +338,39 @@ Gráficos: `Por <campo>` (R-54), `<Número> por <categoria>` (R-56), `Evolução
 - CA-48: `vendas.csv` com escolha confirmada; pedir `soma do valor por cliente` e responder `Sim` → na planilha `Painel` a linha `Meus indicadores` vem depois do último bloco escolhido e antes de `Registros`; logo abaixo, o título do bloco igual ao heading da tela, com tabela `Categoria`/`Valor` igual à tela.
 - CA-49: filtro `Região` = `Sul` → a seção `Registros` da planilha `Painel` tem cabeçalho = nomes dos campos do conjunto, uma linha por registro da região Sul (contagem = oráculo) e as 5 primeiras linhas têm o mesmo código das 5 primeiras da tabela da tela.
 - CA-50: depois do CA-41, `window.__abasPainel("vendas")` devolve `[{nome:"Painel", blocos:[...]}]` com `blocos` = os títulos de bloco da planilha `Painel`, na mesma ordem (sem `Meus indicadores` e sem `Registros`, que são âncoras de seção).
+
+---
+
+### 0.6 Nomes e regras — etapa 5 (v1.5, 26/11/2026, F-55)
+
+Mesmas regras da 0.1 (rótulos exatos; testes localizam por rótulo/texto). Contas são **por conjunto** (cada relatório tem as suas).
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-90 | `Contas personalizadas` | título do cartão | Config; vale para o relatório aberto no Painel |
+| R-91 | `Nome da conta`, `Fórmula`, botão `Salvar conta` | campos e botão | `Nome da conta` até 60 caracteres, `Fórmula` até 300. Nome repetido (sem diferenciar maiúsculas/acentos) substitui a conta antiga |
+| R-92 | `Prévia da conta` | título; valor em elemento com `data-testid="conta-previa"` | atualiza ao digitar (ou ao sair do campo), com os dados do relatório aberto. Número formatado como o resto do app (`1.234,56`); sem resultado = texto `sem dados` |
+| R-93 | mensagem de erro, `role="alert"`, junto da fórmula | texto | nunca salva quando há erro. Textos exatos abaixo |
+| R-94 | lista `Suas contas` com `<nome> = <fórmula>` e botão `Remover` por linha | lista | |
+| R-95 | a conta salva aparece em `O que acompanhar` (R-50) com o próprio nome, exemplo calculado e sem campo específico; o bloco é um cartão com o número (clicável, abre todos os registros) | catálogo | entra no `Seu painel` e na planilha `Painel` (etapa 4) como bloco de número, com a fórmula em "Conta:" |
+
+**Fórmula.** Números (`.` decimal), `+ - * /`, `-` unário, parênteses e as funções abaixo, todas sobre os registros do conjunto (após os filtros do painel, como os outros blocos). Nomes de campo e valores comparados sem acento e sem diferenciar maiúsculas; campo com espaço vai entre aspas (`"Data do pedido"`). Filtro opcional: `campo = valor` (valor sem aspas ou entre aspas).
+- `quantidade()` / `quantidade(filtro)`: registros (que passam no filtro).
+- `soma(campo)` / `soma(campo, filtro)`; `media(...)`; `mediana(...)`: sobre os valores numéricos do campo (vazios fora).
+- `dias(data1, data2)`: **média**, em dias (com casas decimais), de `data2 − data1` nos registros que têm as duas datas.
+- `distintos(campo)`: quantidade de valores diferentes e não vazios.
+- Tudo é lido por um interpretador próprio (nunca `eval`, nunca `Function`); qualquer nome fora da lista é erro.
+
+**Textos de erro (exatos, sem diferenciar maiúsculas na sugestão, que sai em minúsculas):**
+- campo inexistente: `campo 'valr' não existe; você quis dizer 'valor'?` (sem sugestão quando nada parece: `campo 'xyz' não existe`)
+- função desconhecida (inclui `alert(1)`): `função 'alert' não existe`; nome solto que não é campo nem função (ex. `constructor`): `não entendi 'constructor' na fórmula`
+- parêntese aberto: `falta fechar o parêntese`; sobrando: `parêntese fechado sem abrir`
+- divisão por zero ou resultado indefinido: não é erro de fórmula; o resultado é `sem dados` (nunca `NaN`, `Infinity` ou exceção)
+- fórmula vazia: `escreva a fórmula`; nome vazio: `escreva o nome da conta`
+
+**Pedido escrito (CA-54).** `<nome da conta> por <campo>` e `<nome da conta>` sozinho: `window.__entender` devolve `medida: "conta"`, `campo: <nome exato da conta>`, `agrupar` como nas outras medidas. A conta é calculada em cada grupo (a fórmula inteira sobre os registros do grupo); resumo `Entendi assim: Ticket médio · por Região`. O nome da conta vale como o de um campo: semelhança ≥ 80% como nas demais palavras. Contas entram em backup/restauração (chave `contas`, `localStorage` `raiox_contas`; somar junta sem repetir nome, até 50 por conjunto).
+
+**Decisões (v1.5):** D-20 `dias` = média (a especificação não dizia qual estatística). D-21 divisão por zero = `sem dados` em vez de erro de fórmula (CA-53 pede "sem dados"). D-22 a sugestão do campo sai em minúsculas como no CA-52. D-23 contas valem por conjunto, não globais.
 
 ---
 
