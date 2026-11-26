@@ -339,3 +339,14 @@ def test_CA28_nao_entendido_nao_entra_no_resumo(page):
     page.get_by_text("não entendi: bom dia").first.wait_for(state="visible")
     page.get_by_role("button", name="Entender este painel", exact=True).click()
     assert texto_seu_painel(page).count("Conta:") == 1
+
+
+# ---------- F-70: depois de "Não" não aparece "null" solto ----------
+def test_f70_depois_de_nao_o_cartao_nao_mostra_null(page):
+    carregar_vendas(page)
+    pedir(page, "quantidade de registros por cliente")
+    responder(page, "Não")
+    caixa = page.locator("#pedBox")
+    assert "null" not in caixa.inner_text()
+    page.get_by_role("button", name="Período", exact=True).click()
+    assert "null" not in caixa.inner_text()

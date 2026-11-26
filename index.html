@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-a+ki5SBNsvvlWecmLpMFxp7GMQmInyMUrTWLyNr40KY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-6kHSGhL1dxOlAJOMNkqFdNxwSeeqfxGUpc27qf63/iE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -706,7 +706,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "202c2bb7e0";
+const VERSAO = "8ffb54c396";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -1814,7 +1814,8 @@ function abrirPedido(frase, c) {
         l.push(lim); salvaMeus(); d.hidden = true; $('#pedTxt').value = ''; render(); toast('Indicador adicionado ao painel.');
       } }),
       el('button', { type: 'button', text: 'Não', onclick: () => { nao = true; erro = ''; pinta(); } })));
-    if (nao) box.append(el('div', { class: 'row' }, ['Medida', 'Campo', 'Agrupar por', 'Filtro', 'Período'].map(n => el('button', { type: 'button', text: n, onclick: () => { corr = n; pinta(); } }))), corr ? editor() : null);
+    if (nao) box.append(el('div', { class: 'row' }, ['Medida', 'Campo', 'Agrupar por', 'Filtro', 'Período'].map(n => el('button', { type: 'button', text: n, onclick: () => { corr = n; pinta(); } }))));
+    if (nao && corr) box.append(editor());
     box.append(el('div', { class: 'row', style: 'margin-top:12px' }, fecha));
   }
   pinta(); d.hidden = false;

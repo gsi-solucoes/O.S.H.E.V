@@ -1105,7 +1105,8 @@ function abrirPedido(frase, c) {
         l.push(lim); salvaMeus(); d.hidden = true; $('#pedTxt').value = ''; render(); toast('Indicador adicionado ao painel.');
       } }),
       el('button', { type: 'button', text: 'Não', onclick: () => { nao = true; erro = ''; pinta(); } })));
-    if (nao) box.append(el('div', { class: 'row' }, ['Medida', 'Campo', 'Agrupar por', 'Filtro', 'Período'].map(n => el('button', { type: 'button', text: n, onclick: () => { corr = n; pinta(); } }))), corr ? editor() : null);
+    if (nao) box.append(el('div', { class: 'row' }, ['Medida', 'Campo', 'Agrupar por', 'Filtro', 'Período'].map(n => el('button', { type: 'button', text: n, onclick: () => { corr = n; pinta(); } }))));
+    if (nao && corr) box.append(editor());
     box.append(el('div', { class: 'row', style: 'margin-top:12px' }, fecha));
   }
   pinta(); d.hidden = false;

@@ -88,7 +88,6 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 
 **Entende:** medida (quantidade, soma, média, mediana, mínimo, máximo, percentual), campo, agrupar por (campo ou mês), filtros por valor e período (mês pelo nome, ano, "este mês", "mês passado", "este ano", "de dd/mm a dd/mm", "últimos N dias").
 **Regras e limites:** nunca chuta: o que não entendeu aparece como "não entendi: <trecho>". Aceita erro de digitação, sem acento e no plural, com semelhança de 80% ou mais ⚖️ D-11. "Este mês", "mês passado" e "últimos N dias" contam a partir da data mais recente dos registros, não do relógio ⚖️ D-10; "outubro" sem ano é o outubro mais recente dos dados. Até 50 indicadores pedidos por relatório; até 200 sinônimos.
-**Achado na conferência (26/11):** depois de tocar em **Não**, aparece a palavra "null" solta ao lado do botão Período. Defeito de tela, sem efeito na conta; correção na F-70.
 
 ### P-g. Gerar o Excel
 **Para que serve:** levar o painel da tela para uma planilha, para guardar, imprimir ou mandar.
