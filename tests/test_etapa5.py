@@ -22,7 +22,7 @@ def semacento(s):
 def abrir_contas(page, arquivo="vendas.csv"):
     carregar(page, arquivo)
     abrir_config(page)
-    page.get_by_text("Contas personalizadas", exact=True).first.wait_for(state="visible")
+    page.get_by_text("Meus cálculos", exact=True).first.wait_for(state="visible")
 
 
 def digitar(page, nome, formula):

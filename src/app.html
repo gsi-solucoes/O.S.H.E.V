@@ -45,6 +45,9 @@ th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:u
 .jan{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 40px #0006;width:min(720px,96vw);max-height:80vh;display:flex;flex-direction:column}
 .jan header{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--band);color:#fff;border-radius:12px 12px 0 0;cursor:move;touch-action:none}
 .jan header b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jan header button{min-height:32px;padding:0 10px;background:#ffffff22;color:#fff;border-color:#ffffff44}
+.secao{margin:22px 0 8px;padding:10px 14px;border-left:6px solid var(--accent);background:var(--panel);border-radius:8px}.secao h2{margin:0;font-size:20px}.secao p{margin:4px 0 0}
+.card{position:relative}dialog>h3+.info,dialog form>h3+.info{position:absolute;top:14px;right:14px}.info{display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;width:26px;height:26px;padding:0;margin-left:6px;border-radius:50%;font-size:15px;line-height:1;vertical-align:middle;background:var(--panel);color:var(--accent);border:1px solid var(--accent)}.card>.info,.card>h3+.info{position:absolute;top:10px;right:10px}
+#ajudaBox{position:fixed;z-index:60;max-width:min(340px,92vw);background:var(--panel);color:inherit;border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 8px 30px #0005;font-size:14px}#ajudaBox p{margin:4px 0}
 .jan.max{left:0!important;top:0!important;width:100vw;height:100vh;max-height:100vh;border-radius:0}.jan.max header{border-radius:0}.chip.zero{opacity:.45}.h3abre,h3.abre{cursor:pointer}h3.abre::after{content:' ›' / '';color:var(--accent)}
 .jan .corpo{overflow:auto;padding:10px}.jan.min .corpo,.jan.min .barra{display:none}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.chip{min-height:30px;padding:0 10px;font-size:13px;border-radius:99px}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -135,46 +138,50 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 </section>
 
 <section id="config" class="band" hidden>
-  <div class="card"><h3>Empresa / cliente</h3>
+  <div class="secao"><h2><span aria-hidden="true">🏢</span> Aparência</h2><p class="muted">Como o seu nome e o seu logo aparecem no topo, na impressão e no Excel.</p></div>
+  <div class="card"><h3>Empresa e logo</h3>
     <p class="muted">Aparece no topo, na impressão e na capa do Excel. Fica só neste aparelho.</p>
     <div class="grid2">
       <label class="f">Cliente<input type="text" id="cfgCliente"></label>
       <label class="f">Área<input type="text" id="cfgArea"></label>
     </div>
-    <div class="row" style="margin-top:10px"><label class="btn pick">Escolher logo<input type="file" id="cfgLogo" accept="image/*"></label><span id="cfgLogoPrev"></span><button id="cfgLogoX">Apagar logo</button></div>
+    <div class="row" style="margin-top:10px"><label class="btn pick">Escolher logo<input type="file" id="cfgLogo" accept="image/*"></label><span id="cfgLogoPrev" hidden></span><button id="cfgLogoX">Apagar logo</button></div>
   </div>
+  <div class="secao"><h2><span aria-hidden="true">🎯</span> Regras dos números</h2><p class="muted">O que conta como “bom” nos números de tempo.</p></div>
   <div class="card"><h3>Metas</h3>
     <div class="grid2">
       <label class="f">Meta dos indicadores em % (padrão 90; deixe vazio para não ter meta)<input type="number" id="cfgMeta" min="0" max="100"></label>
       <label class="f">Prazo para “dentro do prazo”, em horas (padrão 24)<input type="number" id="cfgPrazo" min="1"></label>
     </div>
   </div>
-  <div class="card"><h3>Sinônimos</h3>
-    <p class="muted">Palavras que você usa no “Peça um indicador”. Exemplo: apelido <code>fat</code> significa <code>Valor</code>. Vale para o relatório aberto no Painel.</p>
+  <div class="secao"><h2><span aria-hidden="true">✍️</span> Pedido escrito e cálculos</h2><p class="muted">Apelidos para pedir números escrevendo, cálculos seus e palavras iguais.</p></div>
+  <div class="card"><h3>Apelidos para o pedido escrito</h3>
+    <p class="muted">Palavras que você usa no “Peça um indicador”. Exemplo: o apelido <code>fat</code> significa <code>Valor</code>. Vale para o relatório aberto no Painel.</p>
     <div class="row"><label class="f">Apelido<input type="text" id="sinAp" maxlength="100"></label><label class="f">Significa<select id="sinSig"></select></label><button type="button" id="sinAdd">Adicionar sinônimo</button></div>
     <div id="listaSin" style="margin-top:10px"></div>
   </div>
-  <div class="card"><h3>Contas personalizadas</h3>
+  <div class="card"><h3>Meus cálculos</h3>
     <p class="muted">Crie uma conta com os campos do relatório aberto. Use <code>+ - * /</code>, parênteses e as funções <code>quantidade()</code>, <code>soma(campo)</code>, <code>media(campo)</code>, <code>mediana(campo)</code>, <code>dias(data1, data2)</code> e <code>distintos(campo)</code>. Filtro opcional: <code>quantidade(situação = cancelado)</code>.</p>
     <div class="grid2"><label class="f">Nome da conta<input type="text" id="contaNome" maxlength="60" autocomplete="off"></label><label class="f">Fórmula<input type="text" id="contaFormula" maxlength="300" autocomplete="off" spellcheck="false"></label></div>
     <p class="muted" id="contaErro" role="alert"></p>
     <h4>Prévia da conta</h4><p><b id="contaPrevia" data-testid="conta-previa">—</b></p>
     <div class="row"><button type="button" id="contaSalvar" class="prim">Salvar conta</button></div>
-    <h4>Suas contas</h4><div id="listaContas"></div>
+    <h4>Meus cálculos salvos</h4><div id="listaContas"></div>
   </div>
-  <div class="card"><h3>Palavras parecidas</h3>
-    <p class="muted">Uma regra por linha, no formato <code>palavra = outra palavra</code>. Usados na semelhança de texto. Começa vazio.</p>
+  <div class="card"><h3>Palavras que significam a mesma coisa (para achar repetidos)</h3>
+    <p class="muted">Ajuda o programa a achar registros repetidos que foram escritos de jeitos diferentes. Escreva uma regra por linha, assim: <code>av = avenida</code>. Começa vazio.</p>
     <textarea id="cfgSin" spellcheck="false"></textarea>
   </div>
+  <div class="secao"><h2><span aria-hidden="true">💾</span> Dados deste aparelho</h2><p class="muted">O que o programa guardou aqui, backup e limpeza.</p></div>
   <div class="card"><h3>Formatos lembrados</h3>
     <p class="muted">Quando você diz “o que é cada coluna” uma vez, o formato fica lembrado. Esqueça para perguntar de novo.</p>
     <div id="listaFmt"></div>
   </div>
-  <div class="card"><h3>Dados deste aparelho</h3>
+  <div class="card"><h3>Backup e dados deste aparelho</h3>
     <div class="row"><button id="bkBaixar">Baixar backup</button><label class="btn pick">Restaurar backup<input type="file" id="bkArq" accept=".json,application/json"></label><button id="apagarTudo">Apagar todos os dados</button></div>
     <p class="muted" id="infoDados"></p>
   </div>
-  <div class="card"><h3>Versão Excel para o PC</h3>
+  <div class="card" id="cardExcelPC" hidden><h3>Versão Excel para o PC</h3>
     <p class="muted">A mesma estrutura do app, como macro do Excel 2016 ou mais novo.</p>
     <a class="btn prim" href="excel/RaioX_Relatorio.bas" download="RaioX_Relatorio.bas" data-baixar-bas>Baixar versão Excel para o PC</a>
     <div class="passosBas"></div>
@@ -188,6 +195,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 </footer>
 
 <div id="dock"></div>
+<div id="ajudaBox" role="note" hidden></div>
 <div id="toast" role="status"></div>
 <dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>

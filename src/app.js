@@ -141,7 +141,7 @@ function perguntarColunas(arquivo, hdr, corpo, nome) {
       tp.value = pal[j];
       return { nome, tp, tr: el('tr', null, el('td', { text: Core.t(h) }), el('td', { text: ex.slice(0, 40) }), el('td', null, nome), el('td', null, tp)) };
     });
-    f.append(el('h3', { text: 'Esta coluna é o quê?' }), el('p', { class: 'muted', text: 'Arquivo: ' + arquivo + '. Confira o que o programa entendeu de cada coluna. À esquerda, a coluna como veio no arquivo e um exemplo. À direita, o nome e o tipo que ele sugeriu: troque o que estiver errado. Marque uma coluna como Código (o que identifica cada registro) e toque em Confirmar. Você só faz isso uma vez por formato.' }),
+    f.append(el('h3', { text: 'Esta coluna é o quê?' }), botaoInfo('Esta coluna é o quê?', { oque: 'Antes de guardar, o programa precisa saber o que cada coluna do seu arquivo significa.', como: '1. Olhe cada linha: à esquerda está a coluna como veio no arquivo, com um exemplo. 2. Se o nome ou o tipo sugerido estiver errado, troque. 3. Marque uma coluna como Código (o número que identifica cada linha, como o número do pedido). 4. Toque em Confirmar.', ex: 'Coluna “Região” com exemplo “Sul”: tipo Categoria (um valor que se repete e serve para agrupar).' }), el('p', { class: 'muted', text: 'Arquivo: ' + arquivo + '. Confira o que o programa entendeu de cada coluna. À esquerda, a coluna como veio no arquivo e um exemplo. À direita, o nome e o tipo que ele sugeriu: troque o que estiver errado. Marque uma coluna como Código (o que identifica cada registro) e toque em Confirmar. Você só faz isso uma vez por formato.' }),
       el('label', { class: 'f' }, 'Nome do relatório', nomeRel),
       el('div', { class: 'tw', style: 'max-height:50vh;overflow:auto;margin:10px 0' }, el('table', null, el('thead', null, el('tr', null, ['Coluna', 'Exemplo', 'Nome do campo', 'Tipo de dado'].map(x => el('th', { text: x })))), el('tbody', null, linhas.map(l => l.tr)))), erro,
       el('p', { class: 'muted', id: 'legTipos', text: 'Tipo de dado: Código = identifica cada registro (só um); Data = dia, com ou sem hora; Categoria = valores que se repetem, para agrupar (ex.: região, vendedor); Situação = andamento (aberto, entregue, cancelado); Número = para somar ou fazer média; Texto = texto livre; Ignorar = não guarda.' }),
@@ -616,11 +616,34 @@ function top10(gr, valor) {
   const t = gr.slice(0, 10).map(([k, l]) => [k, l]); const resto = gr.slice(10).flatMap(x => x[1]);
   if (resto.length) t.push(['Outros', resto]); return t.map(([k, l]) => [k, valor ? valor(l) : l.length, l]);
 }
+/* ⓘ: caixinha "O que é / Como faz / Exemplo" (linguagem simples, texto do POP). Toque abre/fecha; no computador, passar o mouse também mostra. */
+const ajudaBox = () => $('#ajudaBox');
+function fechaAjuda() { const b = ajudaBox(); if (b) { b.hidden = true; b._dono = null; b._fixo = false; } }
+function abreAjuda(btn, d) {
+  const b = ajudaBox(); b.textContent = ''; b.append(el('p', null, el('b', { text: 'O que é: ' }), d.oque));
+  if (d.como) b.append(el('p', null, el('b', { text: 'Como faz: ' }), d.como)); if (d.ex) b.append(el('p', null, el('b', { text: 'Exemplo: ' }), d.ex));
+  b.hidden = false; b._dono = btn; const r = btn.getBoundingClientRect(); b.style.left = Math.max(6, Math.min(window.innerWidth - b.offsetWidth - 6, r.left)) + 'px'; b.style.top = Math.min(window.innerHeight - b.offsetHeight - 6, r.bottom + 6) + 'px';
+}
+function botaoInfo(nome, d) {
+  const o = typeof d === 'function' ? d : () => d;
+  const bt = el('button', { type: 'button', class: 'info', text: 'ⓘ', title: 'Explicação', 'data-ajuda': nome, onclick: e => { e.preventDefault(); e.stopPropagation(); const b = ajudaBox(); if (!b.hidden && b._dono === bt && b._fixo) fechaAjuda(); else { abreAjuda(bt, o()); b._fixo = true; } } });
+  bt.addEventListener('mouseenter', () => { if (window.matchMedia && matchMedia('(hover:hover)').matches) { abreAjuda(bt, o()); ajudaBox()._fixo = false; } });
+  bt.addEventListener('mouseleave', () => { if (window.matchMedia && matchMedia('(hover:hover)').matches && !ajudaBox()._fixo) fechaAjuda(); });
+  return bt;
+}
+document.addEventListener('click', e => { if (!e.target.closest('.info') && !e.target.closest('#ajudaBox')) fechaAjuda(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') fechaAjuda(); });
+const cap = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+function infoBloco(card, b) {
+  if (!card || card.querySelector('.info') || !b || !b.oque) return card;
+  let ex = null; try { ex = b.ex && F.conjunto ? b.ex(doConj(F.conjunto)) : null; } catch (e) { ex = null; }
+  card.append(botaoInfo(b.nome, { oque: cap(b.oque) + '.', como: 'Toque no título do bloco para ver os registros que entram nele; toque num número ou barra para ver só aquele pedaço.', ex: ex ? 'com os seus dados, hoje: ' + ex : '' })); return card;
+}
 const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'button', onclick: abrir }, pre, el('b', { text: val }), suf);
 const cartao = (b, ...kids) => {
   const h = el('h3', { text: b.nome });
   if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => abrirJanela(b.nome, b.regs, F.conjunto); h.classList.add('abre'); h.tabIndex = 0; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
-  return el('div', { class: 'card bloco' }, h, ...kids);
+  const card = el('div', { class: 'card bloco' }, h, ...kids); return b.oque ? infoBloco(card, b) : card;
 };
 
 // catálogo de indicadores possíveis do conjunto: só entram os que dá para calcular (ex() devolve null quando não dá)
@@ -670,6 +693,7 @@ function catalogo(c, soIds) {
     out.push({ id: 'conta' + SEP + x.nome, grupo: 'num', nome: x.nome, oque: 'a conta personalizada ' + x.nome, conta: x.formula, campos: cf.length ? cf.join(', ') : 'nenhum campo específico, conta os registros',
       ex: L => fmtConta(valorConta(c, x.nome, L)),
       desenha: L => cartao({ regs: L, nome: x.nome }, kpiBtn('', fmtConta(valorConta(c, x.nome, L)), '', () => abrir(x.nome, L))) }); });
+  out.forEach(b => { const d = b.desenha; b.desenha = (L, cc) => infoBloco(d(L, cc), b); });
   return (soIds ? out.filter(x => soIds.indexOf(x.id) >= 0) : out).filter(x => x.ex(todos) != null);
 }
 // blocos escolhidos do conjunto, na ordem da especificação: números, gráficos (cada grupo na ordem em que foram marcados); [] = painel da etapa 1
@@ -1053,7 +1077,8 @@ function camposPed(ped, c) {
   return l.length ? l.join(', ') : 'nenhum campo específico, conta os registros';
 }
 // bloco "Meu indicador": mesma forma dos blocos do catálogo, para entrar no Seu painel e na planilha
-function blocoMeu(c, ped, idx) {
+function blocoMeu(c, ped, idx) { const m = blocoMeu0(c, ped, idx), d = m.desenha; m.desenha = (L, cc) => infoBloco(d(L, cc), m); return m; }
+function blocoMeu0(c, ped, idx) {
   const nome = resumoPed(ped, c);
   return { nome, ped, oque: 'o indicador pedido por escrito (' + nome + ')', conta: contaPed(ped, c), campos: camposPed(ped, c), filtrosProprios: [filtrosPedTxt(ped, c), perTxt(ped.periodo)].filter(Boolean).join('; '), aplica: L => listaPed(ped, L, c).base,
     desenha: L => cartao({ regs: listaPed(ped, L, c).base, nome }, corpoPed(ped, L, c, false, nome), el('button', { type: 'button', text: 'Remover', onclick: () => { meus[c].splice(idx, 1); salvaMeus(); render(); } })) };
@@ -1370,7 +1395,7 @@ const PASSOS = ['Baixe o arquivo RaioX_Relatorio.bas (botão “Baixar versão E
 function topo() {
   $('#clienteTopo').textContent = ORG() ? '· ' + ORG() : '';
   const lt = $('#logoTopo'); lt.textContent = ''; if (cfg.logo) lt.append(el('img', { src: cfg.logo, alt: 'Logo' }));
-  const lp = $('#cfgLogoPrev'); lp.textContent = ''; if (cfg.logo) lp.append(el('img', { src: cfg.logo, alt: 'Logo', style: 'height:34px' }));
+  const lp = $('#cfgLogoPrev'); lp.textContent = ''; lp.hidden = !cfg.logo; if (cfg.logo) lp.append(el('img', { src: cfg.logo, alt: 'Logo', style: 'height:34px' }));
   $('#cfgLogoX').hidden = !cfg.logo;
 }
 function renderConfig() {
@@ -1411,6 +1436,42 @@ function iniciaConfig() {
 function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta == null ? '' : cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
 
 /* ---------- partida ---------- */
+const AJUDAS = [
+  ['label.pick:has(#arquivo)', 'Carregar relatório', 'Traz para o programa o arquivo que você tirou do seu sistema (planilha, CSV, JSON, XML, zip, PDF ou foto).', '1. Toque em Carregar relatório. 2. Escolha o arquivo. 3. Na primeira vez de cada tipo de arquivo, diga o que é cada coluna.', 'Um arquivo vendas.xlsx com uma linha por venda.'],
+  ['#btnAcomp', 'O que acompanhar', 'Escolha quais números e gráficos aparecem no seu painel.', '1. Toque em O que acompanhar. 2. Marque os que quer. 3. Toque em Confirmar.', 'Marcar “Total de registros” e “Por Região”.'],
+  ['#btnLay', 'Editar layout', 'Muda a ordem e o tamanho dos blocos do painel e cria abas.', '1. Toque em Editar layout. 2. Use as setas ou arraste os blocos. 3. Toque em Concluir edição.', 'Pôr o gráfico por região em primeiro lugar.'],
+  ['#btnEntender', 'Entender este painel', 'Mostra, em palavras simples, de onde vem cada número do seu painel.', 'Toque no botão e leia a lista.', 'Total de registros: quantas linhas o arquivo tem.'],
+  ['#fPed button.prim', 'Peça um indicador', 'Você escreve o número que quer e o programa monta o bloco para você.', '1. Escreva o pedido. 2. Toque em Pedir. 3. Veja a prévia e responda “É isso?”: Sim guarda no painel, Não deixa você corrigir.', 'soma de Valor por Cliente'],
+  ['#filtros summary', 'Filtros', 'Mostra só um pedaço dos registros (um mês, uma região, uma palavra). Todos os números e o Excel seguem o filtro.', 'Toque em Filtros, escolha o que quer ver; para voltar a tudo, escolha “Tudo” e “(todos)”.', 'Período: Mês, outubro de 2026.'],
+  ['#fPer', 'Período', 'Escolhe o intervalo de datas que vale para o painel.', 'Escolha Tudo, um Mês ou De–até.', 'De 01/10/2026 até 31/10/2026.'],
+  ['#fCD', 'Campo de data', 'Quando há mais de uma data no relatório, diz qual delas manda no Período.', 'Escolha na lista.', 'Data da venda ou data da entrega.'],
+  ['#fCat', 'Campo categoria', 'Escolhe a coluna que agrupa os registros em grupos que se repetem.', 'Escolha a coluna e depois o Valor.', 'Região.'],
+  ['#fVal', 'Valor', 'Escolhe qual grupo da categoria você quer ver.', 'Escolha na lista (primeiro a categoria).', 'Região = Sul.'],
+  ['#fQ', 'Buscar texto', 'Procura uma palavra em qualquer coluna e mostra só os registros que a têm.', 'Escreva a palavra.', 'Zeta.'],
+  ['#kpis', 'Total, Mais antigo e Mais novo', 'Resumo do relatório: quantos registros há e as datas do primeiro e do último.', 'Toque num deles para ver os registros: todos, os do dia mais antigo ou os do dia mais novo.', 'Mais antigo: 03/01/2026.'],
+  ['#maisReg', 'Mostrar mais', 'Mostra mais 100 registros na lista.', 'Toque no botão.', ''],
+  ['#gerarXlsx', 'Gerar Excel', 'Cria um arquivo de Excel com o que está na tela, pronto para imprimir ou mandar.', '1. Escolha o formato. 2. Toque em Gerar Excel. 3. Abra o arquivo baixado.', 'RaioX_vendas_26-11-2026.xlsx'],
+  ['#cfgLogo', 'Escolher logo', 'Põe a imagem da sua empresa no topo, na impressão e no Excel.', 'Toque em Escolher logo e ache a imagem no aparelho.', ''],
+  ['#bkBaixar', 'Baixar backup', 'Salva num arquivo tudo o que o programa guardou neste aparelho.', 'Toque em Baixar backup e guarde o arquivo num lugar seguro.', 'historico_RaioX_26-11-2026.json'],
+  ['#apagarTudo', 'Apagar todos os dados', 'Limpa os relatórios guardados neste aparelho. Não tem volta sem um backup.', 'Faça um backup antes; depois toque e confirme.', ''],
+  ['#cfTit', 'Conferir leitura', 'Quando o arquivo é um PDF ou uma foto, o programa lê o texto e você confere se ele acertou.', '1. Olhe a tabela; as células marcadas podem estar erradas. 2. Corrija o que precisar. 3. Toque em Confirmar.', 'Trocar “1O0,50” por “100,50”.'],
+  ['#painelTit', 'Seu painel', 'Explica, bloco por bloco, o que cada número do seu painel conta.', 'Leia a lista e toque em Fechar.', ''],
+  ['#acompTit', 'O que você quer acompanhar?', 'Lista tudo o que o programa sabe mostrar com os seus dados, com um exemplo de cada.', 'Marque o que quer e toque em Confirmar.', '']
+];
+const AJUDAS_CFG = {
+  'Empresa e logo': ['Nome do cliente, área e logo que aparecem no topo, na impressão e no Excel. Ficam só neste aparelho.', 'Escreva nos campos e escolha a imagem.', 'Cliente: Padaria Sol; Área: Vendas.'],
+  'Metas': ['A meta é a porcentagem que você quer atingir; o prazo diz quantas horas valem como “no prazo”.', 'Digite o número. Deixe a meta vazia se não quiser meta.', 'Meta 90% e prazo de 24 horas: o painel diz se 90% dos chamados foram resolvidos em até 24 horas.'],
+  'Apelidos para o pedido escrito': ['Palavras suas que o programa passa a entender no “Peça um indicador”.', '1. Escreva o apelido. 2. Escolha o que ele significa. 3. Toque em Adicionar sinônimo.', 'Apelido “fat” significa Valor: “fat por cliente” vira soma de Valor por cliente.'],
+  'Meus cálculos': ['Contas que você inventa com as colunas do relatório, como uma média ou a diferença entre duas datas.', '1. Dê um nome. 2. Escreva a conta, por exemplo soma(Valor) / quantidade(). 3. Veja a prévia e toque em Salvar conta.', 'Ticket médio = soma(Valor) / quantidade().'],
+  'Palavras que significam a mesma coisa (para achar repetidos)': ['Ajuda o programa a achar registros repetidos que foram escritos de jeitos diferentes.', 'Escreva uma regra por linha, assim: av = avenida.', 'Com “av = avenida”, “Av. Brasil” e “Avenida Brasil” contam como parecidos.'],
+  'Formatos lembrados': ['O programa lembra o que é cada coluna de um tipo de arquivo, para não perguntar de novo.', 'Para perguntar outra vez, toque em Esquecer ao lado do formato.', ''],
+  'Backup e dados deste aparelho': ['Tudo fica só neste aparelho. O backup é uma cópia em arquivo, para guardar ou levar para outro aparelho.', 'Baixar backup salva a cópia; Restaurar backup traz de volta; Apagar todos os dados limpa tudo.', 'Faça um backup antes de trocar de celular.']
+};
+function iniciaAjudas() {
+  AJUDAS.forEach(([sel, nome, oque, como, ex]) => { const e0 = document.querySelector(sel), e = e0 && (e0.closest('label') || e0); if (!e || (e.nextElementSibling && e.nextElementSibling.classList.contains('info'))) return; e.after(botaoInfo(nome, { oque, como, ex })); });
+  document.querySelectorAll('#config .card > h3').forEach(h => { const d = AJUDAS_CFG[h.textContent.trim()]; if (d && !(h.nextElementSibling && h.nextElementSibling.classList.contains('info'))) h.after(botaoInfo(h.textContent.trim(), { oque: d[0], como: d[1], ex: d[2] })); });
+}
+iniciaAjudas();
 function abas(qual) { $('#painel').hidden = qual !== 'painel'; $('#config').hidden = qual !== 'config'; $('#tPainel').classList.toggle('on', qual === 'painel'); $('#tConfig').classList.toggle('on', qual === 'config'); window.scrollTo(0, 0); }
 $('#tPainel').onclick = () => abas('painel'); $('#tConfig').onclick = () => abas('config');
 $('#arquivo').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) carregar(fs); };

@@ -29,12 +29,13 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 
 | Você faz | O programa faz |
 |---|---|
-| Abre **Config → Empresa / cliente** e escreve **Cliente** e **Área** | Salva sozinho a cada letra, sem botão Salvar ⚖️ D-02; o topo passa a mostrar "Raio X do Relatório · Área · Cliente" |
+| Abre **Config** (em quatro seções com título e linha: **Aparência**, **Regras dos números**, **Pedido escrito e cálculos**, **Dados deste aparelho** ⚖️ nomes provisórios) → **Empresa e logo** e escreve **Cliente** e **Área** | Salva sozinho a cada letra, sem botão Salvar ⚖️ D-02; o topo passa a mostrar "Raio X do Relatório · Área · Cliente" |
 | Toca em **Escolher logo** e escolhe uma imagem | Reduz a imagem e mostra no topo, na impressão e na capa do Excel ⚖️ D-03 |
 | Toca em **Apagar logo** | Tira o logo do topo e da capa |
 | Em **Metas**, muda a meta (padrão 90%) e o prazo "dentro do prazo" (padrão 24 h) | O bloco **Tempo entre duas datas** (só ele) mostra "Dentro de 24 h: X%" e, embaixo, "Acima da meta de 90%" ou "faltam X pontos para a meta de 90%"; o prazo novo muda o "dentro de". Sem esse bloco, a meta não aparece. Meta vazia: some a frase da meta |
 
 **Regras e limites:** logo até 2 MB (vira imagem de até 240 px). Config fica só neste aparelho e entra no backup.
+**Ajuda ⓘ (F-78):** ao lado de cada caixa da Config, dos botões do painel, dos filtros, da faixa Total/Mais antigo/Mais novo, das telas "Esta coluna é o quê?", "Conferir leitura" e "Seu painel" e de cada bloco do painel há um **ⓘ**. Toque (celular) ou passe o mouse (computador): abre uma caixinha com **O que é**, **Como faz** e **Exemplo**; toque fora ou **Esc** fecha. Nomes novos: "Meus cálculos" (antes Contas personalizadas), "Apelidos para o pedido escrito" (antes Sinônimos), "Palavras que significam a mesma coisa (para achar repetidos)" (antes Palavras parecidas). O cartão "Versão Excel para o PC" ficou escondido até a versão 2 (a macro). O traço solto ao lado de "Escolher logo" sumiu.
 
 ### P-c. Carregar um relatório e dizer o que é cada coluna
 **Para que serve:** trazer os registros de um arquivo extraído de qualquer sistema (aqui, CSV; outros formatos em P-v, P-u e P-t).

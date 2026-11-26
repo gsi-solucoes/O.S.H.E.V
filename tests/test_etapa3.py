@@ -230,7 +230,7 @@ def test_CA36_nao_troca_agrupar_para_regiao_e_sim(page):
 def test_CA37_sinonimo_fat_vira_valor_pela_config(page):
     carregar_vendas(page)
     page.get_by_text("Config", exact=True).first.click()
-    page.get_by_text("Sinônimos", exact=True).first.wait_for(state="visible")
+    page.get_by_text("Apelidos para o pedido escrito", exact=True).first.wait_for(state="visible")
     page.get_by_label("Apelido", exact=True).fill("fat")
     page.get_by_role("combobox", name="Significa").select_option(label="Valor")
     page.get_by_role("button", name="Adicionar sinônimo", exact=True).click()

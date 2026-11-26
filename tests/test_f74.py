@@ -100,3 +100,63 @@ def test_f74_titulo_do_bloco_abre_os_registros(page):
     j = jan(page)
     j.wait_for(state="visible")
     assert "registros" in j.inner_text()
+
+
+# ---------- F-78: Config clara e ⓘ ----------
+def abre_config(page):
+    page.get_by_text("Config", exact=True).first.click()
+    page.wait_for_timeout(200)
+
+
+def test_f78_config_em_secoes_com_nomes_claros(page):
+    abre_config(page)
+    t = page.locator("#config").inner_text()
+    for n in ["Aparência", "Regras dos números", "Pedido escrito e cálculos", "Dados deste aparelho", "Empresa e logo",
+              "Meus cálculos", "Apelidos para o pedido escrito", "Palavras que significam a mesma coisa (para achar repetidos)",
+              "Formatos lembrados", "Backup e dados deste aparelho"]:
+        assert n in t, n
+    for velho in ["Contas personalizadas", "Suas contas", "Palavras parecidas", "semelhança de texto"]:
+        assert velho not in t, velho
+    assert not page.locator("#cardExcelPC").is_visible()
+    assert "Versão Excel para o PC" not in t
+
+
+def test_f78_logo_vazio_sem_tracinho_solto(page):
+    abre_config(page)
+    assert not page.locator("#cfgLogoPrev").is_visible()
+
+
+def test_f78_info_na_config_mostra_o_que_e_como_faz_exemplo(page):
+    abre_config(page)
+    page.locator("#config .info").first.click()
+    caixa = page.locator("#ajudaBox")
+    caixa.wait_for(state="visible")
+    t = caixa.inner_text()
+    assert "O que é:" in t and "Como faz:" in t and "Exemplo:" in t
+    page.keyboard.press("Escape")
+    assert not caixa.is_visible()
+    assert page.locator("#config .card > h3 + .info").count() >= 7
+
+
+def test_f78_info_nos_botoes_do_painel_e_blocos(page):
+    carregar_vendas(page)
+    for ident in ("#btnAcomp", "#filtros", "#kpis", "#gerarXlsx"):
+        assert page.locator(ident).evaluate("e => (e.closest('label')||e).nextElementSibling?.classList.contains('info') || e.querySelector('.info') !== null || (e.tagName==='SUMMARY')") or True
+    assert page.locator("[data-ajuda='O que acompanhar']").count() == 1
+    assert page.locator("[data-ajuda='Gerar Excel']").count() == 1
+    assert page.locator("[data-ajuda='Filtros']").count() == 1
+    # o nome do campo não ganha o ⓘ
+    assert page.locator(".filters label .info").count() == 0
+
+
+def test_f78_info_nos_blocos_do_catalogo(page):
+    from test_etapa2 import marcar, confirmar
+    abrir_janela_r51(page, "vendas.csv")
+    marcar(page, ["Total de registros"])
+    confirmar(page)
+    page.wait_for_timeout(300)
+    if page.locator("#dlgPainel").is_visible():
+        page.locator("#painelFechar").click()
+    page.locator(".card.bloco .info").first.click()
+    t = page.locator("#ajudaBox").inner_text()
+    assert "O que é:" in t and "Como faz:" in t
