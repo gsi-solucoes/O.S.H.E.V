@@ -17,7 +17,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 
 | Você faz | O programa faz |
 |---|---|
-| Abre o link https://gsi-solucoes.github.io/raio-x-do-relatorio/ | Mostra "Raio X do Relatório", o botão **Carregar relatório** e as abas **Painel** e **Config** |
+| Abre o link https://gsi-solucoes.github.io/raio-x-do-relatorio/ | Mostra "Raio X do Relatório", o botão **Carregar dados** e as abas **Painel** e **Config** |
 | Escolhe "Adicionar à tela inicial" (celular) ou "Instalar" (computador) no navegador | Vira um ícone, como um app |
 | Abre de novo sem internet | Funciona igual (tudo foi guardado na 1ª abertura); só a leitura de foto precisa de internet uma vez (P-t) |
 | Abre com internet depois de uma atualização | Baixa a versão nova por trás; na próxima abertura aparece "Versão nova instalada" |
@@ -38,11 +38,12 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 **Ajuda ⓘ (F-78):** ao lado de cada caixa da Config, dos botões do painel, dos filtros, da faixa Total/Mais antigo/Mais novo, das telas "Esta coluna é o quê?", "Conferir leitura" e "Seu painel" e de cada bloco do painel há um **ⓘ**. Toque (celular) ou passe o mouse (computador): abre uma caixinha com **O que é**, **Como faz** e **Exemplo**; toque fora ou **Esc** fecha. Nomes novos: "Meus cálculos" (antes Contas personalizadas), "Apelidos para o pedido escrito" (antes Sinônimos), "Palavras que significam a mesma coisa (para achar repetidos)" (antes Palavras parecidas). O cartão "Versão Excel para o PC" ficou escondido até a versão 2 (a macro). O traço solto ao lado de "Escolher logo" sumiu.
 
 ### P-c. Carregar um relatório e dizer o que é cada coluna
+*(F-79: o botão agora se chama **Carregar dados**; o texto "Nenhum arquivo escolhido" do navegador não aparece mais; o campo Número é mostrado sempre com 2 casas e milhar, ex.: 1.841,60; o card **Gerar Excel** fica antes da lista Registros; o link "Baixar versão Excel para o PC" do rodapé ficou escondido até a versão 2; sem logo não sobra espaço no topo.)*
 **Para que serve:** trazer os registros de um arquivo extraído de qualquer sistema (aqui, CSV; outros formatos em P-v, P-u e P-t).
 
 | Você faz | O programa faz |
 |---|---|
-| Toca em **Carregar relatório** e escolhe um ou vários arquivos | Acha a linha do cabeçalho sozinho e lê cada arquivo no aparelho |
+| Toca em **Carregar dados** e escolhe um ou vários arquivos | Acha a linha do cabeçalho sozinho e lê cada arquivo no aparelho |
 | (formato que ele nunca viu) | Abre **Esta coluna é o quê?**: para cada coluna mostra um exemplo, o nome do campo (dá para trocar) e o **Tipo de dado** já sugerido: Ignorar, Código, Data, Categoria, Situação, Texto, Número ⚖️ D-16. Mostra também o **Nome do relatório** (padrão: o nome do arquivo). O texto do topo explica o que conferir, e embaixo da tabela uma legenda diz o que é cada tipo (Código, Data, Categoria, Situação, Número, Texto, Ignorar) |
 | Escolhe **uma** coluna como **Código** (o que identifica cada registro) e toca em **Confirmar** | Guarda os registros e lembra o formato: da próxima vez, o mesmo conjunto de colunas não pergunta de novo. Sem Código, ou com dois: "Escolha exatamente uma coluna como Código." |
 | Carrega o mesmo arquivo outra vez (ou uma versão nova) | Não duplica: registro com o mesmo código é atualizado campo a campo; valor vazio no arquivo novo não apaga o que já havia ⚖️ D-06. No topo: "vendas: 500 lidos, 0 novos" |
@@ -156,6 +157,8 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 ### P-w. Editar o layout do painel
 **Para que serve:** organizar os blocos do painel do seu jeito (ordem, abas, tamanho, forma) sem mexer nos dados. Vale por relatório, entra no backup e no Excel.
 
+**Como é a edição (F-79):** ao tocar em **Editar layout** aparece no topo uma faixa que explica ("Arraste um bloco… Toque nele…"; some com **Entendi, não mostrar de novo**). Cada bloco tem uma alça **⠿**. **Tocar** num bloco o seleciona (borda azul grossa) e só ele mostra as opções (Subir, Descer, Esconder, Duplicar, Mover para…, Tamanho, Forma). **Arrastar** deixa o bloco meio apagado, uma sombra azul mostra onde ele cai, a aba sob o dedo acende e o bloco solto pisca. Em edição, tocar no título não abre a janela de registros.
+
 | Você faz | O programa faz |
 |---|---|
 | Toca em **Editar layout** (só aparece quando há blocos escolhidos em "O que acompanhar") | Mostra a barra de abas e os controles em cada bloco; o botão vira **Concluir edição** |
@@ -176,7 +179,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 
 | Você faz | O programa faz |
 |---|---|
-| Toca em **Carregar relatório** e escolhe um ou vários arquivos (.csv, .txt, .xlsx, .xls, .ods, .json, .xml, .zip) | Lê cada arquivo no próprio aparelho; nada sai dele |
+| Toca em **Carregar dados** e escolhe um ou vários arquivos (.csv, .txt, .xlsx, .xls, .ods, .json, .xml, .zip) | Lê cada arquivo no próprio aparelho; nada sai dele |
 | (planilha com várias abas) | Cada aba vira um relatório separado, chamado "arquivo - aba" ⚖️ D-40 |
 | Responde **Esta coluna é o quê?** na primeira vez | Lembra o formato; o mesmo conjunto de colunas em CSV, planilha, JSON ou XML não pergunta de novo ⚖️ D-41 |
 | Escolhe um **.zip** | Abre e lê cada arquivo de dentro; os que não consegue ler ele avisa e segue com os outros |
@@ -188,7 +191,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 
 | Você faz | O programa faz |
 |---|---|
-| Toca em **Carregar relatório** e escolhe o PDF (ou um .zip com PDF dentro) | Lê o texto de cada página no próprio aparelho, acha as colunas pela posição, tira título, rodapé e cabeçalhos repetidos ⚖️ D-52 |
+| Toca em **Carregar dados** e escolhe o PDF (ou um .zip com PDF dentro) | Lê o texto de cada página no próprio aparelho, acha as colunas pela posição, tira título, rodapé e cabeçalhos repetidos ⚖️ D-52 |
 | Vê a janela **Conferir leitura** | Mostra a tabela lida, "Linhas lidas" e "Células marcadas"; células que parecem erradas ficam destacadas ⚖️ D-50 |
 | Corrige o que estiver errado direto na tabela | Guarda a correção |
 | **Confirmar** | Segue para "Esta coluna é o quê?" (só na primeira vez deste formato) e guarda os registros |
@@ -201,7 +204,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 
 | Você faz | O programa faz |
 |---|---|
-| Toca em **Carregar relatório** e escolhe uma ou várias fotos (JPG ou PNG), um PDF escaneado ou um .zip com elas | Melhora a imagem (cinza, contraste, endireita) e lê o texto em português; mostra "Lendo a imagem… n%" |
+| Toca em **Carregar dados** e escolhe uma ou várias fotos (JPG ou PNG), um PDF escaneado ou um .zip com elas | Melhora a imagem (cinza, contraste, endireita) e lê o texto em português; mostra "Lendo a imagem… n%" |
 | Escolhe várias fotos do mesmo relatório de uma vez | Junta tudo numa só conferência, com o cabeçalho uma vez ⚖️ D-62 |
 | Vê **Conferir leitura** (foto ao lado) | Marca as células em que o leitor tem dúvida e as que ele corrigiu sozinho (O→0 em código e número) ⚖️ D-60 |
 | Corrige o que estiver errado e toca em **Confirmar** (ou **Descartar**) | Guarda só o que você confirmou |

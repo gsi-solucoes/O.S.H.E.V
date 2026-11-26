@@ -524,7 +524,7 @@ const textoFiltros = () => { const p = []; if (F.per === 'mes' && F.mes) p.push(
 function fillSel(s, ops, cur) { s.textContent = ''; ops.forEach(([v, t]) => s.append(el('option', { value: v, text: t }))); if (ops.some(o => o[0] === cur)) s.value = cur; }
 function tabela(campos, lista) {
   return el('table', null, el('thead', null, el('tr', null, campos.map(c => el('th', { text: c.n })))),
-    el('tbody', null, lista.map(r => el('tr', null, campos.map(c => el('td', { text: c.t === 'codigo' ? r.codigo : c.t === 'data' ? fmtData(r.v[c.n]) : (r.v[c.n] || '') }))))));
+    el('tbody', null, lista.map(r => el('tr', null, campos.map(c => el('td', { text: c.t === 'codigo' ? r.codigo : c.t === 'data' ? fmtData(r.v[c.n]) : c.t === 'numero' && Core.numero(r.v[c.n]) != null ? fmtN(Core.numero(r.v[c.n])) : (r.v[c.n] || '') }))))));
 }
 function barras(itens, abrir) {
   const max = Math.max(1, ...itens.map(i => Math.abs(i[1])));
@@ -642,7 +642,7 @@ function infoBloco(card, b) {
 const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'button', onclick: abrir }, pre, el('b', { text: val }), suf);
 const cartao = (b, ...kids) => {
   const h = el('h3', { text: b.nome });
-  if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => abrirJanela(b.nome, b.regs, F.conjunto); h.classList.add('abre'); h.tabIndex = 0; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
+  if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => { if (!modoEd) abrirJanela(b.nome, b.regs, F.conjunto); }; h.classList.add('abre'); h.tabIndex = 0; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
   const card = el('div', { class: 'card bloco' }, h, ...kids); return b.oque ? infoBloco(card, b) : card;
 };
 
@@ -832,7 +832,7 @@ function layoutsLimpo(o, tolera) {   // tolera (só a carga do navegador): layou
 }
 let layouts = layoutsLimpo(store.get('raiox_layout', {}), true) || nulo();
 const salvaLay = () => store.set('raiox_layout', layouts);
-let modoEd = false, arrasta = null; const abaAb = nulo();   // modo edição e aba aberta ficam só na memória (recarregar volta ao normal)
+let modoEd = false, arrasta = null, selK = null, soltouK = null; const abaAb = nulo();   // modo edição e aba aberta ficam só na memória (recarregar volta ao normal)
 const tipoBloco = b => String(b.id || '').split('\u0001')[0];
 const formaOrig = b => ['cat', 'numcat', 'sit', 'mes'].indexOf(tipoBloco(b)) >= 0 ? 'barras' : 'numero';
 const formasDe = b => { const t = tipoBloco(b); return t === 'mes' ? ['barras', 'linha', 'pizza', 'tabela'] : ['cat', 'numcat', 'sit'].indexOf(t) >= 0 ? ['barras', 'pizza', 'tabela'] : ['numero']; };
@@ -889,12 +889,13 @@ function desenhaItem(b, i, L, c) {
   const corpo = forma === 'barras' ? barras(it, g.abrir) : forma === 'tabela' ? tabelaForma(it, g.abrir) : forma === 'linha' ? linhaSvg(it, g.abrir) : pizzaSvg(it, g.abrir);
   const card = cartao(b.aplica ? Object.assign({}, b, { regs: b.aplica(L) }) : Object.assign({}, b, { regs: L }), ...kids, corpo); card.setAttribute('data-forma', forma); return card;
 }
+const layAvisoFechado = () => { try { return localStorage.getItem('raiox_layaviso') === '1'; } catch (e) { return false; } };
 function renderLay(c, L, ed) {
   const lay = layGet(c), aberta = abaAberta(c, lay), nav = $('#abasPainel'), grade = $('#blocosEsc'); abaAb[c] = aberta.id;
-  nav.hidden = !(lay.abas.length >= 2 || ed); nav.textContent = ''; $('#layFerr').hidden = !ed;
+  nav.hidden = !(lay.abas.length >= 2 || ed); nav.textContent = ''; $('#layFerr').hidden = !ed; $('#layAviso').hidden = !ed || layAvisoFechado();
   lay.abas.forEach(a => {
     const on = a.id === aberta.id, bt = el('button', Object.assign({ type: 'button', class: on ? 'on' : '', 'data-testid': 'aba', text: a.nome, onclick: () => { abaAb[c] = a.id; render(); } }, on ? { 'aria-current': 'true' } : {}));
-    if (ed) { bt.ondragover = e => { if (arrasta) e.preventDefault(); }; bt.ondrop = e => { e.preventDefault(); const k = arrasta; arrasta = null; if (k) layMut(c, X => moveFim(X, k, a.id)); }; }
+    if (ed) { bt.ondragover = e => { if (arrasta) { e.preventDefault(); bt.classList.add('acende'); } }; bt.ondragleave = () => bt.classList.remove('acende'); bt.ondrop = e => { bt.classList.remove('acende'); e.preventDefault(); const k = arrasta; arrasta = null; if (k) layMut(c, X => moveFim(X, k, a.id)); }; }
     nav.append(bt);
   });
   if (ed) {
@@ -909,6 +910,9 @@ function renderLay(c, L, ed) {
     if (i.oculto) w.setAttribute('data-escondido', 'true');
     w.append(desenhaItem(b, i, L, c));
     if (ed) {
+      w.classList.add('edita'); if (selK === i.k) w.classList.add('sel'); if (soltouK === i.k) { w.classList.add('solta'); soltouK = null; }
+      w.prepend(el('span', { class: 'alca', 'aria-hidden': 'true', title: 'Arraste para mudar de lugar', text: '⠿' }));
+      w.addEventListener('click', () => { selK = i.k; grade.querySelectorAll('.layItem.sel').forEach(x => x.classList.remove('sel')); w.classList.add('sel'); });
       const bt = (t, fn, dis) => el('button', Object.assign({ type: 'button', text: t, onclick: fn }, dis ? { disabled: '' } : {}));
       const sel = (rot, ops, val, fn) => { const s = el('select', { 'aria-label': rot }, ops.map(([v, t]) => el('option', { value: v, text: t }))); s.value = val; s.onchange = () => fn(s.value); return s; };
       const fo = formasDe(b), forma = fo.indexOf(i.forma) >= 0 ? i.forma : formaOrig(b);
@@ -920,9 +924,9 @@ function renderLay(c, L, ed) {
         sel('Tamanho', LAY_TAM.map(t => [t, TAM_NOME[t]]), i.tam, v => layMut(c, X => { const t = X.itens.find(x => x.k === i.k); if (t) t.tam = v; })),
         sel('Forma', fo.map(f => [f, FORMA_NOME[f]]), forma, v => layMut(c, X => { const t = X.itens.find(x => x.k === i.k); if (t) t.forma = v === formaOrig(b) ? '' : v; }))));
       w.draggable = true;
-      w.ondragstart = e => { arrasta = i.k; try { e.dataTransfer.setData('text/plain', i.k); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* sem dataTransfer: segue */ } };
-      w.ondragend = () => { arrasta = null; }; w.ondragover = e => { if (arrasta) e.preventDefault(); };
-      w.ondrop = e => { e.preventDefault(); e.stopPropagation(); const k = arrasta; arrasta = null; if (!k || k === i.k) return;
+      w.ondragstart = e => { arrasta = i.k; setTimeout(() => w.classList.add('arrastando'), 0); try { e.dataTransfer.setData('text/plain', i.k); e.dataTransfer.effectAllowed = 'move'; } catch (x) { /* sem dataTransfer: segue */ } };
+      w.ondragend = () => { arrasta = null; w.classList.remove('arrastando'); grade.querySelectorAll('.alvo').forEach(x => x.classList.remove('alvo')); }; w.ondragover = e => { if (arrasta) { e.preventDefault(); if (arrasta !== i.k) w.classList.add('alvo'); } }; w.ondragleave = () => w.classList.remove('alvo');
+      w.ondrop = e => { e.preventDefault(); e.stopPropagation(); const k = arrasta; arrasta = null; if (!k || k === i.k) return; soltouK = k; selK = k;
         layMut(c, X => { const a = X.itens.find(x => x.k === k), t = X.itens.findIndex(x => x.k === i.k); if (!a || t < 0 || a.aba !== X.itens[t].aba) return; X.itens.splice(X.itens.indexOf(a), 1); X.itens.splice(t, 0, a); }); };
     }
     grade.append(w);
@@ -944,7 +948,8 @@ function pedeNomeAba(ini, lay, selfId) {
 }
 function iniciaLay() {
   const cc = () => F.conjunto;
-  $('#btnLay').onclick = () => { modoEd = !modoEd; render(); };
+  $('#btnLay').onclick = () => { modoEd = !modoEd; selK = null; render(); };
+  $('#layAvisoX').onclick = () => { try { localStorage.setItem('raiox_layaviso', '1'); } catch (e) { /* sem armazenamento */ } $('#layAviso').hidden = true; };
   $('#layNova').onclick = async () => { const c = cc(), lay = layGet(c); if (lay.abas.length >= 20) { toast('Limite de 20 abas.'); return; } const n = await pedeNomeAba('', lay, null); if (!n) return;
     layMut(c, X => { let q = X.abas.length + 1; while (X.abas.some(a => a.id === 'a' + q)) q++; X.abas.push({ id: 'a' + q, nome: n }); abaAb[c] = 'a' + q; }); };
   $('#layRenomeia').onclick = async () => { const c = cc(), lay = layGet(c), ab = abaAberta(c, lay), n = await pedeNomeAba(ab.nome, lay, ab.id); if (!n) return; layMut(c, X => { const a = X.abas.find(x => x.id === ab.id); if (a) a.nome = n; }); };
@@ -1394,7 +1399,7 @@ async function gerarExcel() {
 const PASSOS = ['Baixe o arquivo RaioX_Relatorio.bas (botão “Baixar versão Excel para o PC”).', 'Abra o Excel (2016 ou mais novo), crie uma pasta de trabalho nova e salve como “Pasta de Trabalho Habilitada para Macro (.xlsm)”.', 'Aperte Alt+F11, vá em Arquivo → Importar arquivo e escolha o RaioX_Relatorio.bas.', 'Volte ao Excel, aperte Alt+F8, escolha a macro Instalar e clique em Executar (se o Excel avisar sobre macros, escolha “Habilitar conteúdo”).'];
 function topo() {
   $('#clienteTopo').textContent = ORG() ? '· ' + ORG() : '';
-  const lt = $('#logoTopo'); lt.textContent = ''; if (cfg.logo) lt.append(el('img', { src: cfg.logo, alt: 'Logo' }));
+  const lt = $('#logoTopo'); lt.hidden = !cfg.logo; lt.textContent = ''; if (cfg.logo) lt.append(el('img', { src: cfg.logo, alt: 'Logo' }));
   const lp = $('#cfgLogoPrev'); lp.textContent = ''; lp.hidden = !cfg.logo; if (cfg.logo) lp.append(el('img', { src: cfg.logo, alt: 'Logo', style: 'height:34px' }));
   $('#cfgLogoX').hidden = !cfg.logo;
 }
@@ -1437,7 +1442,7 @@ function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea')
 
 /* ---------- partida ---------- */
 const AJUDAS = [
-  ['label.pick:has(#arquivo)', 'Carregar relatório', 'Traz para o programa o arquivo que você tirou do seu sistema (planilha, CSV, JSON, XML, zip, PDF ou foto).', '1. Toque em Carregar relatório. 2. Escolha o arquivo. 3. Na primeira vez de cada tipo de arquivo, diga o que é cada coluna.', 'Um arquivo vendas.xlsx com uma linha por venda.'],
+  ['label.pick:has(#arquivo)', 'Carregar dados', 'Traz para o programa o arquivo que você tirou do seu sistema (planilha, CSV, JSON, XML, zip, PDF ou foto).', '1. Toque em Carregar relatório. 2. Escolha o arquivo. 3. Na primeira vez de cada tipo de arquivo, diga o que é cada coluna.', 'Um arquivo vendas.xlsx com uma linha por venda.'],
   ['#btnAcomp', 'O que acompanhar', 'Escolha quais números e gráficos aparecem no seu painel.', '1. Toque em O que acompanhar. 2. Marque os que quer. 3. Toque em Confirmar.', 'Marcar “Total de registros” e “Por Região”.'],
   ['#btnLay', 'Editar layout', 'Muda a ordem e o tamanho dos blocos do painel e cria abas.', '1. Toque em Editar layout. 2. Use as setas ou arraste os blocos. 3. Toque em Concluir edição.', 'Pôr o gráfico por região em primeiro lugar.'],
   ['#btnEntender', 'Entender este painel', 'Mostra, em palavras simples, de onde vem cada número do seu painel.', 'Toque no botão e leia a lista.', 'Total de registros: quantas linhas o arquivo tem.'],

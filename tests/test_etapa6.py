@@ -69,7 +69,13 @@ def em_edicao(page):
 
 
 def grupo(page, nome, n=0):
+    """F-79: só o bloco tocado (selecionado) mostra os controles; toca no bloco antes."""
     g = page.get_by_role("group", name=f"Controles de {nome}", exact=True)
+    hs = heading(page, nome)
+    if len(hs) > n:
+        hs[n].click(position={"x": 4, "y": 4})
+        page.wait_for_timeout(120)
+        return vis(g)[0]
     return vis(g)[n]
 
 

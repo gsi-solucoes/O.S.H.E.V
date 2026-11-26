@@ -160,3 +160,54 @@ def test_f78_info_nos_blocos_do_catalogo(page):
     page.locator(".card.bloco .info").first.click()
     t = page.locator("#ajudaBox").inner_text()
     assert "O que é:" in t and "Como faz:" in t
+
+
+# ---------- F-79 ----------
+def test_f79_botao_carregar_dados_e_sem_etiqueta_do_navegador(page):
+    assert page.get_by_text("Carregar dados", exact=True).first.is_visible()
+    assert "Carregar relatório" not in page.locator("body").inner_text()
+    assert page.locator("#arquivo").get_attribute("title") == " "
+
+
+def test_f79_topo_sem_barrinha_do_logo_e_rodape_sem_excel_pc(page):
+    assert not page.locator("#logoTopo").is_visible()
+    assert not page.locator("footer a[data-baixar-bas]").is_visible()
+
+
+def test_f79_gerar_excel_fica_antes_dos_registros(page):
+    carregar_vendas(page)
+    y1 = page.locator("#gerarXlsx").bounding_box()["y"]
+    y2 = page.get_by_role("heading", name="Registros", exact=True).bounding_box()["y"]
+    assert y1 < y2
+
+
+def test_f79_numero_na_lista_com_duas_casas_e_milhar(page):
+    carregar_vendas(page)
+    cel = page.locator("#tabReg tbody tr td").all_inner_texts()
+    nums = [c for c in cel if re.fullmatch(r"\d{1,3}(\.\d{3})*,\d{2}", c)]
+    assert nums, cel[:14]
+    assert not any(re.fullmatch(r"\d+,\d", c) for c in cel)
+
+
+def _edicao_com_blocos(page):
+    from test_etapa2 import marcar, confirmar
+    abrir_janela_r51(page, "vendas.csv")
+    marcar(page, ["Total de registros", "Por Região"])
+    confirmar(page)
+    if page.locator("#dlgPainel").is_visible():
+        page.locator("#painelFechar").click()
+    page.get_by_role("button", name="Editar layout", exact=True).click()
+    page.wait_for_timeout(300)
+
+
+def test_f79_editar_layout_faixa_alca_e_so_o_selecionado_mostra_controles(page):
+    _edicao_com_blocos(page)
+    assert "Arraste" in page.locator("#layAviso").inner_text() and page.locator("#layAviso").is_visible()
+    assert page.locator(".layItem .alca").count() >= 2
+    assert page.get_by_role("group", name=re.compile("^Controles de ")).count() == 0
+    page.get_by_role("heading", name="Total de registros", exact=True).click(position={"x": 4, "y": 4})
+    page.wait_for_timeout(200)
+    assert page.get_by_role("group", name=re.compile("^Controles de ")).count() == 1
+    assert page.locator(".layItem.sel").count() == 1
+    page.get_by_role("button", name="Entendi, não mostrar de novo").click()
+    assert not page.locator("#layAviso").is_visible()

@@ -45,6 +45,7 @@ th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:u
 .jan{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 40px #0006;width:min(720px,96vw);max-height:80vh;display:flex;flex-direction:column}
 .jan header{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--band);color:#fff;border-radius:12px 12px 0 0;cursor:move;touch-action:none}
 .jan header b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jan header button{min-height:32px;padding:0 10px;background:#ffffff22;color:#fff;border-color:#ffffff44}
+[hidden]{display:none!important}
 .secao{margin:22px 0 8px;padding:10px 14px;border-left:6px solid var(--accent);background:var(--panel);border-radius:8px}.secao h2{margin:0;font-size:20px}.secao p{margin:4px 0 0}
 .card{position:relative}dialog>h3+.info,dialog form>h3+.info{position:absolute;top:14px;right:14px}.info{display:inline-flex;align-items:center;justify-content:center;min-width:26px;min-height:26px;width:26px;height:26px;padding:0;margin-left:6px;border-radius:50%;font-size:15px;line-height:1;vertical-align:middle;background:var(--panel);color:var(--accent);border:1px solid var(--accent)}.card>.info,.card>h3+.info{position:absolute;top:10px;right:10px}
 #ajudaBox{position:fixed;z-index:60;max-width:min(340px,92vw);background:var(--panel);color:inherit;border:1px solid var(--accent);border-radius:10px;padding:10px 12px;box-shadow:0 8px 30px #0005;font-size:14px}#ajudaBox p{margin:4px 0}
@@ -75,6 +76,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 .layItem{grid-column:span 3;min-width:0}.layItem.tp{grid-column:span 2}.layItem.tg{grid-column:span 6}
 @media(max-width:700px){.layItem,.layItem.tp,.layItem.tg{grid-column:span 6}}
 .layItem[draggable=true]{cursor:grab}.layItem[data-escondido=true]{opacity:.45}
+.layItem.edita{position:relative;border:3px solid transparent;border-radius:12px;padding:2px}.layItem.edita.sel{border-color:var(--accent);box-shadow:0 0 0 4px #2563eb33}.layItem.edita .layCtl{display:none}.layItem.edita.sel .layCtl{display:flex}.alca{position:absolute;top:6px;right:8px;z-index:2;cursor:grab;font-size:20px;color:var(--accent);background:var(--panel);border-radius:6px;padding:0 4px}.layItem.arrastando{opacity:.4}.layItem.alvo{box-shadow:0 -6px 0 0 var(--accent)}.abasLay button.acende{background:var(--accent);color:#fff}.layItem.solta{animation:pisca .7s}@keyframes pisca{0%,60%{background:#2563eb44}100%{background:transparent}}.aviso .demo{display:inline-block;font-size:26px;color:var(--accent);animation:arrasta 1.6s ease-in-out 3}@keyframes arrasta{0%{transform:translateX(0)}50%{transform:translateX(60px)}100%{transform:translateX(0)}}
 .layCtl{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 16px}.layCtl select{width:auto;min-width:110px}
 .pizza{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.pizza .bars{flex:1 1 160px}.linha svg{max-height:140px}
 .vazio{padding:24px;text-align:center;color:var(--muted)}
@@ -83,9 +85,9 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <body>
 <header class="band top">
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
-  <p>Leia um relatório (planilha, CSV, JSON, XML, zip, PDF ou foto), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
+  <p>Traga os dados de um relatório (planilha, CSV, JSON, XML, zip, PDF ou foto), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
-    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip,.jpg,.jpeg,.png" multiple></label>
+    <label class="btn prim pick">Carregar dados<input type="file" title=" " id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip,.jpg,.jpeg,.png" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
   </div>
 </header>
@@ -96,7 +98,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 
 <main>
 <section id="painel" class="band">
-  <div id="semDados" class="card vazio">Nenhum relatório carregado ainda. Toque em “Carregar relatório” e escolha um arquivo CSV.</div>
+  <div id="semDados" class="card vazio">Nenhum relatório carregado ainda. Toque em “Carregar dados” e escolha um arquivo.</div>
   <div id="comDados" hidden>
     <div class="row acBtns"><button type="button" id="btnAcomp">O que acompanhar</button><button type="button" id="btnLay" hidden>Editar layout</button><button type="button" id="btnEntender" hidden>Entender este painel</button></div>
     <form id="fPed" class="row acBtns" autocomplete="off"><label class="f pedLab">Peça um indicador<input type="text" id="pedTxt" maxlength="300"></label><button type="submit" class="prim">Pedir</button></form>
@@ -122,18 +124,19 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
     <div id="blocos" class="grid2"></div>
     <nav id="abasPainel" class="abasLay" aria-label="Abas do painel" hidden></nav>
     <div id="layFerr" class="row" hidden><button type="button" id="layNova">Nova aba</button><button type="button" id="layRenomeia">Renomear aba</button><button type="button" id="layApagaAba">Apagar aba</button><button type="button" id="layEsq">Aba à esquerda</button><button type="button" id="layDir">Aba à direita</button><button type="button" id="layPadrao">Voltar ao padrão</button></div>
+    <div id="layAviso" class="card aviso" role="note" hidden><p><b>Arraste</b> um bloco para mudar de lugar (ou para outra aba). <b>Toque</b> nele para ver as opções: esconder, duplicar, tamanho, forma. Quando terminar, toque em <b>Concluir edição</b>.</p><div class="row"><span class="demo" aria-hidden="true">⠿</span><button type="button" id="layAvisoX">Entendi, não mostrar de novo</button></div></div>
     <div id="blocosEsc" class="grid2" hidden></div>
     <div id="meusInd" hidden><h2>Meus indicadores</h2><div id="meusGrade" class="grid2"></div></div>
-    <h2>Registros</h2>
-    <div class="tw" id="tabReg"></div>
-    <div class="row" style="margin-top:10px"><button id="maisReg" hidden>Mostrar mais</button><span id="infoReg" class="muted"></span></div>
-    <div class="card" style="margin-top:16px"><h3>Gerar Excel</h3>
+    <div class="card" style="margin:16px 0"><h3>Gerar Excel</h3>
       <div class="row">
         <label class="f">Formato<select id="xFmt"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label>
         <button class="prim" id="gerarXlsx">Gerar Excel</button><span id="xMsg" class="muted" role="status"></span>
       </div>
       <p class="muted">O Excel segue o período e os filtros escolhidos acima.</p>
     </div>
+    <h2>Registros</h2>
+    <div class="tw" id="tabReg"></div>
+    <div class="row" style="margin-top:10px"><button id="maisReg" hidden>Mostrar mais</button><span id="infoReg" class="muted"></span></div>
   </div>
 </section>
 
@@ -145,7 +148,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
       <label class="f">Cliente<input type="text" id="cfgCliente"></label>
       <label class="f">Área<input type="text" id="cfgArea"></label>
     </div>
-    <div class="row" style="margin-top:10px"><label class="btn pick">Escolher logo<input type="file" id="cfgLogo" accept="image/*"></label><span id="cfgLogoPrev" hidden></span><button id="cfgLogoX">Apagar logo</button></div>
+    <div class="row" style="margin-top:10px"><label class="btn pick">Escolher logo<input type="file" title=" " id="cfgLogo" accept="image/*"></label><span id="cfgLogoPrev" hidden></span><button id="cfgLogoX">Apagar logo</button></div>
   </div>
   <div class="secao"><h2><span aria-hidden="true">🎯</span> Regras dos números</h2><p class="muted">O que conta como “bom” nos números de tempo.</p></div>
   <div class="card"><h3>Metas</h3>
@@ -178,7 +181,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
     <div id="listaFmt"></div>
   </div>
   <div class="card"><h3>Backup e dados deste aparelho</h3>
-    <div class="row"><button id="bkBaixar">Baixar backup</button><label class="btn pick">Restaurar backup<input type="file" id="bkArq" accept=".json,application/json"></label><button id="apagarTudo">Apagar todos os dados</button></div>
+    <div class="row"><button id="bkBaixar">Baixar backup</button><label class="btn pick">Restaurar backup<input type="file" title=" " id="bkArq" accept=".json,application/json"></label><button id="apagarTudo">Apagar todos os dados</button></div>
     <p class="muted" id="infoDados"></p>
   </div>
   <div class="card" id="cardExcelPC" hidden><h3>Versão Excel para o PC</h3>
@@ -190,7 +193,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 </main>
 
 <footer>
-  <a class="btn" href="excel/RaioX_Relatorio.bas" download="RaioX_Relatorio.bas" data-baixar-bas>Baixar versão Excel para o PC</a>
+  <a class="btn" href="excel/RaioX_Relatorio.bas" download="RaioX_Relatorio.bas" data-baixar-bas hidden>Baixar versão Excel para o PC</a>
   <span id="versao"></span>
 </footer>
 

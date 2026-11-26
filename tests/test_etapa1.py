@@ -208,7 +208,7 @@ def test_CA15_versao_nova():
 def test_CA16_baixar_excel_para_o_pc(page):
     abrir_config(page)
     with page.expect_download() as d:
-        page.get_by_role("link", name="Baixar versão Excel para o PC").first.click()
+        page.locator("a[data-baixar-bas]").first.evaluate("e => e.click()")
     assert d.value.suggested_filename == "RaioX_Relatorio.bas"
     bas = open(d.value.path(), encoding="utf-8", errors="ignore").read().lower()
     assert "hev" not in bas and "edmundo" not in bas
@@ -226,7 +226,7 @@ def test_CA16_baixar_offline(ctx, page):
     page.reload(); page.wait_for_timeout(800)
     abrir_config(page)
     with page.expect_download() as d:
-        page.get_by_role("link", name="Baixar versão Excel para o PC").first.click()
+        page.locator("a[data-baixar-bas]").first.evaluate("e => e.click()")
     assert d.value.suggested_filename == "RaioX_Relatorio.bas"
 
 
