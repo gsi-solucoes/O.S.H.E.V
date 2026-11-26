@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-L0RtV/mY/wSYsuiMp6zCb7XP1myNJT9z8NOyF40KOrg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-kxctS8WbFGxH4PZ3s+0UYjkzmZyR4msngG4NcKI3M3c='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -486,7 +486,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
-const VERSAO = "39e159c418";
+const VERSAO = "43b4bf19f5";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -1008,7 +1008,7 @@ function camposPed(ped, c) {
 // bloco "Meu indicador": mesma forma dos blocos do catálogo, para entrar no Seu painel e na planilha
 function blocoMeu(c, ped, idx) {
   const nome = resumoPed(ped, c);
-  return { nome, oque: 'o indicador pedido por escrito (' + nome + ')', conta: contaPed(ped, c), campos: camposPed(ped, c), filtrosProprios: [filtrosPedTxt(ped, c), perTxt(ped.periodo)].filter(Boolean).join('; '), aplica: L => listaPed(ped, L, c).base,
+  return { nome, ped, oque: 'o indicador pedido por escrito (' + nome + ')', conta: contaPed(ped, c), campos: camposPed(ped, c), filtrosProprios: [filtrosPedTxt(ped, c), perTxt(ped.periodo)].filter(Boolean).join('; '), aplica: L => listaPed(ped, L, c).base,
     desenha: L => cartao({ nome }, corpoPed(ped, L, c, false, nome), el('button', { type: 'button', text: 'Remover', onclick: () => { meus[c].splice(idx, 1); salvaMeus(); render(); } })) };
 }
 const blocosMeus = c => (conjs[c] && meus[c] || []).map((p, i) => blocoMeu(c, p, i));
@@ -1128,6 +1128,15 @@ function imprimir(titulo, lista, campos, sel) {
 /* ---------- Excel ---------- */
 function baixar(blob, nome) { const a = el('a', { href: URL.createObjectURL(blob), download: nome }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
 function nomeAba(wb, n) { let b = n.replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28) || 'Aba', x = b, i = 2; while (wb.getWorksheet(x)) x = b.slice(0, 26) + ' ' + i++; return x; }
+const agoraTxt = () => { const d = new Date(); return z2(d.getDate()) + '/' + z2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z2(d.getHours()) + ':' + z2(d.getMinutes()); };
+// R-87: cada ponta vem do filtro quando ele a define; senão, da menor/maior data dos registros filtrados
+function periodoCapa(datas) {
+  let ini = '', fim = '';
+  if (F.per === 'mes' && /^\d{4}-\d{2}$/.test(F.mes || '')) { ini = F.mes + '-01'; fim = F.mes + '-' + z2(new Date(+F.mes.slice(0, 4), +F.mes.slice(5, 7), 0).getDate()); }
+  else if (F.per === 'de') { ini = F.de || ''; fim = F.ate || ''; }
+  const ds = datas.map(x => x.slice(0, 10)).sort(); if (!ini && ds.length) ini = ds[0]; if (!fim && ds.length) fim = ds[ds.length - 1];
+  return ini && fim ? 'Registros de ' + fmtD(ini) + ' a ' + fmtD(fim) : 'sem datas';
+}
 function capa(wb, nomeRel, grupos) {
   const ws = wb.addWorksheet('Capa', { views: [{ showGridLines: false }] }); ws.columns = [{ width: 26 }, { width: 44 }, { width: 22 }];
   const tot = grupos.reduce((s, g) => s + g.lista.length, 0), datas = [];
@@ -1137,7 +1146,7 @@ function capa(wb, nomeRel, grupos) {
   if (cfg.logo) try { const id = wb.addImage({ base64: cfg.logo, extension: 'png' }); ws.addImage(id, { tl: { col: 0.2, row: 1 }, ext: { width: 90, height: 60 } }); } catch (e) { /* logo ilegível: segue sem */ }
   ws.getRow(5).values = ['Total de registros', 'Mais antigo', 'Mais novo']; ws.getRow(6).values = [tot, datas.length ? fmtData(datas[0]) : '—', datas.length ? fmtData(datas[datas.length - 1]) : '—'];
   ws.getRow(5).font = { bold: true, color: { argb: 'FFFFFFFF' } }; ws.getRow(5).eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; }); ws.getRow(6).font = { size: 14, bold: true }; ws.getRow(6).alignment = { horizontal: 'left' };
-  const info = [['Relatório', nomeRel], ['Período', datas.length ? fmtData(datas[0]) + ' a ' + fmtData(datas[datas.length - 1]) : 'sem datas'], ['Filtros', textoFiltros() || 'nenhum'], ['Gerado em', new Date().toLocaleString('pt-BR')]];
+  const info = [['Relatório', nomeRel], ['Período', periodoCapa(datas)], ['Filtros', filtrosResumo()], ['Gerado em', agoraTxt()]];
   info.forEach((p, i) => { ws.getCell(8 + i, 1).value = p[0]; ws.getCell(8 + i, 1).font = { bold: true }; ws.getCell(8 + i, 2).value = cortaCelula(p[1]); });
   ws.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 1 }; ws.headerFooter.oddFooter = '&LRaio X do Relatório&RPágina &P de &N';
 }
@@ -1151,13 +1160,94 @@ function comoLer(wb, grupos) {
   ws.pageSetup = { paperSize: 9, orientation: 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
 }
 const primitivoXL = x => cortaCelula(primitivo(x));
+function celulaReg(k, r) {
+  if (k.t === 'codigo') return primitivoXL(r.codigo); const v = r.v[k.n]; if (!v) return null;
+  if (k.t === 'data') { const m = Core.msISO(v); return m == null ? primitivoXL(v) : new Date(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10), +v.slice(11, 13), +v.slice(14, 16))); }
+  if (k.t === 'numero') { const n = Core.numero(v); return n == null ? primitivoXL(v) : primitivoXL(n); } return primitivoXL(v);
+}
+
+/* ---------- etapa 4: planilha de painel (espelha a tela; só valores, sem fórmula, sem gráfico nativo) ---------- */
+const XI = n => ({ n, f: '#,##0' }), XD = n => ({ n: Math.round(n * 100) / 100, f: '#,##0.00' });
+// especificação de um bloco: { titulo, rot[], val[] } (cartão), { linhas: [[categoria, valor, n]] } (gráfico) ou { aviso }
+function xlBloco(b, c, L) {
+  const SEP = '\u0001', T = b.nome, p = b.ped ? [] : String(b.id || '').split(SEP), t = b.ped ? 'meu' : p[0], k = p[1];
+  const cart = (rot, val) => ({ titulo: T, rot, val }), graf = linhas => ({ titulo: T, linhas });
+  if (t === 'total') return cart(['Registros'], [XI(L.length)]);
+  if (t === 'cat') return graf(top10(ordenaGrupos(agrupa(L, r => r.v[k]))).map(([n, v]) => [n, XI(v), v]));
+  if (t === 'num') { const v = numeros(L, k), s = v.reduce((a, x) => a + x, 0); return cart(['Soma', 'Média', 'Mediana'], v.length ? [XD(s), XD(s / v.length), XD(Core.mediana(v))] : ['—', '—', '—']); }
+  if (t === 'numcat') {
+    const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k]) != null), r => r.v[p[2]])).map(([n, l]) => [n, l]);
+    const soma = l => numeros(l, k).reduce((a, x) => a + x, 0); m.sort((a, b2) => soma(b2[1]) - soma(a[1]));
+    return graf(top10(m, soma).map(x => [x[0], XD(x[1]), x[1]]));
+  }
+  if (t === 'mes') return graf([...agrupa(L, r => (r.v[k] || '').slice(0, 7))].sort((a, b2) => a[0] < b2[0] ? -1 : 1).map(([m, l]) => [fmtM(m), XI(l.length), l.length]));
+  if (t === 'tempo') {
+    const ds = camposDe(c, 'data'); parTempo(ds); const durs = paresTempo(L, F.tA, F.tB).map(x => x[1]), pct = Core.pctDentro(durs, cfg.prazoH * 3600000), fx = Core.FAIXAS.map(n => [n, 0]);
+    durs.forEach(d => { fx[Core.faixa(d)][1]++; });
+    return { titulo: T, rot: ['De', 'Até', 'Mediana', 'Dentro de ' + cfg.prazoH + ' h'], val: [F.tA, F.tB, Core.hm(Core.mediana(durs)), pct == null ? '—' : fmtP(pct)], linhas: fx.map(([n, q]) => [n, XI(q), q]) };
+  }
+  if (t === 'sit') { const g = ordenaGrupos(agrupa(L, r => r.v[k])), n = g.reduce((a, x) => a + x[1].length, 0); return graf(g.map(([v, l]) => [v, fmtP(100 * l.length / n), l.length])); }
+  if (t === 'vazio') return cart(['Registros'], [XI(L.filter(r => !r.v[k]).length)]);
+  if (t === 'aberto') {
+    const sit = camposDe(c, 'situacao')[0].n, dat = campoData(c), l = L.filter(r => r.v[dat] && emAberto(r, sit)).sort((a, b2) => a.v[dat] < b2.v[dat] ? -1 : 1);
+    return cart(['Mais antigo', 'Em aberto'], [l.length ? fmtData(l[0].v[dat]) : '—', XI(l.length)]);
+  }
+  if (t === 'meu') {
+    const ped = b.ped, f = faltaPed(ped); if (f) return { titulo: T, aviso: f };
+    const r = calcPed(ped, L, c), tv = v => v == null ? '—' : ped.medida === 'quantidade' ? XI(v) : ped.medida === 'percentual' ? fmtP(v) : XD(v);
+    if (!ped.agrupar) return cart(['Valor', 'Registros considerados'], [tv(r.valor), XI(r.base.length)]);
+    if (!r.itens.length) return { titulo: T, aviso: 'Nenhum registro para este pedido.' };
+    return graf(r.itens.map(([n, v]) => [n, tv(v), v == null ? 0 : v]));
+  }
+  return { titulo: T, aviso: '' };
+}
+// painel padrão (sem escolha confirmada): mesmos blocos da tela
+function xlPadrao(c, L) {
+  const ds = camposDe(c, 'data'), cats = camposDe(c, 'categoria'), cd = campoData(c), todos = doConj(c), out = [], datas = cd ? L.map(r => r.v[cd]).filter(Boolean).sort() : [];
+  const cmp = cd && ds.length > 1 ? ' (' + cd + ')' : '';
+  out.push({ titulo: 'Números', rot: ['Total de registros' + (L.length !== todos.length ? ' (de ' + todos.length + ' guardados)' : ''), 'Mais antigo' + cmp, 'Mais novo' + cmp], val: [XI(L.length), datas.length ? fmtData(datas[0]) : '—', datas.length ? fmtData(datas[datas.length - 1]) : '—'] });
+  cats.slice(0, 3).forEach(k => { const g = [...agrupa(L, r => r.v[k.n])].sort((a, b2) => b2[1].length - a[1].length).slice(0, 8); if (g.length) out.push({ titulo: 'Por ' + k.n, linhas: g.map(([n, l]) => [n, XI(l.length), l.length]) }); });
+  if (cd) { const g = [...agrupa(L, r => (r.v[cd] || '').slice(0, 7))].sort((a, b2) => a[0] < b2[0] ? -1 : 1).slice(-12); if (g.length) out.push({ titulo: 'Por mês (' + cd + ')', linhas: g.map(([m, l]) => [fmtM(m), XI(l.length), l.length]) }); }
+  if (ds.length >= 2) out.push(xlBloco({ nome: 'Tempo entre datas', id: 'tempo' }, c, L));
+  return out;
+}
+// lista de abas do painel de um conjunto: [{ nome, escondida, blocos }]; a etapa 6 só passa a lista nova
+function abasPainelXl(c, L) {
+  const esc = blocosEscolhidos(c), bl = esc.length ? esc.map(b => xlBloco(b, c, L)) : xlPadrao(c, L);
+  return [{ nome: 'Painel', escondida: false, blocos: bl.concat(blocosMeus(c).map(b => Object.assign(xlBloco(b, c, L), { meu: true }))) }];
+}
+window.__abasPainel = nome => { const c = achaConj(nome); return c && conjs[c] ? JSON.parse(JSON.stringify(abasPainelXl(c, filtrar(c)).filter(a => !a.escondida).map(a => ({ nome: a.nome, blocos: a.blocos.map(b => b.titulo) })))) : []; };
+function abaPainel(wb, nomeFinal, c, ab, L, campos) {
+  const ws = wb.addWorksheet(nomeFinal); ws.columns = [{ width: 38 }, { width: 22 }, { width: 26 }, { width: 22 }];
+  const put = (row, col, v) => { const cl = ws.getCell(row, col); if (v && typeof v === 'object' && !(v instanceof Date)) { cl.value = v.n; cl.numFmt = v.f; } else cl.value = primitivoXL(v); return cl; };
+  const neg = cl => { cl.font = { bold: true }; return cl; };
+  ws.getCell('A1').value = ab.nome; ws.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF0F2A4A' } }; ws.getCell('A2').value = 'Relatório: ' + c;
+  let r = 4, meuFeito = false;
+  ab.blocos.forEach(b => {
+    if (b.meu && !meuFeito) { meuFeito = true; neg(put(r++, 1, 'Meus indicadores')); }
+    neg(put(r++, 1, b.titulo));
+    if (b.aviso != null && !b.rot && !b.linhas) { put(r++, 1, b.aviso); }
+    if (b.rot) { b.rot.forEach((x, i) => neg(put(r, 1 + i, x))); r++; b.val.forEach((x, i) => put(r, 1 + i, x)); r++; }
+    if (b.linhas) {
+      ['Categoria', 'Valor', 'Barra'].forEach((x, i) => neg(put(r, 1 + i, x))); r++;
+      const mx = Math.max(0, ...b.linhas.map(x => Math.abs(x[2])));
+      b.linhas.forEach(([n, v, q]) => { put(r, 1, n); put(r, 2, v); const w = q === 0 || !mx ? 0 : Math.max(1, Math.round(20 * Math.abs(q) / mx)); if (w) put(r, 3, '\u2588'.repeat(w)); r++; });
+    }
+    r++;
+  });
+  neg(put(r++, 1, 'Registros')); const cd = campoData(c);
+  campos.forEach((k, i) => neg(put(r, 1 + i, k.n))); r++;
+  L.slice().sort((a, b2) => cd ? (b2.v[cd] || '').localeCompare(a.v[cd] || '') : a.codigo.localeCompare(b2.codigo, 'pt', { numeric: true })).forEach(x => {
+    campos.forEach((k, i) => { const v = celulaReg(k, x), cl = ws.getCell(r, 1 + i); cl.value = v; if (v instanceof Date) cl.numFmt = 'dd/mm/yyyy hh:mm'; }); r++;
+  });
+  ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+}
+function abasDoArquivo(wb, grupos) { grupos.forEach(g => abasPainelXl(g.c, g.lista).filter(a => !a.escondida).forEach(a => abaPainel(wb, nomeAba(wb, grupos.length > 1 ? a.nome + ' - ' + g.c : a.nome), g.c, a, g.lista, g.campos))); }
 function aba(wb, nome, campos, linhas, comRel) {
   const ws = wb.addWorksheet(nomeAba(wb, nome)), cols = (comRel ? [{ n: 'Relatório', t: 'texto' }] : []).concat(campos);
   ws.addRow(cols.map(c => c.n)); const h = ws.getRow(1); h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; });
   linhas.forEach(({ r, c }) => ws.addRow(cols.map((k, i) => {
-    if (comRel && i === 0) return primitivoXL(c); if (k.t === 'codigo') return primitivoXL(r.codigo); const v = r.v[k.n]; if (!v) return null;
-    if (k.t === 'data') { const m = Core.msISO(v); return m == null ? primitivoXL(v) : new Date(Date.UTC(+v.slice(0, 4), +v.slice(5, 7) - 1, +v.slice(8, 10), +v.slice(11, 13), +v.slice(14, 16))); }
-    if (k.t === 'numero') { const n = Core.numero(v); return n == null ? primitivoXL(v) : primitivoXL(n); } return primitivoXL(v); })));
+    if (comRel && i === 0) return primitivoXL(c); return celulaReg(k, r); })));
   cols.forEach((k, i) => { const col = ws.getColumn(i + 1); let w = k.n.length; ws.eachRow({ includeEmpty: false }, (row, n) => { if (n < 400) { const x = row.getCell(i + 1).value; w = Math.max(w, x instanceof Date ? 16 : String(x == null ? '' : x).length); } }); col.width = Math.min(60, w + 3); if (k.t === 'data') col.numFmt = 'dd/mm/yyyy hh:mm'; });
   ws.views = [{ state: 'frozen', ySplit: 1 }]; if (cols.length) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: cols.length } };
   ws.pageSetup = { paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0, printTitlesRow: '1:1' }; ws.headerFooter.oddFooter = '&L' + (ORG() || 'Raio X do Relatório').replace(/&/g, '&&') + '&CPágina &P de &N&R&D';
@@ -1171,9 +1261,9 @@ async function gerarExcel() {
   try {
     const novo = () => { const wb = new ExcelJS.Workbook(); wb.creator = 'Raio X do Relatório'; wb.title = 'Raio X do Relatório' + (ORG() ? ' · ' + ORG() : ''); wb.created = new Date(); return wb; };
     const grava = async (wb, nome) => baixar(new Blob([await wb.xlsx.writeBuffer()], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'RaioX_' + slug(nome) + '_' + data + '.xlsx');
-    if (fm === 'sep') { for (const g of grupos) { const wb = novo(); capa(wb, g.c, [g]); comoLer(wb, [g]); aba(wb, g.c, g.campos, g.lista.map(r => ({ r, c: g.c }))); await grava(wb, g.c); await new Promise(r => setTimeout(r, 300)); } }
+    if (fm === 'sep') { for (const g of grupos) { const wb = novo(); capa(wb, g.c, [g]); comoLer(wb, [g]); abasDoArquivo(wb, [g]); aba(wb, g.c, g.campos, g.lista.map(r => ({ r, c: g.c }))); await grava(wb, g.c); await new Promise(r => setTimeout(r, 300)); } }
     else {
-      const nome = grupos.length === 1 ? grupos[0].c : 'Tudo', wb = novo(); capa(wb, nome, grupos); comoLer(wb, grupos);
+      const nome = grupos.length === 1 ? grupos[0].c : 'Tudo', wb = novo(); capa(wb, nome, grupos); comoLer(wb, grupos); abasDoArquivo(wb, grupos);
       if (fm === 'tudo') { const u = []; grupos.forEach(g => g.campos.forEach(k => { if (!u.some(x => x.n === k.n)) u.push({ n: k.n, t: k.t === 'codigo' ? 'texto' : k.t }); })); aba(wb, 'Tudo', u, grupos.flatMap(g => g.lista.map(r => ({ r: { codigo: r.codigo, v: Object.assign({ [camposDe(g.c, 'codigo')[0].n]: r.codigo }, r.v) }, c: g.c }))), true); }
       else grupos.forEach(g => aba(wb, g.c, g.campos, g.lista.map(r => ({ r, c: g.c }))));
       await grava(wb, nome);

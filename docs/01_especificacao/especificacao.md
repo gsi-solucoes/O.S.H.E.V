@@ -1,8 +1,10 @@
-# Raio X do Relatório — Especificação v1.1
+# Raio X do Relatório — Especificação v1.4
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v1.4 (26/11/2026, tarefa F-53, Especificador): seção 0.5 "Nomes e estrutura — etapa 4" (R-80 a R-89: planilha de painel, células-âncora, tipos e formatos de célula, capa); seção 4 completada (CA-41 a CA-43 detalhados, CA-45 a CA-50 novos; CA-40 e CA-44 adiados para a etapa 6 com teste `skip`). Na etapa 4 o painel tem uma única aba implícita, `Painel`. Nenhuma regra de negócio nova além das decisões de formato registradas na 0.5.
+- v1.3 (25/11/2026): seção 0.4 "Nomes na tela — etapa 3".
 - v1.2 (25/11/2026, tarefa F-46, coordenador): seção 0.3 "Nomes na tela — etapa 2" (rótulos, formatos de exemplo, regra de "em aberto", texto do "Seu painel"); CA-28 só vale quando existirem pedido escrito (etapa 3) e Editar layout (etapa 6): na etapa 2 fica marcado como adiado. Nenhuma regra de negócio mudou.
 - v1.0 (25/11/2026 14h18): primeira versão; portão 2 em 14h43.
 - v1.1 (25/11/2026 15h10, tarefa F-43): seção 0.1 "Nomes na tela (rótulos exatos)"; CAs das seções 1, 8 e 9 apontam para os rótulos; dúvidas do Testador decididas no próprio critério (CA-96 formato da mediana, CA-98 data no nome do arquivo, D-01 a D-08 na seção 0.2). Nenhuma regra de negócio mudou.
@@ -250,23 +252,91 @@ Bateria: `tests/pedidos.json` = lista de `{frase, conjunto, esperado}` (≥ 40 f
 - CA-37: sinônimo "fat" = valor cadastrado na Config → "fat por cliente" = soma de valor por cliente.
 - Bateria: `tests/pedidos.json` com pelo menos 40 frases e a estrutura esperada; meta: 100% das frases da bateria.
 
+### 0.5 Nomes e estrutura — etapa 4 (v1.4, 26/11/2026)
+
+Mesmas regras da 0.1. No Excel, os testes localizam por **texto de célula** (openpyxl), nunca por posição fixa além das indicadas aqui (A1, A2 da planilha de painel; rótulos da capa na coluna A).
+
+**Abas do painel.** Até a etapa 6 o painel **não tem abas na tela**: tem uma única **aba implícita** chamada `Painel`. A geração do Excel já recebe, por conjunto, a **lista de abas** `[{nome, blocos}]` (na etapa 4: `[{nome: "Painel", blocos: <blocos do painel na ordem da tela>}]`), gera **uma planilha por aba** e ignora abas escondidas; a etapa 6 só passa a lista nova (CA-40 e CA-44 entram de graça). O app expõe `window.__abasPainel(nomeConjunto)` que devolve essa lista com os **nomes** dos blocos: `[{nome:"Painel", blocos:["Total de registros", ...]}]` (oráculo do CA-50; nome do conjunto como na D-11).
+
+| Nº | Rótulo / conteúdo exato | Onde | Observação |
+|---|---|---|---|
+| R-80 | `Painel` | nome da planilha de painel | Com **1 conjunto** no arquivo: `<nome da aba>` = `Painel`. Com **≥ 2 conjuntos** no mesmo arquivo: `<nome da aba> - <conjunto>` (ex. `Painel - vendas`). O nome passa pela regra atual de nome de planilha (`nomeAba`): `[ ] : * ? / \` viram espaço, corta em 28 caracteres, repetido ganha ` 2`, ` 3`… |
+| R-81 | A1 = nome da aba (`Painel`); A2 = `Relatório: <conjunto>` | planilha de painel | A3 vazia; o 1º bloco começa na linha 4 |
+| R-82 | título do bloco = nome exato R-53 a R-61 (ou o nome do bloco de pedido, igual ao heading da tela) | coluna A, em negrito | uma linha vazia depois de cada bloco |
+| R-83 | `Categoria`, `Valor`, `Barra` | cabeçalho (colunas A, B, C) da tabela de cada gráfico | linha logo abaixo do título |
+| R-84 | `Meus indicadores` | coluna A, linha logo antes do 1º bloco de pedido | só existe se houver bloco de pedido (R-79) |
+| R-85 | `Registros` | coluna A, última seção da planilha de painel | linha seguinte = cabeçalho com os nomes dos campos |
+| R-86 | rótulos de cartão (ver tabela abaixo) | linha logo abaixo do título, colunas A, B, C… | valores na linha seguinte, mesma coluna |
+| R-87 | `Período` → `Registros de dd/mm/aaaa a dd/mm/aaaa` | Capa: rótulo na coluna A, texto na coluna B | sem datas: `sem datas` |
+| R-88 | `Filtros` → mesmo texto de filtros do `Seu painel` (`sem filtros` ou `só região Sul; outubro/2026`) | Capa, A/B | substitui o antigo `nenhum` |
+| R-89 | `Gerado em` → `dd/mm/aaaa hh:mm` (texto, hora local) | Capa, A/B | os rótulos `Relatório`, `Período`, `Filtros`, `Gerado em` continuam na coluna A, um por linha; logo continua na capa (CA-11/CA-12) |
+
+**Ordem das planilhas** (todos os formatos): `Capa` → `Como ler este relatório` (só com escolha confirmada, regra da etapa 2) → planilhas de painel (uma por aba de cada conjunto, na ordem dos conjuntos) → planilhas de registros do formato escolhido, como hoje (`<conjunto>` por relatório, ou `Tudo`). As planilhas de registros continuam iguais (regressão CA-98).
+- `Uma planilha por relatório` e `Tudo numa planilha`: um arquivo, uma planilha de painel por conjunto com registros.
+- `Arquivos separados`: um arquivo por conjunto, cada um com `Capa`, `Como ler este relatório` (se houver), `Painel` (sempre sem sufixo) e a planilha de registros.
+
+**Layout de cada bloco na planilha de painel** (mesma ordem da tela: blocos escolhidos — números, depois gráficos —, depois `Meus indicadores`, depois `Registros`):
+- **Cartão de números:** linha 1 = título (R-82); linha 2 = rótulos; linha 3 = valores.
+- **Gráfico:** linha 1 = título; linha 2 = `Categoria` | `Valor` | `Barra`; uma linha por barra da tela, na mesma ordem e com o mesmo nome (top 10 + `Outros` onde a tela mostra; meses como `10/2026`). **Não há gráfico nativo do Excel**: a coluna `Barra` é texto com `█` repetido `round(20 × |n| / maior |n| do bloco)` vezes (mínimo 1 quando n ≠ 0; célula vazia quando n = 0), onde n é o número por trás da barra (contagem ou soma).
+- **Tempo entre datas:** cartão (rótulos `De`, `Até`, `Mediana`, `Dentro de <prazo> h`; valores: campo inicial, campo final, duração, percentual) e, logo abaixo, a tabela de faixas (`Categoria` = nome da faixa, `Valor` = contagem).
+- **Bloco de pedido sem resultado:** linha 2 = o mesmo aviso da tela (ex. `Nenhum registro para este pedido.`).
+- **Registros:** linha `Registros`; cabeçalho com os campos do conjunto (mesma ordem e mesmos tipos de célula da planilha de registros atual); uma linha por registro **depois de filtros e período** (todos, não só os 100 da tela), na mesma ordem da tabela da tela (mais novo primeiro pelo campo de data; sem data, por código).
+
+**Rótulos de cartão (R-86)**
+
+| Bloco | Rótulos (linha 2) | Valores (linha 3) |
+|---|---|---|
+| `Total de registros` (R-53) | `Registros` | contagem |
+| `<Campo> (soma, média e mediana)` (R-55) | `Soma`, `Média`, `Mediana` | decimais |
+| `Sem valor em <campo>` (R-60) | `Registros` | contagem |
+| `Mais antigos em aberto` (R-61) | `Mais antigo`, `Em aberto` | data como texto `dd/mm/aaaa` (como na tela), contagem |
+| `Tempo entre duas datas` (R-58) | `De`, `Até`, `Mediana`, `Dentro de <prazo> h` | texto, texto, duração, percentual |
+| Pedido sem `Agrupar por` (R-79) | `Valor`, `Registros considerados` | conforme a medida, contagem |
+| `Números` (painel padrão, CA-46) | os mesmos textos da faixa da tela: `Total de registros`, `Mais antigo`, `Mais novo` (com o complemento `(<campo de data>)` quando a tela mostra) | contagem, texto, texto |
+
+Gráficos: `Por <campo>` (R-54), `<Número> por <categoria>` (R-56), `Evolução por mês (<campo>)` (R-57), `% por <campo>` (R-59) e pedido com `Agrupar por`. No `% por <campo>`, `Valor` é o percentual da barra (texto) e a `Barra` usa a contagem.
+
+**Tipo e formato de cada célula** (o que o oráculo do CA-41 compara)
+- **Contagem** (registros, quantidade, contagem de barra): **número inteiro**, `number_format` `#,##0` (o Excel em português mostra `1.284`).
+- **Soma, média, mediana, mínimo, máximo** (inclusive `Valor` de R-56 e de pedidos com essas medidas): **número arredondado a 2 casas**, `number_format` `#,##0.00` (mostra `48.210,35`). Igual ao número da tela convertido de pt-BR.
+- **Percentual:** **texto**, igual à tela (`87,4%`, 1 casa).
+- **Duração:** **texto**, igual à tela (`48 min`, `26 h 00 min`; mesma função da tela).
+- **Data em cartão:** texto `dd/mm/aaaa` como na tela. **Sem valor:** texto `—` (onde a tela mostra `—`).
+- **Nenhuma fórmula e nenhuma macro:** nenhuma célula com `data_type == 'f'` em nenhuma planilha; o `.xlsx` não contém `xl/vbaProject.bin`.
+
+**Período da capa (R-87):** cada ponta vem do filtro quando ele a define (`Mês` → 1º e último dia do mês; `De–até` → as datas informadas) e, quando não define (`Tudo` ou ponta em branco), da menor/maior data do campo de data dos registros filtrados.
+
+**Painel padrão (sem escolha confirmada):** a planilha de painel traz os blocos da etapa 1, como na tela: `Números`; `Por <categoria>` para até 3 categorias (8 maiores, sem `Outros`); `Por mês (<campo de data>)` (últimos 12 meses); `Tempo entre datas` (só com ≥ 2 campos de data); depois `Meus indicadores` (se houver) e `Registros`. `Possíveis repetidos` **não** vai ao Excel (é um botão de busca).
+
+**Macro (9b):** a planilha de painel na versão Excel é tarefa à parte (cabe no Excel 2016: só valores e texto); não entra nos CAs da etapa 4.
+
 ---
 
 ## 4. Etapa 4 — Excel seguindo o painel
 
 **O que quero**
-- "Gerar Excel" produz um arquivo com: **capa** (cliente, área, título, período real dos dados, filtros, data de geração, logo), e **uma planilha por aba do painel**, com os blocos na mesma ordem: números como cartões, gráficos como tabela de valores + gráfico, tabela de registros no fim.
-- Mantém as opções atuais: período (tudo / mês / de–até), formato (uma planilha por relatório / tudo numa / arquivos separados), durações em "h min", percentuais formatados.
+- "Gerar Excel" produz um arquivo com: **capa** (cliente, área, título, período, filtros, data de geração, logo), e **uma planilha por aba do painel**, com os blocos na mesma ordem: números como cartões, gráficos como tabela de valores com barra em texto, tabela de registros no fim. Nomes, layout e formatos exatos na seção 0.5 (R-80 a R-89).
+- Na etapa 4 o painel tem uma só aba implícita (`Painel`); a geração já trabalha com a lista de abas para a etapa 6.
+- Mantém as opções atuais: período (tudo / mês / de–até), formato (uma planilha por relatório / tudo numa / arquivos separados), durações em "h min", percentuais formatados. As planilhas de registros de cada formato continuam como hoje, depois das planilhas de painel.
 
 **O que NÃO quero**
 - Fórmula ou macro no arquivo gerado (só valores, como hoje).
+- Gráfico nativo do Excel (a barra é texto `█`, seção 0.5).
+- Valor no Excel diferente do que a tela mostra para os mesmos filtros.
+- Bloco que não está na tela (ex.: `Possíveis repetidos`) ou bloco da tela que falta no Excel.
 
-**Critérios**
-- CA-40: painel com 2 abas (3 e 2 blocos) → Excel com capa + 2 planilhas; nomes das planilhas = nomes das abas; ordem dos blocos igual.
-- CA-41: os valores de cada bloco no Excel são iguais aos da tela (leitura do .xlsx com openpyxl).
-- CA-42: período "de 01/10 a 31/10" → a capa diz "Registros de 01/10/2026 a 31/10/2026" e os números batem com o filtro.
-- CA-43: duração de 0,8 h aparece como "48 min"; 26 h como "26 h 00 min".
-- CA-44: aba escondida no painel não sai no Excel.
+**Critérios** (dados de `tests/dados/`; leitura do `.xlsx` com openpyxl; `Formato` = `Uma planilha por relatório` quando não dito)
+- CA-40 (**adiado para a etapa 6**, teste existe marcado `skip`): painel com 2 abas (3 e 2 blocos) → Excel com capa + 2 planilhas de painel; nomes das planilhas = nomes das abas; ordem dos blocos igual.
+- CA-41: `vendas.csv`; em `O que acompanhar` marcar `Total de registros`, `Valor (soma, média e mediana)`, `Por Cliente`, `Valor por Região` e `% por Situação`, `Confirmar`; `Gerar Excel` → existe a planilha `Painel` (3ª, depois de `Capa` e `Como ler este relatório`); A1 = `Painel`, A2 = `Relatório: vendas`; os títulos de bloco na coluna A aparecem na mesma ordem dos headings dos cartões da tela; para cada bloco, cada valor do cartão (linha abaixo do rótulo R-86) e cada linha `Categoria`/`Valor` da tabela é igual ao texto da tela (números convertidos de pt-BR; contagens inteiras com `#,##0`; decimais com 2 casas e `#,##0.00`; percentuais texto igual, ex. `87,4%`); a coluna `Barra` tem a quantidade de `█` da regra da 0.5.
+- CA-42: em `Filtros`, `Período` = `De–até` de 01/10/2026 a 31/10/2026; `Gerar Excel` → na `Capa`, a célula à direita de `Período` é `Registros de 01/10/2026 a 31/10/2026`, a de `Filtros` é `de 01/10/2026 a 31/10/2026`, a de `Gerado em` casa com `^\d{2}/\d{2}/\d{4} \d{2}:\d{2}$`; na planilha `Painel`, o valor de `Total de registros` e a quantidade de linhas da seção `Registros` = quantidade de registros com data em outubro/2026 (oráculo Python).
+- CA-43: CSV de teste com 2 campos de data cuja mediana do tempo é 0,8 h → no bloco `Tempo entre duas datas` da planilha `Painel`, a célula abaixo de `Mediana` é o texto `48 min`; outro CSV com mediana de 26 h → `26 h 00 min`; as duas células são texto (não número).
+- CA-44 (**adiado para a etapa 6**, teste existe marcado `skip`): aba escondida no painel não sai no Excel.
+- CA-45: carregar `vendas.csv` e `chamados.csv`, escolher blocos nos dois; `Formato` = `Tudo numa planilha` → um arquivo com `Capa`, `Como ler este relatório`, `Painel - vendas`, `Painel - chamados` e `Tudo`, nessa ordem; cada planilha de painel tem A2 = `Relatório: <conjunto>` e só os blocos do seu conjunto. `Formato` = `Arquivos separados` → 2 arquivos, cada um com uma planilha `Painel` (sem sufixo) com os blocos do seu conjunto.
+- CA-46: `vendas.csv` sem escolha confirmada (fechar `O que acompanhar` com `Cancelar`) → não há `Como ler este relatório`; a planilha `Painel` é a 2ª e traz, na coluna A e nesta ordem, `Números`, os `Por <categoria>` que a tela mostra, `Por mês (<campo de data>)` e `Registros`; não há `Possíveis repetidos`; os valores batem com a tela como no CA-41.
+- CA-47: em todos os arquivos gerados pelos CAs desta seção, nenhuma célula de nenhuma planilha tem `data_type == 'f'` e o zip do `.xlsx` não contém `xl/vbaProject.bin`.
+- CA-48: `vendas.csv` com escolha confirmada; pedir `soma do valor por cliente` e responder `Sim` → na planilha `Painel` a linha `Meus indicadores` vem depois do último bloco escolhido e antes de `Registros`; logo abaixo, o título do bloco igual ao heading da tela, com tabela `Categoria`/`Valor` igual à tela.
+- CA-49: filtro `Região` = `Sul` → a seção `Registros` da planilha `Painel` tem cabeçalho = nomes dos campos do conjunto, uma linha por registro da região Sul (contagem = oráculo) e as 5 primeiras linhas têm o mesmo código das 5 primeiras da tabela da tela.
+- CA-50: depois do CA-41, `window.__abasPainel("vendas")` devolve `[{nome:"Painel", blocos:[...]}]` com `blocos` = os títulos de bloco da planilha `Painel`, na mesma ordem (sem `Meus indicadores` e sem `Registros`, que são âncoras de seção).
 
 ---
 
