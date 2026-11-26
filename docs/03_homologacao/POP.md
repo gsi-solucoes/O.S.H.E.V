@@ -92,6 +92,18 @@ apagar dados). Modelo de cada procedimento: -->
 
 **Regras e limites:** se o PDF não tem tabela (um contrato, por exemplo) aparece "Não encontrei uma tabela neste arquivo" e nada é guardado. PDF com senha ou danificado: "Não consegui ler <arquivo>.". Até 200 páginas e 20 mil linhas ⚖️ D-51.
 
+### P-t. Carregar uma foto ou PDF escaneado (leitura por OCR)
+**Para que serve:** trazer os dados de uma foto, print ou PDF escaneado de um relatório, sem digitar. Tudo acontece no aparelho, sem enviar nada para a internet.
+
+| Você faz | O programa faz |
+|---|---|
+| Toca em **Carregar relatório** e escolhe uma ou várias fotos (JPG ou PNG), um PDF escaneado ou um .zip com elas | Melhora a imagem (cinza, contraste, endireita) e lê o texto em português; mostra "Lendo a imagem… n%" |
+| Escolhe várias fotos do mesmo relatório de uma vez | Junta tudo numa só conferência, com o cabeçalho uma vez ⚖️ D-62 |
+| Vê **Conferir leitura** (foto ao lado) | Marca as células em que o leitor tem dúvida e as que ele corrigiu sozinho (O→0 em código e número) ⚖️ D-60 |
+| Corrige o que estiver errado e toca em **Confirmar** (ou **Descartar**) | Guarda só o que você confirmou |
+
+**Regras e limites:** a primeira vez precisa de internet **uma vez** para o aparelho guardar o leitor (cerca de 9 MB, uma só vez); depois funciona sem internet. Sem tabela na imagem: "Não encontrei uma tabela neste arquivo". Até 20 imagens por vez e 120 segundos por imagem ⚖️ D-62. Só português ⚖️ D-63. Modelo de idioma leve ⚖️ D-61: erra um pouco mais, por isso a conferência é obrigatória.
+
 ## Quadro das decisões (marcar na homologação)
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
@@ -115,3 +127,7 @@ apagar dados). Modelo de cada procedimento: -->
 | D-50 | Carregar PDF | PDF sempre abre a conferência, mesmo sem nenhuma célula marcada | Espec. 7: tudo de PDF/OCR passa pela conferência | Pular a conferência quando tudo parece certo: tarefa pequena | Não | |
 | D-51 | Carregar PDF | Até 200 páginas e 20 mil linhas; acima disso corta em silêncio | Proteção do aparelho | Mudar os números: trivial | Sim | |
 | D-52 | Carregar PDF | Colunas achadas pela posição do texto; tabelas desenhadas só por linhas (sem alinhamento de texto) podem não ser lidas | Simplicidade, sem IA | Melhorar a leitura: tarefa maior | Sim | |
+| D-60 | Foto/OCR | Confusões do leitor (O por 0, I por 1…) são corrigidas sozinhas só em colunas de código e número, mas a célula fica marcada | Reduz erro sem esconder a mudança | Não corrigir sozinho: trivial | Sim | |
+| D-61 | Foto/OCR | Modelo de idioma leve (1,4 MB) | Rápido e leve no celular | Modelo completo (6,7 MB): tarefa pequena | Sim | |
+| D-62 | Foto/OCR | Até 20 imagens por vez e 120 s por imagem; fotos do mesmo envio com o mesmo cabeçalho viram uma conferência só | Proteção do aparelho | Mudar os números: trivial | Sim | |
+| D-63 | Foto/OCR | Só português | Espec. 7 | Outros idiomas: tarefa pequena | Não | |

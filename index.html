@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uRgnFLQw/4j0cYkJQX+S6Bxy4QcTYeUi3gj92KN1CuQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mHz/6n2x7tgnbdTBgOJb/siiRwWFU91SuU+l+CDTRe0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -38,6 +38,7 @@ textarea{min-height:90px}
 .bars{display:grid;gap:6px}.bar{display:grid;grid-template-columns:minmax(80px,30%) 1fr auto;gap:8px;align-items:center;text-align:left;background:none;border:0;min-height:32px;padding:0;font-weight:400}
 .bar i{display:block;height:14px;background:var(--accent);border-radius:4px;opacity:.85}.bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+#cfImgs img{max-width:100%;display:block;margin-bottom:6px;border:1px solid var(--line)}
 .tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;max-width:340px;min-width:70px;overflow-wrap:break-word}
 th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:uppercase;color:var(--muted)}
@@ -80,7 +81,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
   <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
-    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip" multiple></label>
+    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip,.jpg,.jpeg,.png" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
   </div>
 </header>
@@ -191,7 +192,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
 <dialog id="dlgAba" aria-labelledby="abaTit"><h3 id="abaTit">Dê um nome à aba</h3><label class="f">Nome da aba<input type="text" id="abaNome" maxlength="30" autocomplete="off"></label><p id="abaErro" class="muted" role="alert" hidden></p><div class="row" style="margin-top:12px"><button type="button" class="prim" id="abaSalvar">Salvar</button><button type="button" id="abaCancela">Cancelar</button></div></dialog>
 <dialog id="dlgPainel" aria-labelledby="painelTit"><h3 id="painelTit">Seu painel</h3><ol id="painelLista" class="passos"></ol><div class="row" style="margin-top:12px"><button type="button" class="prim" id="painelFechar">Fechar</button></div></dialog>
-<dialog id="dlgConf" aria-labelledby="cfTit" style="max-width:min(1100px,96vw)"><h3 id="cfTit">Conferir leitura</h3><p class="muted" id="cfArq"></p><p class="muted">Confira a tabela lida. As células marcadas podem estar erradas.</p><p id="cfCont" class="muted" role="status"></p><div class="tw" style="max-height:55vh;overflow:auto;margin:10px 0"><table id="cfTab"></table></div><div class="row"><button type="button" class="prim" id="cfOk">Confirmar</button><button type="button" id="cfNao">Descartar</button></div></dialog>
+<dialog id="dlgConf" aria-labelledby="cfTit" style="max-width:min(1100px,96vw)"><h3 id="cfTit">Conferir leitura</h3><p class="muted" id="cfArq"></p><p class="muted">Confira a tabela lida. As células marcadas podem estar erradas.</p><p id="cfCont" class="muted" role="status"></p><div style="display:flex;gap:10px;align-items:flex-start;margin:10px 0"><div id="cfImgs" hidden style="flex:0 0 28%;max-height:55vh;overflow:auto"></div><div class="tw" style="max-height:55vh;overflow:auto;flex:1;min-width:0"><table id="cfTab"></table></div></div><div class="row"><button type="button" class="prim" id="cfOk">Confirmar</button><button type="button" id="cfNao">Descartar</button></div></dialog>
 <dialog id="dlgPergunta"><h3 id="pgTit"></h3><p id="pgTxt"></p><div class="row" id="pgBtns"></div></dialog>
 
 <script src="vendor/jszip.min.js"></script>
@@ -655,11 +656,57 @@ var Core = (function () {
     return { rows: rows, baixas: baixas };
   }
 
+  // OCR (etapa 7c). words = [{t, x0, y0, x1, y1, c}] de uma página/foto (coordenadas da imagem, y para baixo; c = confiança 0-100).
+  // Vira itens {x, y, w, h, t} na escala do PDF (corpo do texto ~10) com y invertido (topo = maior y). Palavra de confiança < 75 leva a marca .
+  var MARCA = '';
+  function itensOcr(words) {
+    var ws = words.filter(function (w) { return t(w.t) && w.x1 > w.x0 && w.y1 > w.y0; });
+    if (!ws.length) return [];
+    var hs = ws.map(function (w) { return w.y1 - w.y0; }).sort(function (a, b) { return a - b; }), mh = Math.max(1, hs[hs.length >> 1]), k = 10 / mh;
+    ws = ws.filter(function (w) { return /[0-9A-Za-zÀ-ÿ]/.test(w.t) || (w.y1 - w.y0) <= 1.25 * mh; });   // traço fantasma (borda, sujeira) bem mais alto que o texto: descarta
+    return ws.map(function (w) { return { x: w.x0 * k, y: -(w.y0 + w.y1) / 2 * k, w: (w.x1 - w.x0) * k, h: (w.y1 - w.y0) * k, t: (w.c < 75 ? MARCA : '') + t(w.t) }; });
+  }
+  // Regra 3: coluna de códigos (letra + dígitos) ou de números/datas (>= 60% das células) tem as confusões O/I/S/B/Z trocadas; só nessas colunas.
+  function corrigeOcr(rows, baixas) {
+    var ba = {}; baixas.forEach(function (b) { ba[b[0] + ',' + b[1]] = 1; });
+    var COD = /^[A-Za-z]\d+$/, NUM = /^[\d,.\/: ]+$/, DEC = /^[\d.]*\d,\d{2}$/;
+    var troca = function (s) { return s.replace(/[OoQD]/g, '0').replace(/[Il|]/g, '1').replace(/S/g, '5').replace(/B/g, '8').replace(/Z/g, '2'); };
+    var cod = function (x) { return /^[A-Za-z]/.test(x) ? x.charAt(0) + troca(x.slice(1)) : ''; };   // no código a letra do começo fica
+    for (var j = 0; j < rows[0].length; j++) {
+      var cel = rows.slice(1).map(function (r) { return r[j]; }).filter(Boolean); if (!cel.length) continue;
+      // o formato vale também depois da troca (um código lido "VOOOO1" ainda é código), desde que a célula tenha ao menos um dígito
+      var nc = cel.filter(function (x) { return COD.test(x) || (/\d/.test(x) && COD.test(cod(x))); }).length, nn = cel.filter(function (x) { return NUM.test(x) || (/\d/.test(x) && NUM.test(troca(x))); }).length;
+      var modo = nc >= 0.6 * cel.length ? 'cod' : nn >= 0.6 * cel.length ? 'num' : '';
+      if (!modo) {   // coluna de texto: nada é alterado; só marca a célula que começa em minúscula quando as demais começam em maiúscula (ex.: "I" lido como "l")
+        if (cel.filter(function (x) { return /^[A-ZÀ-Ý]/.test(x); }).length >= 0.8 * cel.length) rows.forEach(function (r, i) { if (i && /^[a-zà-ÿ]/.test(r[j])) ba[i + ',' + j] = 1; });
+        continue;
+      }
+      var dec = modo === 'num' && cel.filter(function (x) { return DEC.test(troca(x)); }).length >= 0.8 * cel.length;   // coluna de valores com 2 casas
+      var ln = {}, ml = 0; if (modo === 'cod') { cel.forEach(function (x) { ln[x.length] = (ln[x.length] || 0) + 1; }); Object.keys(ln).forEach(function (k) { if (!ml || ln[k] > ln[ml]) ml = +k; }); }   // tamanho mais comum dos códigos
+      for (var i = 1; i < rows.length; i++) {
+        var x = rows[i][j]; if (!x) continue;
+        var y = modo === 'cod' ? cod(x.replace(/\s+/g, '')) || x : troca(x);   // código não tem espaço
+        if (modo === 'cod' && ml && y.length === ml + 1 && y.indexOf('00') > 0) y = y.replace('00', '0');   // um zero a mais (letra O lida em dobro)
+        if (dec && !DEC.test(y)) { if (/^\d+ \d{2}$/.test(y)) y = y.replace(' ', ','); else if (/^\d{3,}$/.test(y)) y = y.slice(0, -2) + ',' + y.slice(-2); }   // vírgula lida como espaço ou perdida
+        if (y !== x) { rows[i][j] = y; ba[i + ',' + j] = 1; }
+      }
+    }
+    return Object.keys(ba).map(function (k) { var p = k.split(','); return [+p[0], +p[1]]; });
+  }
+  // paginas = [words]; devolve {rows, baixas} (como tabelaPdf, já com a regra 3) ou null
+  function tabelaOcr(paginas) {
+    var r = tabelaPdf(paginas.map(itensOcr), 20000); if (!r) return null;
+    var baixas = [];
+    r.rows = r.rows.map(function (lin, i) { return lin.map(function (x, j) { if (x.indexOf(MARCA) >= 0) { baixas.push([i, j]); return t(x.split(MARCA).join('')); } return x; }); });
+    r.baixas.forEach(function (b) { baixas.push(b); });
+    return { rows: r.rows, baixas: corrigeOcr(r.rows, baixas) };
+  }
+
   return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
-    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, t: t };
+    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "5b2f4ddf3f";
+const VERSAO = "03d796ec8e";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -818,7 +865,7 @@ function perguntarColunas(arquivo, hdr, corpo, nome) {
   });
 }
 /* ---- leitores por tipo (etapa 7a): cada um devolve [{nome, rows}] ---- */
-const EXTS = ['csv', 'txt', 'tsv', 'xlsx', 'xls', 'ods', 'json', 'xml', 'pdf', 'zip'], MAXCOL = 200, PDFPAG = 200, ZIP = { arqs: 50, total: 200 * 1048576 };
+const EXTS = ['csv', 'txt', 'tsv', 'xlsx', 'xls', 'ods', 'json', 'xml', 'pdf', 'zip', 'jpg', 'jpeg', 'png'], MAXCOL = 200, PDFPAG = 200, ZIP = { arqs: 50, total: 200 * 1048576 };
 const p2 = n => (n < 10 ? '0' : '') + n;
 const numTxt = n => String(n).replace('.', ',');
 function dataTxt(d0) { const d = new Date(d0.getTime() + 30000); const s = p2(d.getUTCDate()) + '/' + p2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); return d.getUTCHours() || d.getUTCMinutes() ? s + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) : s; }
@@ -924,9 +971,10 @@ async function lerZip(buf, arq) {
   return lidos;
 }
 /* ---- conferência da leitura (PDF e, na 7c, OCR): conferir(arquivo, rows, baixas) -> rows editadas ou null ---- */
-function conferir(arquivo, rows, baixas) {
+function conferir(arquivo, rows, baixas, imgs) {
   return new Promise(ok => {
     const d = $('#dlgConf'), tb = $('#cfTab'), ba = new Set((baixas || []).map(b => b[0] + ',' + b[1])), nc = rows[0].length, hdr = rows[0].map(Core.t), cel = [];
+    const ci = $('#cfImgs'); ci.textContent = ''; ci.hidden = !(imgs && imgs.length); (imgs || []).forEach(m => ci.append(el('img', { src: m.src, alt: 'Imagem lida: ' + m.nome })));
     $('#cfArq').textContent = 'Arquivo: ' + arquivo + '.'; $('#cfCont').textContent = 'Linhas lidas: ' + (rows.length - 1) + ' · Células marcadas: ' + ba.size;
     const frag = document.createDocumentFragment(), cab = el('tr'), lin = (r, i) => { const tr = el('tr'), v = []; for (let j = 0; j < nc; j++) { const x = el('input', { type: 'text', value: Core.t(r[j]), 'aria-label': i ? 'Linha ' + i + ', ' + (hdr[j] || 'coluna ' + (j + 1)) : 'Cabeçalho, coluna ' + (j + 1) }); if (ba.has(i + ',' + j)) x.setAttribute('data-baixa', 'true'); v.push(x); tr.append(el('td', null, x)); } cel.push(v); return tr; };
     cab.append(...lin(rows[0], 0).children); frag.append(el('thead', null, cab));
@@ -935,26 +983,157 @@ function conferir(arquivo, rows, baixas) {
     const mais = () => { const fim = Math.min(rows.length, prox + passo), f = document.createDocumentFragment(); for (; prox < fim; prox++) f.append(lin(rows[prox], prox)); corpo.append(f); bm.hidden = prox >= rows.length; };
     const bm = el('button', { type: 'button', id: 'cfMais', text: 'Mostrar mais linhas', onclick: mais }); frag.append(corpo);
     tb.textContent = ''; tb.append(frag); tb.parentNode.querySelector('#cfMais') && tb.parentNode.querySelector('#cfMais').remove(); tb.after(bm); mais();
-    let res = null; d.onclose = () => { tb.textContent = ''; ok(res); };
+    let res = null; d.onclose = () => { tb.textContent = ''; ci.textContent = ''; ok(res); };
     $('#cfOk').onclick = () => { res = rows.map((r, i) => cel[i] ? cel[i].map(x => x.value) : r.slice()); d.close(); }; $('#cfNao').onclick = () => d.close();
     d.showModal();
   });
 }
-let pdfjs;
+let pdfjs, pdfSemTexto = false;
 async function lerPdf(buf) {   // texto com posição de cada página -> tabela {rows, baixas} ou null (nada executado, sem rede)
   if (!pdfjs) { const m = await import('./vendor/pdf.min.mjs'); m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; pdfjs = m; }
   toast('Lendo o PDF…');
-  const tarefa = pdfjs.getDocument({ data: new Uint8Array(buf), disableFontFace: true, useSystemFonts: false, enableXfa: false }); let tempo = null, esgotou = false;
+  const tarefa = pdfjs.getDocument({ data: new Uint8Array(buf).slice(), disableFontFace: true, useSystemFonts: false, enableXfa: false }); let tempo = null, esgotou = false;
   const doc = await tarefa.promise;
   try {
     const lim = new Promise((_, no) => { tempo = setTimeout(() => { esgotou = true; tarefa.destroy(); no(new Error('tempo')); }, 60000); });   // PDF-bomba: passou de 60 s, desiste
     const ler = (async () => {
-      const pgs = []; let tot = 0;
-      for (let i = 1; i <= Math.min(doc.numPages, PDFPAG) && !esgotou; i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); const it = tc.items.filter(x => typeof x.str === 'string').slice(0, 100000); tot += it.length; pgs.push(it.map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); if (tot > 400000) break; }
+      const pgs = []; let tot = 0, txt = 0;
+      for (let i = 1; i <= Math.min(doc.numPages, PDFPAG) && !esgotou; i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); const it = tc.items.filter(x => typeof x.str === 'string').slice(0, 100000); tot += it.length; txt += it.filter(x => x.str.trim()).length; pgs.push(it.map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); if (tot > 400000) break; }
+      pdfSemTexto = txt === 0;
       return Core.tabelaPdf(pgs, 20000);
     })();
     return await Promise.race([ler, lim]);
   } finally { clearTimeout(tempo); doc.destroy(); }
+}
+/* ---- OCR no aparelho (etapa 7c): imagem e PDF escaneado; só arquivos de vendor/ocr/, nunca rede externa ---- */
+const OCR = { lim: 20, ms: 120000, max: 3000, min: 1600 }, IMGS = ['jpg', 'jpeg', 'png'];
+let ocrW = null, ocrTxt = n => 'Lendo a imagem… ' + n + '%';
+const ocrUrl = p => new URL('vendor/ocr/' + p, location.href).href;
+function toastFim() { const t = $('#toast'); if (/^Lendo a /.test(t.textContent)) t.style.display = 'none'; }
+async function ocrPronto() {   // 1ª vez: injeta tesseract.min.js e cria o leitor; falhou = indisponível (ex.: offline antes do 1º uso)
+  if (ocrW) return ocrW;
+  try {
+    if (!window.Tesseract) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = ocrUrl('tesseract.min.js'); sc.onload = ok; sc.onerror = () => no(new Error('script')); document.head.append(sc); });
+    const simd = WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
+    const w = await Tesseract.createWorker('por', 1, { workerPath: ocrUrl('worker.min.js'), corePath: ocrUrl('core/tesseract-core-' + (simd ? 'simd-' : '') + 'lstm.wasm.js'), langPath: ocrUrl('lang'), workerBlobURL: false, gzip: true, cacheMethod: 'none', logger: m => { if (m.status === 'recognizing text') toast(ocrTxt(Math.round(m.progress * 100))); } });
+    await w.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' }); ocrW = w;
+  } catch (e) { ocrW = null; throw 'indisp'; }
+  return ocrW;
+}
+function ocrPartes(x) {   // limpa e reparte uma palavra do leitor: letras repetidas por cima umas das outras, palavras coladas ("ZetaFerragens")
+  const bb = x.bbox, h = bb.y1 - bb.y0, sy = [];
+  (x.symbols || []).forEach(q => {
+    if (!q.text || !q.text.trim()) return;
+    const a = sy[sy.length - 1];
+    if (a && /^[0OoDQ]$/.test(a.text) && /^[0OoDQ]$/.test(q.text) && Math.min(a.bbox.x1, q.bbox.x1) - Math.max(a.bbox.x0, q.bbox.x0) > 0.5 * Math.min(a.bbox.x1 - a.bbox.x0, q.bbox.x1 - q.bbox.x0)) { if (q.confidence > a.confidence) sy[sy.length - 1] = q; return; }   // zero/O fantasma por cima do outro
+    sy.push(q);
+  });
+  if (!sy.length) return [{ t: x.text.trim(), x0: bb.x0, y0: bb.y0, x1: bb.x1, y1: bb.y1, c: x.confidence }];
+  const ps = []; let at = null, ant = null;
+  sy.forEach(q => { if (!at || q.bbox.x0 - ant.bbox.x1 > 0.3 * h) { at = { t: '', x0: q.bbox.x0, y0: bb.y0, x1: 0, y1: bb.y1, c: x.confidence }; ps.push(at); } at.t += q.text; at.x1 = q.bbox.x1; ant = q; });
+  const out = [];   // minúscula seguida de maiúscula sem vão: reparte (célula fica marcada para conferir)
+  ps.forEach(pt => {
+    const m = pt.t.split(/(?<=[a-zà-ÿ])(?=[A-ZÀ-Ý])/); if (m.length < 2) { out.push(pt); return; }
+    let o = 0; const L = pt.t.length, W = pt.x1 - pt.x0;
+    m.forEach((tx, i) => { out.push({ t: tx, x0: pt.x0 + W * o / L, y0: pt.y0, x1: pt.x0 + W * (o + tx.length) / L - (i < m.length - 1 ? 0.25 * h : 0), y1: pt.y1, c: Math.min(pt.c, 60) }); o += tx.length; });
+  });
+  return out;
+}
+async function ocrLer(cv) {   // canvas -> palavras [{t, x0, y0, x1, y1, c}]; passou de 120 s: abandona (worker.terminate)
+  const blob = await new Promise(ok => cv.toBlob(ok, 'image/png')); if (!blob) throw 'img';
+  const w = await ocrPronto(); let tempo;
+  const lim = new Promise((_, no) => { tempo = setTimeout(() => { try { w.terminate(); } catch (e) { /* já parou */ } ocrW = null; no('tempo'); }, OCR.ms); });
+  try {
+    const r = await Promise.race([w.recognize(blob, {}, { blocks: true }), lim]), ws = [];
+    (r.data.blocks || []).forEach(b => b.paragraphs.forEach(pa => pa.lines.forEach(l => l.words.forEach(x => ocrPartes(x).forEach(q => ws.push(q))))));
+    return ws;
+  } finally { clearTimeout(tempo); }
+}
+function infoImg(b) {   // tamanho e integridade pelo cabeçalho (JPEG/PNG); null = corrompida/cortada/vazia
+  const n = b.length;
+  if (n > 40 && b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) {
+    const dv = new DataView(b.buffer, b.byteOffset, n), w = dv.getUint32(16), h = dv.getUint32(20);
+    return w && h && b[n - 8] === 0x49 && b[n - 7] === 0x45 && b[n - 6] === 0x4E && b[n - 5] === 0x44 ? { w, h, tipo: 'image/png' } : null;
+  }
+  if (n > 200 && b[0] === 0xFF && b[1] === 0xD8) {
+    let fim = false; for (let i = n - 2; i >= Math.max(2, n - 64); i--) if (b[i] === 0xFF && b[i + 1] === 0xD9) { fim = true; break; }
+    if (!fim) return null;
+    for (let i = 2; i + 9 < n;) {
+      if (b[i] !== 0xFF) { i++; continue; }
+      const m = b[i + 1];
+      if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) { const h = (b[i + 5] << 8) | b[i + 6], w = (b[i + 7] << 8) | b[i + 8]; return w && h ? { w, h, tipo: 'image/jpeg' } : null; }
+      if (m === 0xFF) i++; else if (m === 0xD8 || m === 0x01 || (m >= 0xD0 && m <= 0xD7)) i += 2; else i += 2 + ((b[i + 2] << 8) | b[i + 3]);
+    }
+  }
+  return null;
+}
+function melhora(src, w0, h0) {   // cinza + contraste + tamanho (3000 máx., 1600 mín.) + endireitar ±5°; devolve canvas
+  const mx = Math.max(w0, h0), k = mx > OCR.max ? OCR.max / mx : mx < OCR.min ? Math.min(4, OCR.min / mx) : 1, w = Math.max(1, Math.round(w0 * k)), h = Math.max(1, Math.round(h0 * k));
+  let cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const cx = cv.getContext('2d', { willReadFrequently: true }); cx.imageSmoothingQuality = 'high'; cx.fillStyle = '#fff'; cx.fillRect(0, 0, w, h); cx.drawImage(src, 0, 0, w, h);
+  const id = cx.getImageData(0, 0, w, h), d = id.data, n = w * h, gr = new Uint8Array(n), hist = new Uint32Array(256);
+  for (let i = 0, j = 0; i < n; i++, j += 4) { const g = (d[j] * 77 + d[j + 1] * 150 + d[j + 2] * 29) >> 8; gr[i] = g; hist[g]++; }
+  let lo = 0, hi = 255, ac = 0; for (let v = 0; v < 256; v++) { ac += hist[v]; if (ac >= n * 0.01) { lo = v; break; } } ac = 0; for (let v = 0; v < 256; v++) { ac += hist[v]; if (ac >= n * 0.99) { hi = v; break; } }
+  if (hi - lo > 30) { const lut = new Uint8Array(256); for (let v = 0; v < 256; v++) lut[v] = Math.max(0, Math.min(255, Math.round((v - lo) * 255 / (hi - lo)))); for (let i = 0; i < n; i++) gr[i] = lut[gr[i]]; }
+  for (let i = 0, j = 0; i < n; i++, j += 4) { d[j] = d[j + 1] = d[j + 2] = gr[i]; d[j + 3] = 255; }
+  cx.putImageData(id, 0, 0);
+  // endireitar: ângulo (−5° a +5°) em que as linhas de texto mais se alinham (projeção horizontal dos pontos escuros)
+  const st = Math.max(1, Math.round(mx * k / 1200)), px = [], py = [];
+  for (let y = 0; y < h; y += st) for (let x = 0; x < w; x += st) if (gr[y * w + x] < 110) { px.push(x); py.push(y); }
+  const cap = Math.max(1, Math.ceil(px.length / 150000)), qx = [], qy = []; for (let i = 0; i < px.length; i += cap) { qx.push(px[i]); qy.push(py[i]); }
+  const off = Math.ceil(w * 0.1), nb = Math.ceil((h + 2 * off) / st) + 2;
+  const pont = a => { const sn = Math.sin(a * Math.PI / 180), cs = Math.cos(a * Math.PI / 180), bins = new Float64Array(nb); for (let i = 0; i < qx.length; i++) bins[Math.floor((qx[i] * sn + qy[i] * cs + off) / st)]++; let q = 0; for (let i = 0; i < nb; i++) q += bins[i] * bins[i]; return q; };
+  if (qx.length > 200) {
+    let ma = 0, mp = pont(0); for (let a = -5; a <= 5.001; a += 0.5) { const q = pont(a); if (q > mp) { mp = q; ma = a; } }
+    const c0 = ma; for (let a = c0 - 0.5; a <= c0 + 0.501; a += 0.1) { const q = pont(a); if (q > mp) { mp = q; ma = a; } }
+    if (Math.abs(ma) >= 0.15) { const c2 = document.createElement('canvas'); c2.width = w; c2.height = h; const x2 = c2.getContext('2d'); x2.fillStyle = '#fff'; x2.fillRect(0, 0, w, h); x2.imageSmoothingQuality = 'high'; x2.translate(w / 2, h / 2); x2.rotate(ma * Math.PI / 180); x2.drawImage(cv, -w / 2, -h / 2); cv = c2; }
+  }
+  return cv;
+}
+function miniatura(cv) { const k = Math.min(1, 900 / Math.max(cv.width, cv.height)), m = document.createElement('canvas'); m.width = Math.max(1, Math.round(cv.width * k)); m.height = Math.max(1, Math.round(cv.height * k)); m.getContext('2d').drawImage(cv, 0, 0, m.width, m.height); return m.toDataURL('image/jpeg', 0.6); }
+async function imgCanvas(buf) {   // arquivo -> canvas melhorado (reduz antes de desenhar: foto de 12 MP não trava)
+  const inf = infoImg(new Uint8Array(buf)); if (!inf) throw 'img';
+  const blob = new Blob([buf], { type: inf.tipo }), k = Math.min(1, OCR.max / Math.max(inf.w, inf.h)); let bm;
+  if (window.createImageBitmap) bm = await (k < 1 ? createImageBitmap(blob, { resizeWidth: Math.round(inf.w * k), resizeHeight: Math.round(inf.h * k), resizeQuality: 'high' }) : createImageBitmap(blob));
+  else bm = await new Promise((ok, no) => { const u = URL.createObjectURL(blob), im = new Image(); im.onload = () => { URL.revokeObjectURL(u); ok(im); }; im.onerror = no; im.src = u; });
+  const cv = melhora(bm, bm.width, bm.height); if (bm.close) bm.close(); return cv;
+}
+async function lerItem(it, resta) {   // imagem ou PDF escaneado -> { t: {rows, baixas}|null, mini, n }
+  if (!it.pdf) { const cv = await imgCanvas(it.buf), ws = await ocrLer(cv); return { t: Core.tabelaOcr([ws]), mini: miniatura(cv), n: 1 }; }
+  if (!pdfjs) { const m = await import('./vendor/pdf.min.mjs'); m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; pdfjs = m; }
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(it.buf), disableFontFace: true, useSystemFonts: false, enableXfa: false }).promise, np = Math.min(doc.numPages, OCR.lim, resta), pgs = []; let mini = '';
+  try {
+    if (doc.numPages > np) toast(it.nome + ': limite de 20 imagens.');
+    for (let i = 1; i <= np; i++) {
+      ocrTxt = () => 'Lendo a página ' + i + ' de ' + np + '…'; toast(ocrTxt());
+      const pg = await doc.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: Math.min(4, 2000 / Math.max(v0.width, v0.height)) }), c0 = document.createElement('canvas');
+      c0.width = Math.round(v.width); c0.height = Math.round(v.height); await pg.render({ canvasContext: c0.getContext('2d'), canvas: c0, viewport: v }).promise; pg.cleanup();
+      const cv = melhora(c0, c0.width, c0.height); if (i === 1) mini = miniatura(cv); pgs.push(await ocrLer(cv));
+    }
+  } finally { doc.destroy(); ocrTxt = n => 'Lendo a imagem… ' + n + '%'; }
+  return { t: Core.tabelaOcr(pgs), mini, n: np };
+}
+async function lerImagens(fila) {   // R-133: mesmo cabeçalho = uma janela; devolve os resultados já importados
+  const res = [], gr = new Map(); let n = 0;
+  try {
+    for (const it of fila) {
+      if (n >= OCR.lim) { toast(it.nome + ': limite de 20 imagens.'); continue; }
+      toast(ocrTxt(0));
+      try {
+        const r = await lerItem(it, OCR.lim - n); n += r.n;
+        if (!r.t) { toast('Não encontrei uma tabela neste arquivo'); continue; }
+        const k = r.t.rows[0].map(Core.norm).join('\u0001'); let g = gr.get(k);
+        if (!g) { g = { nomes: [], rows: [r.t.rows[0]], baixas: [], imgs: [] }; gr.set(k, g); }
+        const off = g.rows.length - 1; g.rows.push(...r.t.rows.slice(1)); r.t.baixas.forEach(b => { if (b[0] > 0 || off === 0) g.baixas.push([b[0] + off, b[1]]); });
+        g.nomes.push(it.nome); g.imgs.push({ src: r.mini, nome: it.nome });
+      } catch (e) {
+        if (e === 'indisp') { toast('O leitor de imagens ainda não está disponível neste aparelho. Use uma vez com internet.'); break; }
+        toast('Não consegui ler ' + it.nome + '.');
+      }
+    }
+  } finally { if (ocrW) { try { ocrW.terminate(); } catch (e) { /* já parou */ } ocrW = null; } toastFim(); }
+  for (const g of gr.values()) { const rows = await conferir(g.nomes.join(', '), g.rows, g.baixas, g.imgs); if (!rows) continue; const r = await processar(g.nomes.join(', '), semExt(g.nomes[0]), rows); if (r) res.push(r); }
+  return res;
 }
 async function processar(arq, nome, rows) {
   const hi = Core.acharCabecalho(rows);
@@ -965,10 +1144,11 @@ async function processar(arq, nome, rows) {
   if (!fm) { fm = await perguntarColunas(arq, hdr, corpo, nome); if (!fm) return null; fmts[sig] = fm; store.set('raiox_fmt', fmts); }
   return await importar(fm, corpo);
 }
-async function lerBuf(buf, arq, res) {   // um arquivo (ou um de dentro do zip) -> uma ou mais tabelas, cada uma pelo caminho de sempre
+async function lerBuf(buf, arq, res, fila) {   // um arquivo (ou um de dentro do zip) -> uma ou mais tabelas, cada uma pelo caminho de sempre
+  if (IMGS.includes(extDe(arq))) { fila.push({ nome: arq, buf }); return; }   // imagens do envio vão juntas para o OCR
   if (extDe(arq) === 'pdf') {
     let t; try { t = await lerPdf(buf); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
-    if (!t) { toast('Não encontrei uma tabela neste arquivo'); return; }
+    if (!t) { if (pdfSemTexto) fila.push({ nome: arq, buf, pdf: true }); else toast('Não encontrei uma tabela neste arquivo'); return; }
     const rows = await conferir(arq, t.rows, t.baixas); if (!rows) return;
     const r = await processar(arq, semExt(arq), rows); if (r) res.push(r); return;
   }
@@ -976,17 +1156,17 @@ async function lerBuf(buf, arq, res) {   // um arquivo (ou um de dentro do zip) 
   if (!ts.length) { toast('Não achei o cabeçalho em ' + arq + '.'); return; }
   for (const t of ts) { const r = await processar(arq, t.nome, t.rows); if (r) res.push(r); }
 }
-async function lerArquivo(f) {
+async function lerArquivo(f, fila) {
   const res = [], e = extDe(f.name);
   if (!EXTS.includes(e)) { toast(f.name + ': formato não suportado.'); return res; }
   if (f.size > LIM.csv) { toast(f.name + ': arquivo grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.csv) + ').'); return res; }
   const buf = await f.arrayBuffer();
-  if (e !== 'zip') { await lerBuf(buf, f.name, res); return res; }
+  if (e !== 'zip') { await lerBuf(buf, f.name, res, fila); return res; }
   let L; try { L = await lerZip(buf, f.name); } catch (x) { toast(x === 'grande' ? f.name + ': zip grande demais.' : 'Não consegui ler ' + f.name + '.'); return res; }
   for (const x of L) {
     if (x.ign) toast(x.p + ': formato não suportado (ignorado).');
     else if (x.grande) toast(x.p + ': arquivo grande demais (o limite é ' + mb(LIM.csv) + ').');
-    else await lerBuf(x.buf, x.p, res);
+    else await lerBuf(x.buf, x.p, res, fila);
   }
   return res;
 }
@@ -1016,11 +1196,12 @@ async function importar(fm, corpo) {
   return { c, lidos: noArq.size, novos };
 }
 async function carregar(files) {
-  const msgs = [], tocados = [];
+  const msgs = [], tocados = [], fila = [], reg = r => { msgs.push(r.c + ': ' + r.lidos + ' lidos, ' + r.novos + ' novos'); if (tocados.indexOf(r.c) < 0) tocados.push(r.c); };
   for (const f of files) {
-    try { for (const r of await lerArquivo(f)) { msgs.push(r.c + ': ' + r.lidos + ' lidos, ' + r.novos + ' novos'); if (tocados.indexOf(r.c) < 0) tocados.push(r.c); } }
+    try { for (const r of await lerArquivo(f, fila)) reg(r); }
     catch (e) { toast('Não consegui ler ' + f.name + '.'); }
   }
+  try { for (const r of await lerImagens(fila)) reg(r); } catch (e) { toast('Não consegui ler as imagens.'); }
   $('#status').textContent = msgs.join(' · ');
   if (!F.conjunto || !conjs[F.conjunto]) F.conjunto = Object.keys(conjs)[0] || '';
   mostrar = 50; render(); renderConfig();

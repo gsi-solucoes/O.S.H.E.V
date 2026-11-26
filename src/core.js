@@ -456,8 +456,54 @@ var Core = (function () {
     return { rows: rows, baixas: baixas };
   }
 
+  // OCR (etapa 7c). words = [{t, x0, y0, x1, y1, c}] de uma página/foto (coordenadas da imagem, y para baixo; c = confiança 0-100).
+  // Vira itens {x, y, w, h, t} na escala do PDF (corpo do texto ~10) com y invertido (topo = maior y). Palavra de confiança < 75 leva a marca .
+  var MARCA = '';
+  function itensOcr(words) {
+    var ws = words.filter(function (w) { return t(w.t) && w.x1 > w.x0 && w.y1 > w.y0; });
+    if (!ws.length) return [];
+    var hs = ws.map(function (w) { return w.y1 - w.y0; }).sort(function (a, b) { return a - b; }), mh = Math.max(1, hs[hs.length >> 1]), k = 10 / mh;
+    ws = ws.filter(function (w) { return /[0-9A-Za-zÀ-ÿ]/.test(w.t) || (w.y1 - w.y0) <= 1.25 * mh; });   // traço fantasma (borda, sujeira) bem mais alto que o texto: descarta
+    return ws.map(function (w) { return { x: w.x0 * k, y: -(w.y0 + w.y1) / 2 * k, w: (w.x1 - w.x0) * k, h: (w.y1 - w.y0) * k, t: (w.c < 75 ? MARCA : '') + t(w.t) }; });
+  }
+  // Regra 3: coluna de códigos (letra + dígitos) ou de números/datas (>= 60% das células) tem as confusões O/I/S/B/Z trocadas; só nessas colunas.
+  function corrigeOcr(rows, baixas) {
+    var ba = {}; baixas.forEach(function (b) { ba[b[0] + ',' + b[1]] = 1; });
+    var COD = /^[A-Za-z]\d+$/, NUM = /^[\d,.\/: ]+$/, DEC = /^[\d.]*\d,\d{2}$/;
+    var troca = function (s) { return s.replace(/[OoQD]/g, '0').replace(/[Il|]/g, '1').replace(/S/g, '5').replace(/B/g, '8').replace(/Z/g, '2'); };
+    var cod = function (x) { return /^[A-Za-z]/.test(x) ? x.charAt(0) + troca(x.slice(1)) : ''; };   // no código a letra do começo fica
+    for (var j = 0; j < rows[0].length; j++) {
+      var cel = rows.slice(1).map(function (r) { return r[j]; }).filter(Boolean); if (!cel.length) continue;
+      // o formato vale também depois da troca (um código lido "VOOOO1" ainda é código), desde que a célula tenha ao menos um dígito
+      var nc = cel.filter(function (x) { return COD.test(x) || (/\d/.test(x) && COD.test(cod(x))); }).length, nn = cel.filter(function (x) { return NUM.test(x) || (/\d/.test(x) && NUM.test(troca(x))); }).length;
+      var modo = nc >= 0.6 * cel.length ? 'cod' : nn >= 0.6 * cel.length ? 'num' : '';
+      if (!modo) {   // coluna de texto: nada é alterado; só marca a célula que começa em minúscula quando as demais começam em maiúscula (ex.: "I" lido como "l")
+        if (cel.filter(function (x) { return /^[A-ZÀ-Ý]/.test(x); }).length >= 0.8 * cel.length) rows.forEach(function (r, i) { if (i && /^[a-zà-ÿ]/.test(r[j])) ba[i + ',' + j] = 1; });
+        continue;
+      }
+      var dec = modo === 'num' && cel.filter(function (x) { return DEC.test(troca(x)); }).length >= 0.8 * cel.length;   // coluna de valores com 2 casas
+      var ln = {}, ml = 0; if (modo === 'cod') { cel.forEach(function (x) { ln[x.length] = (ln[x.length] || 0) + 1; }); Object.keys(ln).forEach(function (k) { if (!ml || ln[k] > ln[ml]) ml = +k; }); }   // tamanho mais comum dos códigos
+      for (var i = 1; i < rows.length; i++) {
+        var x = rows[i][j]; if (!x) continue;
+        var y = modo === 'cod' ? cod(x.replace(/\s+/g, '')) || x : troca(x);   // código não tem espaço
+        if (modo === 'cod' && ml && y.length === ml + 1 && y.indexOf('00') > 0) y = y.replace('00', '0');   // um zero a mais (letra O lida em dobro)
+        if (dec && !DEC.test(y)) { if (/^\d+ \d{2}$/.test(y)) y = y.replace(' ', ','); else if (/^\d{3,}$/.test(y)) y = y.slice(0, -2) + ',' + y.slice(-2); }   // vírgula lida como espaço ou perdida
+        if (y !== x) { rows[i][j] = y; ba[i + ',' + j] = 1; }
+      }
+    }
+    return Object.keys(ba).map(function (k) { var p = k.split(','); return [+p[0], +p[1]]; });
+  }
+  // paginas = [words]; devolve {rows, baixas} (como tabelaPdf, já com a regra 3) ou null
+  function tabelaOcr(paginas) {
+    var r = tabelaPdf(paginas.map(itensOcr), 20000); if (!r) return null;
+    var baixas = [];
+    r.rows = r.rows.map(function (lin, i) { return lin.map(function (x, j) { if (x.indexOf(MARCA) >= 0) { baixas.push([i, j]); return t(x.split(MARCA).join('')); } return x; }); });
+    r.baixas.forEach(function (b) { baixas.push(b); });
+    return { rows: r.rows, baixas: corrigeOcr(r.rows, baixas) };
+  }
+
   return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
-    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, t: t };
+    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
 if (typeof module !== 'undefined') module.exports = Core;

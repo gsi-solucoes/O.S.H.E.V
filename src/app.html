@@ -38,6 +38,7 @@ textarea{min-height:90px}
 .bars{display:grid;gap:6px}.bar{display:grid;grid-template-columns:minmax(80px,30%) 1fr auto;gap:8px;align-items:center;text-align:left;background:none;border:0;min-height:32px;padding:0;font-weight:400}
 .bar i{display:block;height:14px;background:var(--accent);border-radius:4px;opacity:.85}.bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:16px}
+#cfImgs img{max-width:100%;display:block;margin-bottom:6px;border:1px solid var(--line)}
 .tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;max-width:340px;min-width:70px;overflow-wrap:break-word}
 th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:uppercase;color:var(--muted)}
@@ -80,7 +81,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
   <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
-    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip" multiple></label>
+    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip,.jpg,.jpeg,.png" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
   </div>
 </header>
@@ -191,7 +192,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
 <dialog id="dlgAba" aria-labelledby="abaTit"><h3 id="abaTit">Dê um nome à aba</h3><label class="f">Nome da aba<input type="text" id="abaNome" maxlength="30" autocomplete="off"></label><p id="abaErro" class="muted" role="alert" hidden></p><div class="row" style="margin-top:12px"><button type="button" class="prim" id="abaSalvar">Salvar</button><button type="button" id="abaCancela">Cancelar</button></div></dialog>
 <dialog id="dlgPainel" aria-labelledby="painelTit"><h3 id="painelTit">Seu painel</h3><ol id="painelLista" class="passos"></ol><div class="row" style="margin-top:12px"><button type="button" class="prim" id="painelFechar">Fechar</button></div></dialog>
-<dialog id="dlgConf" aria-labelledby="cfTit" style="max-width:min(1100px,96vw)"><h3 id="cfTit">Conferir leitura</h3><p class="muted" id="cfArq"></p><p class="muted">Confira a tabela lida. As células marcadas podem estar erradas.</p><p id="cfCont" class="muted" role="status"></p><div class="tw" style="max-height:55vh;overflow:auto;margin:10px 0"><table id="cfTab"></table></div><div class="row"><button type="button" class="prim" id="cfOk">Confirmar</button><button type="button" id="cfNao">Descartar</button></div></dialog>
+<dialog id="dlgConf" aria-labelledby="cfTit" style="max-width:min(1100px,96vw)"><h3 id="cfTit">Conferir leitura</h3><p class="muted" id="cfArq"></p><p class="muted">Confira a tabela lida. As células marcadas podem estar erradas.</p><p id="cfCont" class="muted" role="status"></p><div style="display:flex;gap:10px;align-items:flex-start;margin:10px 0"><div id="cfImgs" hidden style="flex:0 0 28%;max-height:55vh;overflow:auto"></div><div class="tw" style="max-height:55vh;overflow:auto;flex:1;min-width:0"><table id="cfTab"></table></div></div><div class="row"><button type="button" class="prim" id="cfOk">Confirmar</button><button type="button" id="cfNao">Descartar</button></div></dialog>
 <dialog id="dlgPergunta"><h3 id="pgTit"></h3><p id="pgTxt"></p><div class="row" id="pgBtns"></div></dialog>
 
 <script src="vendor/jszip.min.js"></script>
