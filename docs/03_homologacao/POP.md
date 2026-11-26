@@ -32,7 +32,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | Abre **Config → Empresa / cliente** e escreve **Cliente** e **Área** | Salva sozinho a cada letra, sem botão Salvar ⚖️ D-02; o topo passa a mostrar "Raio X do Relatório · Área · Cliente" |
 | Toca em **Escolher logo** e escolhe uma imagem | Reduz a imagem e mostra no topo, na impressão e na capa do Excel ⚖️ D-03 |
 | Toca em **Apagar logo** | Tira o logo do topo e da capa |
-| Em **Metas**, muda a meta (padrão 90%) e o prazo "dentro do prazo" (padrão 24 h) | Os blocos de percentual mostram "faltam X para a meta"; o tempo entre datas usa o prazo novo |
+| Em **Metas**, muda a meta (padrão 90%) e o prazo "dentro do prazo" (padrão 24 h) | O bloco **Tempo entre duas datas** (só ele) mostra "Dentro de 24 h: X%" e, embaixo, "Acima da meta de 90%" ou "faltam X pontos para a meta de 90%"; o prazo novo muda o "dentro de". Sem esse bloco, a meta não aparece |
 
 **Regras e limites:** logo até 2 MB (vira imagem de até 240 px). Config fica só neste aparelho e entra no backup.
 
@@ -203,6 +203,14 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | Corrige o que estiver errado e toca em **Confirmar** (ou **Descartar**) | Guarda só o que você confirmou |
 
 **Regras e limites:** a primeira vez precisa de internet **uma vez** para o aparelho guardar o leitor (cerca de 9 MB, uma só vez); depois funciona sem internet. Sem tabela na imagem: "Não encontrei uma tabela neste arquivo". Até 20 imagens por vez e 120 segundos por imagem ⚖️ D-62. Só português ⚖️ D-63. Modelo de idioma leve ⚖️ D-61: erra um pouco mais, por isso a conferência é obrigatória.
+
+## Anotações da leitura com o Galindo (26/11/2026)
+**Meta (P-b), versão atual, depois do teste:** hoje não dá para ficar sem meta: campo vazio ou **0** volta para 90 (defeito). Ideia: campo vazio = sem meta (o bloco mostra só o percentual). O Galindo quer **testar antes** com um relatório de vendas (`tests/dados/vendas.csv`) e só então decidir (F-71).
+
+**Versão 2.0 (mudanças grandes, não entram agora; F-72):**
+1. **Clientes ou contratos separados:** seletor "Cliente ▾" no topo, com "+ Novo cliente"; cada um com relatórios, nome, logo, metas, painel e backup próprios; trocar com um toque, sem misturar (hoje é um cliente por aparelho e códigos iguais de clientes diferentes se juntam, D-05).
+2. **Histórico de alterações:** a cada carga, comparar registro a registro com o guardado; onde algum campo mudou, guardar a data da carga, o campo, o valor antigo e o novo. Mostrar ao passar o mouse no registro, botão "Exibir histórico" (todas as versões na lista) e extrair no Excel. Só aparece em registro que teve alteração (D-06, "Se mudar").
+3. **Compartilhar aprendizado com a GSI:** janela com campo de texto e print colado com Ctrl+V (só texto e print; nenhum outro arquivo; o app redesenha a imagem antes; aviso para não mandar dado pessoal; quem tem imagem salva abre, tira print e cola). Vai junto um arquivo só com as configurações (formatos de coluna, indicadores, sinônimos, contas), nunca os registros. Envio por e-mail para **solucaogsi@gmail.com**: no celular pelo compartilhar do aparelho (anexo junto); no computador baixa o pacote e abre o e-mail pronto. O app continua sem servidor.
 
 ## Quadro das decisões (marcar na homologação)
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
