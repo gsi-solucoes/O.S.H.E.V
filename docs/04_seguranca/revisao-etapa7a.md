@@ -71,3 +71,6 @@
 
 ## Correção
 (a preencher pela fábrica)
+
+## Correção (F-66, 26/11/2026)
+M-1 (planilha lida só pelas células que existem, teto de 2 milhões de células e 20 abas), B-1 (tamanho real descompactado de .xlsx/.ods conferido antes do leitor) e B-2 (`vendor/LEIA-ME.md` com origem, versão e hash) corrigidos, com 2 testes de regressão (`test_f66_*`); etapa 1 e 7a: 69 verdes.

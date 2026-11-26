@@ -168,20 +168,26 @@ function valorTxt(v) {
   if (typeof v === 'object') return JSON.stringify(v);
   return String(v);
 }
-function lerPlanilha(buf, nome, ext) {
+async function lerPlanilha(buf, nome, ext) {
   // assinatura do arquivo: .xlsx/.ods são zip ('PK'), .xls é OLE; texto qualquer com essa extensão é arquivo corrompido (o leitor o tomaria por CSV)
   const u8 = new Uint8Array(buf);
   const okAss = ext === 'xls' ? (u8[0] === 0xD0 && u8[1] === 0xCF && u8[2] === 0x11 && u8[3] === 0xE0) || u8[0] === 0x3C : (u8[0] === 0x50 && u8[1] === 0x4B);
   if (!okAss) throw new Error('assinatura');
+  if (ext !== 'xls') await confereDescompactado(buf);
   const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true, sheetRows: 200001, cellFormula: false }), out = [];
-  wb.SheetNames.forEach(n => {
+  wb.SheetNames.slice(0, 20).forEach(n => {
     const ws = wb.Sheets[n]; if (!ws || !ws['!ref']) return;
-    const rg = XLSX.utils.decode_range(ws['!ref']), c1 = Math.min(rg.e.c, rg.s.c + MAXCOL - 1), r1 = Math.min(rg.e.r, rg.s.r + 200000), rows = [];
-    for (let r = rg.s.r; r <= r1; r++) {
-      const lin = []; let tem = false;
-      for (let c = rg.s.c; c <= c1; c++) { const ce = ws[XLSX.utils.encode_cell({ r, c })]; const s = !ce || ce.t === 'e' || ce.t === 'z' ? '' : valorTxt(ce.v); if (s) tem = true; lin.push(s); }
-      rows.push(lin);
+    // só as células que existem (uma célula em XFD200000 não pode montar uma grade de 200 mil x 200); teto de células por aba
+    const rg = XLSX.utils.decode_range(ws['!ref']), cel = [], porLin = new Map(); let nCel = 0, maxC = -1;
+    for (const k in ws) {
+      if (k.charCodeAt(0) === 33) continue;   // '!ref', '!merges'...
+      const ce = ws[k]; if (!ce || ce.t === 'e' || ce.t === 'z') continue;
+      const a1 = XLSX.utils.decode_cell(k); if (a1.r < rg.s.r || a1.r > rg.s.r + 200000 || a1.c < rg.s.c || a1.c > rg.s.c + MAXCOL - 1) continue;
+      const v = valorTxt(ce.v); if (!v) continue;
+      if (++nCel > PLAN_CELULAS) break;
+      if (!porLin.has(a1.r)) porLin.set(a1.r, []); porLin.get(a1.r).push([a1.c - rg.s.c, v]); if (a1.c - rg.s.c > maxC) maxC = a1.c - rg.s.c;
     }
+    const rows = [...porLin.keys()].sort((x, y) => x - y).map(r => { const lin = new Array(maxC + 1).fill(''); porLin.get(r).forEach(([c, v]) => { lin[c] = v; }); return lin; });
     if (rows.some(l => l.some(Boolean))) out.push({ aba: n, rows });
   });
   return out.map(t => ({ nome: out.length > 1 ? nome + ' - ' + t.aba : nome, rows: t.rows }));
@@ -215,11 +221,20 @@ function lerXML(buf, nome) {
   });
   const rows = [cols.slice()]; vals.forEach(v => rows.push(cols.map(k => v[k] || ''))); return [{ nome, rows }];
 }
+const PLAN_CELULAS = 2000000;
+// .xlsx/.ods são zips: confere o tamanho REAL depois de descompactar (o declarado pode mentir) antes de entregar ao leitor
+async function confereDescompactado(buf) {
+  const z = await JSZip.loadAsync(buf); let tot = 0;
+  for (const p of Object.keys(z.files)) {
+    const en = z.files[p]; if (en.dir) continue;
+    await new Promise((ok, no) => { const st = en.internalStream('uint8array'); st.on('data', d => { tot += d.length; if (tot > ZIP.total) { st.pause(); no(new Error('grande')); } }).on('error', no).on('end', ok).resume(); });
+  }
+}
 const extDe = n => { const m = /\.([^.\/]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
 const semExt = n => n.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
-function tabelasDe(buf, arq) {
+async function tabelasDe(buf, arq) {
   const e = extDe(arq), nome = semExt(arq);
-  if (e === 'xlsx' || e === 'xls' || e === 'ods') return lerPlanilha(buf, nome, e);
+  if (e === 'xlsx' || e === 'xls' || e === 'ods') return await lerPlanilha(buf, nome, e);
   if (e === 'json') return lerJSON(buf, nome);
   if (e === 'xml') return lerXML(buf, nome);
   return [{ nome, rows: Core.parseCSV(Core.decode(buf)) }];
@@ -256,7 +271,7 @@ async function processar(arq, nome, rows) {
   return await importar(fm, corpo);
 }
 async function lerBuf(buf, arq, res) {   // um arquivo (ou um de dentro do zip) -> uma ou mais tabelas, cada uma pelo caminho de sempre
-  let ts; try { ts = tabelasDe(buf, arq); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
+  let ts; try { ts = await tabelasDe(buf, arq); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
   if (!ts.length) { toast('Não achei o cabeçalho em ' + arq + '.'); return; }
   for (const t of ts) { const r = await processar(arq, t.nome, t.rows); if (r) res.push(r); }
 }

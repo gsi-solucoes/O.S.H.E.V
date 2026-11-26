@@ -562,3 +562,44 @@ def test_regra7_sem_rede_ao_ler_formatos_novos(ctx, page):
 def test_regra7_leitor_e_local_sem_cdn(page):
     html = page.content()
     assert not re.search(r"<script[^>]+src=[\"']https?://", html)
+
+
+# ---------- F-66: Médio e Baixos da revisão de segurança da etapa 7a (regressão) ----------
+def test_f66_celula_longe_nao_monta_grade_gigante(page, tmp_path):
+    import time
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["Código", "Cliente"])
+    ws.append(["V00001", "Alfa Teste"])
+    ws["XFD200000"] = "longe"
+    p = tmp_path / "longe.xlsx"
+    wb.save(p)
+    t0 = time.time()
+    enviar(page, p)
+    page.wait_for_timeout(500)
+    mapear_tudo(page)
+    fechar_acompanhar(page)
+    assert time.time() - t0 < 12, "a aba travou lendo uma planilha de 1,5 KB"
+    assert "V00001" in codigos(page)
+    vivo(page)
+
+
+def test_f66_bomba_de_descompressao_em_xlsx_nao_consegui_ler(page, tmp_path):
+    import zipfile
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    wb.active.append(["Código", "Cliente"])
+    base = tmp_path / "base.xlsx"
+    wb.save(base)
+    p = tmp_path / "bomba.xlsx"
+    with zipfile.ZipFile(base) as a, zipfile.ZipFile(p, "w", zipfile.ZIP_DEFLATED) as b:
+        for i in a.infolist():
+            b.writestr(i.filename, a.read(i.filename))
+        with b.open("xl/bomba.bin", "w", force_zip64=True) as f:
+            bloco = bytes(1024 * 1024)
+            for _ in range(250):
+                f.write(bloco)
+    msgs = enviar_vendo_mensagens(page, p, espera=6000)
+    assert "Não consegui ler bomba.xlsx." in msgs
+    vivo(page)
