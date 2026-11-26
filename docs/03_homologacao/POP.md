@@ -159,7 +159,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | **Subir** / **Descer** (ou arrasta) um bloco | Muda a ordem na tela, no "Seu painel" e no Excel |
 | **Nova aba**, **Renomear aba**, **Aba à esquerda/direita** | Cria e organiza abas (nome até 30 letras, sem repetir) |
 | **Mover para…** outra aba | O bloco passa para a aba escolhida |
-| **Apagar aba** e confirma | Os blocos dela vão para o fim da primeira aba ⚖️ D-35 |
+| **Apagar aba** e confirma | Os blocos dela vão para o fim da primeira aba; a pergunta diz "O bloco dela vai…" (1 bloco) ou "Os N blocos dela vão…" ⚖️ D-35 |
 | **Tamanho** (Pequeno, Médio, Grande) | Muda a largura na tela; o Excel não muda ⚖️ D-33 |
 | **Esconder** / **Mostrar** | Bloco escondido some da tela, do "Seu painel" e do Excel |
 | **Duplicar** | Cria uma cópia logo depois, na mesma aba ⚖️ D-31 |
@@ -191,7 +191,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | **Confirmar** | Segue para "Esta coluna é o quê?" (só na primeira vez deste formato) e guarda os registros |
 | **Descartar** (ou Esc) | Não guarda nada |
 
-**Regras e limites:** se o PDF não tem tabela (um contrato, por exemplo) aparece "Não encontrei uma tabela neste arquivo" e nada é guardado. PDF com senha ou danificado: "Não consegui ler <arquivo>.". Até 200 páginas e 20 mil linhas ⚖️ D-51.
+**Regras e limites:** se o PDF não tem tabela (um contrato, por exemplo) aparece "Não encontrei uma tabela neste arquivo" e nada é guardado. PDF com senha ou danificado: "Não consegui ler <arquivo>.". Até 200 páginas e 20 mil linhas; acima disso o programa lê só até o limite e avisa "O arquivo foi cortado em 200 páginas." / "O arquivo foi cortado em 20 mil linhas." ⚖️ D-51.
 
 ### P-t. Carregar uma foto ou PDF escaneado (leitura por OCR)
 **Para que serve:** trazer os dados de uma foto, print ou PDF escaneado de um relatório, sem digitar. Tudo acontece no aparelho, sem enviar nada para a internet.
@@ -246,14 +246,14 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | D-32 | Editar layout / Backup | Restaurar com "Somar" só traz layout de relatório sem layout | Evita desfazer o arranjo atual | Sobrescrever: trivial | Sim | **Fica** (26/11) |
 | D-33 | Editar layout | Tamanho não muda o Excel | Planilha não tem largura de bloco | Nenhum efeito possível | Não | **Fica** (26/11) |
 | D-34 | Editar layout | Formas permitidas por tipo de bloco: número só Número; por categoria Barras/Pizza/Tabela; por mês também Linha | "quando o tipo de dado permite" | Liberar mais formas: tarefa média | Sim | **Fica** (26/11) |
-| D-35 | Editar layout | A mensagem de apagar aba diz "Os N blocos dela vão para a primeira aba." (inclusive com 1 bloco) | Texto literal da espec. | Singular: trivial | Sim | **Muda** (26/11): com 1 bloco, "O bloco dela vai para a primeira aba." (F-73) |
+| D-35 | Editar layout | A mensagem de apagar aba diz "Os N blocos dela vão para a primeira aba." (inclusive com 1 bloco) | Texto literal da espec. | Singular: trivial | Sim | **Muda** (26/11), feito na F-73: com 1 bloco, "O bloco dela vai para a primeira aba." |
 | D-36 | Editar layout / Excel | A tabela de registros só aparece na primeira planilha de painel de cada relatório | Não repetir milhares de linhas em cada aba | Repetir em todas: trivial | Sim | **Fica** (26/11) |
 | D-40 | Carregar planilha | Cada aba da planilha vira um relatório à parte, "arquivo - aba" | Espec. 7: "cada aba vira um conjunto candidato" | Juntar abas num só: tarefa média | Sim | **Fica** (26/11) |
 | D-41 | Carregar planilha/JSON/XML | Número com vírgula e sem milhar, data dd/mm/aaaa, para o formato lembrado do CSV servir | Reaproveitar o que o usuário já respondeu | Perguntar de novo por tipo de arquivo: trivial | Sim | **Fica** (26/11) |
 | D-42 | Carregar planilha | .xlsm, .xlsb e planilha com senha não são lidos | Segurança (macros) e simplicidade | Aceitar .xlsb: tarefa pequena | Sim | **Fica** (26/11) |
 | D-43 | Carregar zip | Até 50 arquivos e 200 MB depois de aberto; acima disso nada do zip entra | Proteção contra arquivo-bomba | Mudar os números: trivial | Sim | **Fica** (26/11) |
 | D-50 | Carregar PDF | PDF sempre abre a conferência, mesmo sem nenhuma célula marcada | Espec. 7: tudo de PDF/OCR passa pela conferência | Pular a conferência quando tudo parece certo: tarefa pequena | Não | **Fica** (26/11) |
-| D-51 | Carregar PDF | Até 200 páginas e 20 mil linhas; acima disso corta em silêncio | Proteção do aparelho | Mudar os números: trivial | Sim | **Muda** (26/11): continua cortando, mas avisa "O arquivo foi cortado em 200 páginas / 20 mil linhas." (F-73) |
+| D-51 | Carregar PDF | Até 200 páginas e 20 mil linhas; acima disso corta e avisa | Proteção do aparelho | Mudar os números: trivial | Sim | **Muda** (26/11): continua cortando, mas avisa "O arquivo foi cortado em 200 páginas / 20 mil linhas." (feito na F-73) |
 | D-52 | Carregar PDF | Colunas achadas pela posição do texto; tabelas desenhadas só por linhas (sem alinhamento de texto) podem não ser lidas | Simplicidade, sem IA | Melhorar a leitura: tarefa maior | Sim | **Fica** (26/11) |
 | D-60 | Foto/OCR | Confusões do leitor (O por 0, I por 1…) são corrigidas sozinhas só em colunas de código e número, mas a célula fica marcada | Reduz erro sem esconder a mudança | Não corrigir sozinho: trivial | Sim | **Fica** (26/11) |
 | D-61 | Foto/OCR | Modelo de idioma leve (1,4 MB) | Rápido e leve no celular | Modelo completo (6,7 MB): tarefa pequena | Sim | **Fica** (26/11) |

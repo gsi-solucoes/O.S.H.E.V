@@ -403,7 +403,7 @@ var Core = (function () {
   // rows[0] é o cabeçalho; baixas indexa rows (0 = cabeçalho). Linha = mesmo y (± metade do corpo); coluna = x de início (± 6 pt).
   function tabelaPdf(paginas, maxLin) {
     maxLin = maxLin || 20000;
-    var linhas = [], totItens = 0; // por página: [[{x, t}]] (células já coladas)
+    var cortado = false, linhas = [], totItens = 0; // por página: [[{x, t}]] (células já coladas)
     paginas.forEach(function (itens) {
       if (totItens > 400000) return; totItens += itens.length; itens = itens.length > 100000 ? itens.slice(0, 100000) : itens;   // teto de pedaços de texto
       var its = itens.filter(function (i) { return t(i.t); }).sort(function (a, b) { return b.y - a.y; }), ls = [];
@@ -439,7 +439,7 @@ var Core = (function () {
       ls.forEach(function (l, k) {
         if (l.length < 2 || (p === 0 && k <= cabP.desde)) return;
         var m = monta(l); if (m.r.join('\u0001') === hdrT) return;
-        if (rows.length > maxLin || rows.length * cols.length > 1000000) return;   // teto de linhas e de células
+        if (rows.length > maxLin || rows.length * cols.length > 1000000) { cortado = true; return; }   // teto de linhas e de células
         rows.push(m.r); lm.push(m);
       });
     });
@@ -454,7 +454,7 @@ var Core = (function () {
         if ((!x && m.r.some(Boolean)) || m.col[j] || (x && padrao[j] && numero(x) === null && dataISO(x) === '')) baixas.push([i + 1, j]);
       });
     });
-    return { rows: rows, baixas: baixas };
+    return { rows: rows, baixas: baixas, cortado: cortado };
   }
 
   // OCR (etapa 7c). words = [{t, x0, y0, x1, y1, c}] de uma página/foto (coordenadas da imagem, y para baixo; c = confiança 0-100).

@@ -899,3 +899,12 @@ def test_f63_nome_de_aba_sem_invisiveis_nem_emoji_partido(page):
       nomeAba({ worksheets: [] }, '\\ud83d\\ude00'.repeat(40))]""")
     assert r[:4] == [True, True, True, False]
     assert "�" not in r[4] and len(list(r[4])) <= 28
+
+
+def test_f73_apagar_aba_com_um_bloco_diz_o_bloco_dela_vai(page):
+    _com_reuniao(page)
+    mover(page, TOTAL, "Painel")
+    page.get_by_role("button", name="Apagar aba", exact=True).click()
+    d = dlg(page, "Apagar a aba Reunião?")
+    d.wait_for(state="visible")
+    assert "O bloco dela vai para a primeira aba." in re.sub(r"\s+", " ", d.inner_text())

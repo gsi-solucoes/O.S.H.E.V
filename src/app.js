@@ -279,10 +279,10 @@ function conferir(arquivo, rows, baixas, imgs) {
     d.showModal();
   });
 }
-let pdfjs, pdfSemTexto = false;
+let pdfjs, pdfSemTexto = false, pdfAviso = '';
 async function lerPdf(buf) {   // texto com posição de cada página -> tabela {rows, baixas} ou null (nada executado, sem rede)
   if (!pdfjs) { const m = await import('./vendor/pdf.min.mjs'); m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; pdfjs = m; }
-  toast('Lendo o PDF…');
+  pdfAviso = ''; toast('Lendo o PDF…');
   const tarefa = pdfjs.getDocument({ data: new Uint8Array(buf).slice(), disableFontFace: true, useSystemFonts: false, enableXfa: false }); let tempo = null, esgotou = false;
   const doc = await tarefa.promise;
   try {
@@ -290,8 +290,9 @@ async function lerPdf(buf) {   // texto com posição de cada página -> tabela 
     const ler = (async () => {
       const pgs = []; let tot = 0, txt = 0;
       for (let i = 1; i <= Math.min(doc.numPages, PDFPAG) && !esgotou; i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); const it = tc.items.filter(x => typeof x.str === 'string').slice(0, 100000); tot += it.length; txt += it.filter(x => x.str.trim()).length; pgs.push(it.map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); if (tot > 400000) break; }
-      pdfSemTexto = txt === 0;
-      return Core.tabelaPdf(pgs, 20000);
+      pdfSemTexto = txt === 0; pdfAviso = doc.numPages > PDFPAG ? 'O arquivo foi cortado em ' + PDFPAG + ' páginas.' : '';
+      const tb = Core.tabelaPdf(pgs, 20000); if (tb && tb.cortado) pdfAviso = (pdfAviso ? pdfAviso + ' ' : '') + 'O arquivo foi cortado em 20 mil linhas.';
+      return tb;
     })();
     return await Promise.race([ler, lim]);
   } finally { clearTimeout(tempo); doc.destroy(); }
@@ -443,7 +444,7 @@ async function lerBuf(buf, arq, res, fila) {   // um arquivo (ou um de dentro do
     let t; try { t = await lerPdf(buf); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
     if (!t) { if (pdfSemTexto) fila.push({ nome: arq, buf, pdf: true }); else toast('Não encontrei uma tabela neste arquivo'); return; }
     const rows = await conferir(arq, t.rows, t.baixas); if (!rows) return;
-    const r = await processar(arq, semExt(arq), rows); if (r) res.push(r); return;
+    const r = await processar(arq, semExt(arq), rows); if (r) res.push(r); if (pdfAviso) toast(pdfAviso); return;
   }
   let ts; try { ts = await tabelasDe(buf, arq); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
   if (!ts.length) { toast('Não achei o cabeçalho em ' + arq + '.'); return; }
@@ -918,7 +919,7 @@ function iniciaLay() {
   $('#layRenomeia').onclick = async () => { const c = cc(), lay = layGet(c), ab = abaAberta(c, lay), n = await pedeNomeAba(ab.nome, lay, ab.id); if (!n) return; layMut(c, X => { const a = X.abas.find(x => x.id === ab.id); if (a) a.nome = n; }); };
   $('#layApagaAba').onclick = async () => {
     const c = cc(), lay = layGet(c); if (lay.abas.length < 2) return; const ab = abaAberta(c, lay), n = lay.itens.filter(i => i.aba === ab.id).length;
-    const r = await perguntar('Apagar a aba ' + ab.nome + '?', n ? 'Os ' + n + ' blocos dela vão para a primeira aba.' : '', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]); if (!r) return;
+    const r = await perguntar('Apagar a aba ' + ab.nome + '?', n ? (n === 1 ? 'O bloco dela vai para a primeira aba.' : 'Os ' + n + ' blocos dela vão para a primeira aba.') : '', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]); if (!r) return;
     layMut(c, X => { const resto = X.abas.filter(a => a.id !== ab.id), dest = resto[0].id, mv = X.itens.filter(i => i.aba === ab.id); X.itens = X.itens.filter(i => i.aba !== ab.id); mv.forEach(i => { i.aba = dest; X.itens.push(i); }); X.abas = resto; abaAb[c] = dest; });
   };
   const anda = d => { const c = cc(); layMut(c, X => { const ab = abaAberta(c, X), i = X.abas.findIndex(a => a.id === ab.id), j = i + d; if (j < 0 || j >= X.abas.length) return; const t = X.abas[i]; X.abas[i] = X.abas[j]; X.abas[j] = t; }); };

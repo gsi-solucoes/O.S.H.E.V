@@ -454,3 +454,37 @@ def test_f67_conferencia_grande_mostra_primeiras_linhas_e_mais(page):
       return [antes, depois, document.querySelector('#cfMais').hidden];
     }""")
     assert n[0] < 2001 * 50 and n[0] > 0 and n[1] > n[0]
+
+
+# ---------- F-73 (D-51): PDF grande continua cortando, mas avisa ----------
+def test_f73_core_pdf_acima_de_20_mil_linhas_marca_cortado(tmp_path):
+    import subprocess, json, pathlib
+    js = ("const C=require('./src/core.js');const pg=[];for(let p=0;p<2;p++){const it=[];"
+          "[['Cod','Cli','Val']].concat(Array.from({length:30},(_,i)=>['V'+i,'C'+i,i+',5'])).forEach((l,k)=>{"
+          "l.forEach((t,j)=>it.push({x:30+j*120,y:800-k*14,w:50,h:10,t:t}))});pg.push(it)}"
+          "const a=C.tabelaPdf(pg,10),b=C.tabelaPdf(pg,20000);console.log(JSON.stringify([a.cortado,a.rows.length,b.cortado]))")
+    raiz = pathlib.Path(__file__).resolve().parent.parent
+    r = subprocess.run(["node", "-e", js], cwd=raiz, capture_output=True, text=True)
+    assert json.loads(r.stdout.strip().splitlines()[-1]) == [True, 11, False], r.stdout + r.stderr
+
+
+def test_f73_pdf_com_mais_de_200_paginas_avisa_o_corte(page, tmp_path):
+    pytest.importorskip("reportlab")
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.pdfgen import canvas
+    p = tmp_path / "grande.pdf"
+    c = canvas.Canvas(str(p), pagesize=landscape(A4), invariant=1)
+    for n in range(205):
+        c.setFont("Helvetica", 10)
+        if n == 0:
+            for x, t in zip(XS3, ["Código", "Cliente", "Valor"]):
+                c.drawString(x, 500, t)
+        for k in range(3):
+            for x, t in zip(XS3, [f"V{n:03d}{k}", f"Cliente {n}", f"{n},50"]):
+                c.drawString(x, 480 - 16 * k, t)
+        c.showPage()
+    c.save()
+    enviar_vendo_mensagens(page, p, espera=1000)
+    resolver(page)
+    msgs = " | ".join(page.evaluate("window.__tt")) + " | " + page.evaluate("document.body.innerText")
+    assert "O arquivo foi cortado em 200 páginas." in msgs
