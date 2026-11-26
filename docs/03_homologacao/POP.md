@@ -9,9 +9,96 @@ as regras e os limites. Onde a fábrica tomou uma **decisão importante sem o Ga
 Cada "Muda" vira tarefa com teste. A fábrica atualiza o POP a cada etapa publicada.
 
 ## Procedimentos
-<!-- F-61 escreve os procedimentos das etapas 1 a 4 (abrir/instalar, Config, importar arquivos, "esta coluna é o quê?",
-"O que você quer acompanhar?", "Seu painel"/"Entender este painel", pedido escrito com "É isso?", gerar Excel, backup e restaurar,
-apagar dados). Modelo de cada procedimento: -->
+Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada coluna (P-c), escolher o que acompanhar e entender o painel (P-d), usar o painel e os filtros (P-e), pedir por escrito (P-f), gerar o Excel (P-g), backup e apagar (P-x, P-h); depois os recursos das etapas 5 a 7 (P-y em diante).
+*P-a a P-h e P-x conferidos no app em 26/11/2026 (navegador da oficina, `vendas.csv` de teste), F-61.*
+
+### P-a. Abrir, instalar e usar sem internet
+**Para que serve:** usar o Raio X no celular ou no computador como um aplicativo, mesmo sem internet.
+
+| Você faz | O programa faz |
+|---|---|
+| Abre o link https://gsi-solucoes.github.io/raio-x-do-relatorio/ | Mostra "Raio X do Relatório", o botão **Carregar relatório** e as abas **Painel** e **Config** |
+| Escolhe "Adicionar à tela inicial" (celular) ou "Instalar" (computador) no navegador | Vira um ícone, como um app |
+| Abre de novo sem internet | Funciona igual (tudo foi guardado na 1ª abertura); só a leitura de foto precisa de internet uma vez (P-t) |
+| Abre com internet depois de uma atualização | Baixa a versão nova por trás; na próxima abertura aparece "Versão nova instalada" |
+
+**Regras e limites:** nada sai do aparelho: sem login, sem servidor, sem envio de dados. Os dados ficam só naquele navegador daquele aparelho; para levar a outro, use o backup (P-x).
+
+### P-b. Pôr o nome do cliente, a área e o logo (Config)
+**Para que serve:** o relatório sair com a cara do cliente, sem nada fixo no programa.
+
+| Você faz | O programa faz |
+|---|---|
+| Abre **Config → Empresa / cliente** e escreve **Cliente** e **Área** | Salva sozinho a cada letra, sem botão Salvar ⚖️ D-02; o topo passa a mostrar "Raio X do Relatório · Área · Cliente" |
+| Toca em **Escolher logo** e escolhe uma imagem | Reduz a imagem e mostra no topo, na impressão e na capa do Excel ⚖️ D-03 |
+| Toca em **Apagar logo** | Tira o logo do topo e da capa |
+| Em **Metas**, muda a meta (padrão 90%) e o prazo "dentro do prazo" (padrão 24 h) | Os blocos de percentual mostram "faltam X para a meta"; o tempo entre datas usa o prazo novo |
+
+**Regras e limites:** logo até 2 MB (vira imagem de até 240 px). Config fica só neste aparelho e entra no backup.
+
+### P-c. Carregar um relatório e dizer o que é cada coluna
+**Para que serve:** trazer os registros de um arquivo extraído de qualquer sistema (aqui, CSV; outros formatos em P-v, P-u e P-t).
+
+| Você faz | O programa faz |
+|---|---|
+| Toca em **Carregar relatório** e escolhe um ou vários arquivos | Acha a linha do cabeçalho sozinho e lê cada arquivo no aparelho |
+| (formato que ele nunca viu) | Abre **Esta coluna é o quê?**: para cada coluna mostra um exemplo, o nome do campo (dá para trocar) e o tipo já sugerido: Ignorar, Código, Data, Categoria, Situação, Texto, Número ⚖️ D-16. Mostra também o **Nome do relatório** (padrão: o nome do arquivo) |
+| Escolhe **uma** coluna como **Código** (o que identifica cada registro) e toca em **Confirmar** | Guarda os registros e lembra o formato: da próxima vez, o mesmo conjunto de colunas não pergunta de novo. Sem Código, ou com dois: "Escolha exatamente uma coluna como Código." |
+| Carrega o mesmo arquivo outra vez (ou uma versão nova) | Não duplica: registro com o mesmo código é atualizado campo a campo; valor vazio no arquivo novo não apaga o que já havia ⚖️ D-06. No topo: "vendas: 500 lidos, 0 novos" |
+| Carrega outro arquivo com o mesmo campo código e códigos que já existem | Junta no relatório que já tem esses códigos, somando os campos novos ⚖️ D-05 |
+| Em **Config → Formatos lembrados**, toca em **Esquecer** | Na próxima carga desse formato, pergunta de novo |
+
+**Regras e limites:** linha sem código é deixada de fora, sem aviso ⚖️ D-04. Categoria é sugerida quando a coluna tem até 30 valores diferentes e muita repetição; Situação, quando o nome lembra "situação", "status" ou "estado" ⚖️ D-08. O arquivo original não é guardado, só os registros. Cada arquivo até 50 MB.
+
+### P-d. Escolher "O que você quer acompanhar?" e ler "Seu painel"
+**Para que serve:** montar o painel só com o que interessa, a partir do que os dados permitem calcular.
+
+| Você faz | O programa faz |
+|---|---|
+| (logo depois de carregar um relatório novo) | Abre sozinho **O que você quer acompanhar?**: só os indicadores que dá para calcular com os seus campos, cada um com o resultado real como exemplo (ex.: "Total de registros — 500 registros", "% por Situação — Cancelado: 28,4%") |
+| Marca os que quer (nada vem marcado ⚖️ D-07) e toca em **Confirmar** | Cria um bloco por indicador: primeiro os números, depois os gráficos, a lista **Registros** sempre no fim; e abre **Seu painel** |
+| Confirma sem marcar nada | "Marque pelo menos um indicador." |
+| Toca em **Cancelar** | Mantém o painel padrão (todos os blocos automáticos) e não salva nada |
+| Lê **Seu painel** (ou toca depois em **Entender este painel**) | Uma linha por bloco: o que mostra, a conta em palavras ("soma do campo Valor, separada por Região"), os campos, o período e os filtros do momento |
+| Toca em **O que acompanhar** | Reabre a lista com as marcas atuais, para tirar ou pôr indicadores |
+
+**Catálogo possível:** Total de registros; Por <categoria>; <Número> (soma, média e mediana); <Número> por <categoria>; Evolução por mês; Tempo entre duas datas (só com 2 datas); % por <situação>; Sem valor em <campo>; Mais antigos em aberto (data + situação). "Em aberto" é a situação que não começa com conclu-, finaliz-, encerr-, fechad-, entreg-, cancel-, resolvid- ou pag- ⚖️ D-09.
+**Regras e limites:** a escolha vale por relatório, fica guardada e entra no backup. Gráfico por categoria mostra os 10 maiores e junta o resto em "Outros". Acima dos blocos fica sempre a faixa com Total, Mais antigo e Mais novo ⚖️ D-15.
+
+### P-e. Usar o painel: filtros e números clicáveis
+**Para que serve:** olhar um recorte (um mês, uma região) e ver os registros por trás de qualquer número.
+
+| Você faz | O programa faz |
+|---|---|
+| Abre **Filtros** e escolhe **Relatório**, **Período** (Tudo, Mês ou De–até), **Campo de data**, **Campo categoria** e **Valor**, ou escreve em **Buscar texto** | Recalcula todos os blocos, o "Seu painel" e o Excel com o recorte |
+| Toca em qualquer número ou barra | Abre uma janela com os registros por trás dele: dá para arrastar, **Minimizar**, filtrar, **Imprimir**, **Copiar** ("Copiado.") e **Limpar seleção** |
+
+**Regras e limites:** a lista Registros mostra os 50 mais novos primeiro; **Mostrar mais** traz mais 100 de cada vez; o Excel leva todos.
+
+### P-f. Pedir um indicador por escrito ("É isso?")
+**Para que serve:** criar um bloco que não está no catálogo, escrevendo como se fala.
+
+| Você faz | O programa faz |
+|---|---|
+| Escreve em **Peça um indicador** (ex.: "soma do valor por cliente em outubro") e toca em **Pedir** (ou Enter) | Mostra **Entendi assim: Soma de Valor · por Cliente · outubro/2026**, a **Prévia** já calculada e pergunta **É isso?** |
+| Toca em **Sim** | O bloco entra em **Meus indicadores** no painel, no "Seu painel" e no Excel; aviso "Indicador adicionado ao painel." |
+| Toca em **Não** | Aparecem os botões **Medida**, **Campo**, **Agrupar por**, **Filtro**, **Período**; cada um abre as opções reais dos dados; **Aplicar** atualiza o resumo e a prévia |
+| Escreve algo que ele não entende (ex.: "bom dia") | "não entendi: bom dia" e **Tente um destes:** com 3 frases montadas com os seus campos (ex.: "soma de Valor por Cliente"); tocar numa já pede. Nada entra no painel |
+| Em **Config → Sinônimos**, cadastra um **Apelido** e o que ele **Significa** (ex.: "fat" = Valor) | Passa a entender "fat por cliente" como soma de Valor por cliente |
+
+**Entende:** medida (quantidade, soma, média, mediana, mínimo, máximo, percentual), campo, agrupar por (campo ou mês), filtros por valor e período (mês pelo nome, ano, "este mês", "mês passado", "este ano", "de dd/mm a dd/mm", "últimos N dias").
+**Regras e limites:** nunca chuta: o que não entendeu aparece como "não entendi: <trecho>". Aceita erro de digitação, sem acento e no plural, com semelhança de 80% ou mais ⚖️ D-11. "Este mês", "mês passado" e "últimos N dias" contam a partir da data mais recente dos registros, não do relógio ⚖️ D-10; "outubro" sem ano é o outubro mais recente dos dados. Até 50 indicadores pedidos por relatório; até 200 sinônimos.
+**Achado na conferência (26/11):** depois de tocar em **Não**, aparece a palavra "null" solta ao lado do botão Período. Defeito de tela, sem efeito na conta; correção na F-70.
+
+### P-g. Gerar o Excel
+**Para que serve:** levar o painel da tela para uma planilha, para guardar, imprimir ou mandar.
+
+| Você faz | O programa faz |
+|---|---|
+| No fim do Painel, em **Gerar Excel**, escolhe o **Formato**: Uma planilha por relatório, Tudo numa planilha ou Arquivos separados | — |
+| Toca em **Gerar Excel** | Baixa `RaioX_<RELATÓRIO>_<data>.xlsx` com: **Capa** (título, área, cliente, logo, total, mais antigo e mais novo, relatório, período, filtros e "Gerado em"), **Como ler este relatório** (o texto do "Seu painel", só se houver escolha confirmada), **Painel** (os blocos na ordem da tela, depois Meus indicadores, depois todos os registros do recorte) e a planilha de registros |
+
+**Regras e limites:** o Excel mostra os mesmos números da tela com os mesmos filtros. Só valores: nenhuma fórmula, nenhuma macro e nenhum gráfico nativo; o gráfico vira tabela Categoria / Valor / Barra, com a barra desenhada em texto (█) ⚖️ D-12. Contagens como número inteiro, somas e médias com 2 casas, percentuais e durações como texto igual à tela. Com abas no painel (P-w), sai uma planilha por aba.
 
 ### P-x. Fazer backup e restaurar
 **Para que serve:** guardar os dados e as escolhas e trazê-los de volta (outro aparelho ou depois de apagar).
@@ -19,10 +106,23 @@ apagar dados). Modelo de cada procedimento: -->
 **Passo a passo**
 | Você faz | O programa faz |
 |---|---|
-| … | … |
-| Escolhe o arquivo de backup e toca em **Somar** | Junta os registros do backup aos atuais. Em "Meus indicadores", junta a lista atual com a do backup, sem repetir, até 50; o que passar fica de fora com aviso ⚖️ D-01 |
+| Abre **Config → Dados deste aparelho** e toca em **Baixar backup** | Baixa `historico_RaioX_<data>.json` com tudo: registros, Config, formatos lembrados, escolhas do painel, Meus indicadores, sinônimos, contas e layout |
+| Toca em **Restaurar backup** e escolhe o arquivo | Confere se é mesmo um backup do Raio X (se não for: "Esse arquivo não é um backup do Raio X… Nada foi alterado.") e pergunta: "O backup tem N registros. Somar aos dados atuais ou substituir tudo?" |
+| Toca em **Substituir** | Apaga tudo do aparelho e põe o backup no lugar, Config inclusive |
+| Toca em **Somar** | Junta os registros do backup aos atuais (mesmo código: campo a campo, como em P-c). Em "Meus indicadores", junta a lista atual com a do backup, sem repetir, até 50; o que passar fica de fora com aviso ⚖️ D-01. Contas e sinônimos também se juntam. A escolha de "O que acompanhar" e os formatos lembrados do backup valem por cima dos atuais; a Config atual fica ⚖️ D-14 |
+| Toca em **Cancelar** | Nada muda |
 
-**Regras e limites:** …
+**Regras e limites:** backup até 200 MB. Ao final: "Backup restaurado.". Layout: ver ⚖️ D-32.
+
+### P-h. Apagar todos os dados
+**Para que serve:** limpar o aparelho (troca de dono, teste, dados errados).
+
+| Você faz | O programa faz |
+|---|---|
+| Abre **Config → Dados deste aparelho** e toca em **Apagar todos os dados** | Pergunta: "Isso apaga os N registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?" |
+| Toca em **Apagar** | Apaga registros, escolhas do painel, Meus indicadores, contas e layouts; mostra "Dados apagados." |
+
+**Regras e limites:** **ficam** a Config (cliente, área, logo, metas), os formatos lembrados e os sinônimos ⚖️ D-13: assim o próximo relatório do mesmo sistema entra sem perguntar de novo. Não tem volta sem backup.
 
 ### P-y. Criar uma conta personalizada
 **Para que serve:** ter no painel um número que é uma conta feita com os campos do relatório (ex.: ticket médio = soma do valor ÷ quantidade de registros).
@@ -108,6 +208,21 @@ apagar dados). Modelo de cada procedimento: -->
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
 | D-01 | Backup e restaurar | "Somar" junta "Meus indicadores" (sem repetir, até 50). Espec. seção 13, P-06; implementado na F-60 (26/11/2026, com teste) | Não perde o que o usuário já escolheu | "Troca": tarefa pequena, com teste | Sim | |
+| D-02 | Config | Config salva sozinha a cada letra; não há botão Salvar | Menos um passo; nada se perde | Pôr botão Salvar: trivial | Não | |
+| D-03 | Config | Logo até 2 MB, reduzido para até 240 px e guardado no aparelho | Não pesar no aparelho nem no Excel | Mudar os números: trivial | Sim | |
+| D-04 | Carregar relatório | Linha sem valor no Código fica de fora sem aviso | Sem código não dá para juntar nem atualizar | Avisar quantas ficaram de fora: tarefa pequena | Sim | |
+| D-05 | Carregar relatório | Arquivo com o mesmo campo código e códigos já guardados entra no relatório que já os tem (mesmo com outro nome de arquivo) | Juntar relatórios complementares do mesmo sistema | Perguntar antes de juntar: tarefa pequena | Sim | |
+| D-06 | Carregar relatório | Mesmo código: valor novo preenchido substitui o antigo; vazio não apaga | Arquivo novo é o mais atual; arquivo parcial não estraga | Guardar histórico de cada mudança: tarefa maior | Não | |
+| D-07 | O que acompanhar | Nada vem marcado; Cancelar mantém o painel padrão sem salvar | A escolha é da pessoa (nada fixo) | Já vir marcado o essencial: trivial | Sim | |
+| D-08 | Esta coluna é o quê? | Situação é sugerida pelo nome da coluna (situação, status, estado); a pessoa troca | Situação não dá para adivinhar pelos valores | Outras palavras: trivial | Sim | |
+| D-09 | O que acompanhar | "Em aberto" = situação que não começa com conclu-, finaliz-, encerr-, fechad-, entreg-, cancel-, resolvid-, pag- | Sem lista fixa de um ramo; serve para a maioria dos sistemas | Deixar a pessoa marcar quais situações são "fechadas": tarefa média | Sim | |
+| D-10 | Pedido escrito | "Este mês", "mês passado", "últimos N dias" contam a partir da data mais recente dos registros, não de hoje | Relatório antigo continua dando resposta | Usar a data de hoje: trivial | Sim | |
+| D-11 | Pedido escrito | Erro de digitação aceito com semelhança de 80% ou mais | Equilíbrio entre entender e não chutar | Mudar o número: trivial | Sim | |
+| D-12 | Excel | Sem fórmula, macro ou gráfico nativo; gráfico vira tabela com barra em texto (█) | Segurança e Excel igual à tela em qualquer versão | Gráfico nativo do Excel: tarefa média | Sim | |
+| D-13 | Apagar todos os dados | Apagar mantém Config, formatos lembrados e sinônimos | Próximo relatório entra sem perguntar de novo | Apagar tudo mesmo: trivial | Sim | |
+| D-14 | Backup / Somar | No "Somar", escolha do painel e formatos do backup valem por cima dos atuais; Config não muda (só no Substituir) | O backup traz o arranjo mais completo; não troca o cliente do aparelho | Perguntar item a item: tarefa média | Sim | |
+| D-15 | Painel | A faixa Total / Mais antigo / Mais novo fica sempre no topo, mesmo com escolha | Dá o tamanho e o período do relatório de relance | Esconder quando há escolha: trivial | Sim | |
+| D-16 | Esta coluna é o quê? | Tipos: Ignorar, Código, Data, Categoria, Situação, Texto, Número; data com hora é Data (não há "Data e hora" separado) | Menos escolhas; a hora é lida quando existe | Separar "Data e hora": tarefa pequena | Sim | |
 | D-20 | Criar conta personalizada | `dias(data1, data2)` devolve a **média** de dias entre as duas datas | A especificação não dizia qual estatística | Trocar por mediana: tarefa pequena, com teste | Sim | |
 | D-21 | Criar conta personalizada | Divisão por zero (ou resultado indefinido) mostra "sem dados" em vez de mensagem de erro | Espec. CA-53 pede "sem dados" | Mostrar erro: tarefa pequena | Não | |
 | D-22 | Criar conta personalizada | A sugestão de campo no erro sai em minúsculas ('valor'), como no exemplo da especificação | Seguir o CA-52 ao pé da letra | Mostrar o nome exato do campo: troca de texto | Sim | |
