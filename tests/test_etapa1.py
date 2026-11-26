@@ -216,7 +216,8 @@ def test_CA16_baixar_excel_para_o_pc(page):
     titulo = page.get_by_text("Como instalar a versão Excel (4 passos)").first
     itens = titulo.locator("xpath=following::ol[1]/li")
     assert itens.count() == 4, "4 passos de instalação"
-    assert itens.first.is_visible()
+    # F-78 (26/11/2026): o cartão da versão Excel fica escondido na Config até a versão 2; o link do rodapé segue valendo
+    assert not itens.first.is_visible()
 
 
 def test_CA16_baixar_offline(ctx, page):
