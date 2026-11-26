@@ -67,6 +67,18 @@ apagar dados). Modelo de cada procedimento: -->
 
 **Regras e limites:** até 20 abas e 200 blocos por relatório. A primeira aba chama **Painel** ⚖️ D-30. O Excel gera uma planilha por aba, na ordem; a tabela de registros só vai na primeira planilha ⚖️ D-36. Restaurar backup com "Somar" só traz o layout de relatório que ainda não tem layout ⚖️ D-32.
 
+### P-v. Carregar relatórios de planilha, JSON, XML ou zip
+**Para que serve:** trazer os dados de qualquer arquivo de tabela, sem digitar nada. (PDF e foto com leitura de texto vêm em etapa seguinte.)
+
+| Você faz | O programa faz |
+|---|---|
+| Toca em **Carregar relatório** e escolhe um ou vários arquivos (.csv, .txt, .xlsx, .xls, .ods, .json, .xml, .zip) | Lê cada arquivo no próprio aparelho; nada sai dele |
+| (planilha com várias abas) | Cada aba vira um relatório separado, chamado "arquivo - aba" ⚖️ D-40 |
+| Responde **Esta coluna é o quê?** na primeira vez | Lembra o formato; o mesmo conjunto de colunas em CSV, planilha, JSON ou XML não pergunta de novo ⚖️ D-41 |
+| Escolhe um **.zip** | Abre e lê cada arquivo de dentro; os que não consegue ler ele avisa e segue com os outros |
+
+**Regras e limites:** números saem com vírgula e sem milhar, datas como dd/mm/aaaa ⚖️ D-41; só os valores contam (fórmulas e macros nunca rodam; .xlsm, .xlsb e planilha com senha não são lidos ⚖️ D-42); cada arquivo até 50 MB; zip até 50 arquivos e 200 MB depois de aberto ⚖️ D-43. Mensagens: "Não achei o cabeçalho em <arquivo>.", "Não consegui ler <arquivo>.", "<arquivo>: formato não suportado.".
+
 ## Quadro das decisões (marcar na homologação)
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
@@ -83,3 +95,7 @@ apagar dados). Modelo de cada procedimento: -->
 | D-34 | Editar layout | Formas permitidas por tipo de bloco: número só Número; por categoria Barras/Pizza/Tabela; por mês também Linha | "quando o tipo de dado permite" | Liberar mais formas: tarefa média | Sim | |
 | D-35 | Editar layout | A mensagem de apagar aba diz "Os N blocos dela vão para a primeira aba." (inclusive com 1 bloco) | Texto literal da espec. | Singular: trivial | Sim | |
 | D-36 | Editar layout / Excel | A tabela de registros só aparece na primeira planilha de painel de cada relatório | Não repetir milhares de linhas em cada aba | Repetir em todas: trivial | Sim | |
+| D-40 | Carregar planilha | Cada aba da planilha vira um relatório à parte, "arquivo - aba" | Espec. 7: "cada aba vira um conjunto candidato" | Juntar abas num só: tarefa média | Sim | |
+| D-41 | Carregar planilha/JSON/XML | Número com vírgula e sem milhar, data dd/mm/aaaa, para o formato lembrado do CSV servir | Reaproveitar o que o usuário já respondeu | Perguntar de novo por tipo de arquivo: trivial | Sim | |
+| D-42 | Carregar planilha | .xlsm, .xlsb e planilha com senha não são lidos | Segurança (macros) e simplicidade | Aceitar .xlsb: tarefa pequena | Sim | |
+| D-43 | Carregar zip | Até 50 arquivos e 200 MB depois de aberto; acima disso nada do zip entra | Proteção contra arquivo-bomba | Mudar os números: trivial | Sim | |

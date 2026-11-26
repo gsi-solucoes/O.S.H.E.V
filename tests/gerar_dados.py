@@ -64,6 +64,20 @@ from xml.sax.saxutils import escape as _esc
 _ci = [dict(zip(CAB_V, r)) for r in vendas]
 
 
+def _fixa_zip(caminho):
+    """Regrava o zip (xlsx) com data fixa nas entradas: o mesmo arquivo a cada geração (CA-83)."""
+    with _zf.ZipFile(caminho) as _a:
+        _itens = [(i.filename, _a.read(i.filename)) for i in _a.infolist()]
+    with _zf.ZipFile(caminho, "w", _zf.ZIP_DEFLATED) as _b:
+        for _n, _d in _itens:
+            if _n == "docProps/core.xml":
+                import re as _re
+                _d = _re.sub(rb"(<dcterms:(?:created|modified)[^>]*>)[^<]*", rb"\g<1>2026-01-01T00:00:00Z", _d)
+            _zi = _zf.ZipInfo(_n, (2026, 1, 1, 0, 0, 0))
+            _zi.compress_type = _zf.ZIP_DEFLATED
+            _b.writestr(_zi, _d)
+
+
 def _num(s):
     return float(s.replace(",", "."))
 
@@ -83,6 +97,7 @@ with open(D / "vendas.xml", "w", encoding="utf-8") as _f:
 try:
     import openpyxl as _ox
     _wb = _ox.Workbook()
+    _wb.properties.created = _wb.properties.modified = datetime.datetime(2026, 1, 1)   # reprodutível (CA-83)
     _ws = _wb.active
     _ws.title = "Vendas"
     _ws.append(CAB_V)
@@ -91,16 +106,19 @@ try:
     for _row in _ws.iter_rows(min_row=2, min_col=2, max_col=2):
         _row[0].number_format = "dd/mm/yyyy"
     _wb.save(D / "vendas.xlsx")
+    _fixa_zip(D / "vendas.xlsx")
     # duas abas: Vendas + Chamados (cada aba vira um conjunto candidato)
     _ws2 = _wb.create_sheet("Chamados")
     _ws2.append(["Código", "Abertura", "Conclusão", "Categoria", "Responsável", "Situação"])
     for _r in chamados:
         _ws2.append(_r)
     _wb.save(D / "vendas_2abas.xlsx")
+    _fixa_zip(D / "vendas_2abas.xlsx")
     # xls e ods pelo LibreOffice (se existir); sem ele, os testes desses formatos são pulados
     _so = _shutil.which("soffice") or "/usr/bin/soffice"
+    # xls/ods carregam carimbo de data do LibreOffice: só se gera quando ainda não existem (reprodutível, CA-83)
     if pathlib.Path(_so).exists():
-        for _fmt in ("xls", "ods"):
+        for _fmt in [f for f in ("xls", "ods") if not (D / f"vendas.{f}").exists()]:
             _t = pathlib.Path(_tmp.mkdtemp())
             _sp.run([_so, "--headless", f"-env:UserInstallation=file://{_t}/p", "--convert-to", _fmt, "--outdir", str(_t), str(D / "vendas.xlsx")],
                     check=False, stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=120)
@@ -109,8 +127,9 @@ try:
             _shutil.rmtree(_t, ignore_errors=True)
     # zip com mistura: CSV + XLSX + JSON
     with _zf.ZipFile(D / "vendas_mistura.zip", "w", _zf.ZIP_DEFLATED) as _z:
-        _z.write(D / "chamados.csv", "chamados.csv")
-        _z.write(D / "vendas.xlsx", "vendas.xlsx")
-        _z.write(D / "vendas.json", "pasta/vendas.json")
+        for _orig, _dest in (("chamados.csv", "chamados.csv"), ("vendas.xlsx", "vendas.xlsx"), ("vendas.json", "pasta/vendas.json")):
+            _zi = _zf.ZipInfo(_dest, (2026, 1, 1, 0, 0, 0))
+            _zi.compress_type = _zf.ZIP_DEFLATED
+            _z.writestr(_zi, (D / _orig).read_bytes())
 except ImportError:
     pass

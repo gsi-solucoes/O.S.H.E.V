@@ -78,7 +78,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
   <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
-    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,text/csv,text/plain" multiple></label>
+    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.zip" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
   </div>
 </header>
@@ -193,6 +193,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/exceljs.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
 <script>/*CORE*/</script>
 </body>
 </html>

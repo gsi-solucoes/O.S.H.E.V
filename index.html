@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-CeYTaVS1pySF2GMUQuYloGslHnkXQwMh+14GXYOCbE8='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-RcUjbbUhYLI2mMKjhxydX6Me+SWwm95KcdumM28wbp4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -78,7 +78,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
   <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
-    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,text/csv,text/plain" multiple></label>
+    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.zip" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
   </div>
 </header>
@@ -193,6 +193,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/exceljs.min.js"></script>
+<script src="vendor/xlsx.full.min.js"></script>
 <script>/* ===== Raio X do Relatório · núcleo genérico: leitura de CSV, tipos, tempo entre datas, semelhança de texto ===== */
 var Core = (function () {
   function decode(buf) {
@@ -597,7 +598,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
 })();
-const VERSAO = "741a13b910";
+const VERSAO = "951c7f0526";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -729,11 +730,11 @@ function perguntar(tit, txt, botoes) {
     d.oncancel = () => ok(null); d.showModal();
   });
 }
-function perguntarColunas(arquivo, hdr, corpo) {
+function perguntarColunas(arquivo, hdr, corpo, nome) {
   return new Promise(ok => {
     const d = $('#dlgCol'), f = $('#fCol'); f.textContent = '';
     const pal = Core.palpites(hdr, corpo), erro = el('p', { class: 'muted', role: 'alert' });
-    const nomeRel = el('input', { type: 'text', id: 'colRel', value: arquivo.replace(/\.[^.]+$/, '') });
+    const nomeRel = el('input', { type: 'text', id: 'colRel', value: nome || arquivo.replace(/\.[^.]+$/, '') });
     const linhas = hdr.map((h, j) => {
       const ex = corpo.map(r => Core.t(r[j])).find(Boolean) || '';
       const nome = el('input', { type: 'text', value: Core.t(h) || ('Campo ' + (j + 1)), 'aria-label': 'Nome do campo ' + (j + 1) });
@@ -755,15 +756,124 @@ function perguntarColunas(arquivo, hdr, corpo) {
     d.oncancel = () => ok(null); d.showModal();
   });
 }
-async function lerArquivo(f) {
-  if (f.size > LIM.csv) { toast(f.name + ': arquivo grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.csv) + ').'); return null; }
-  const rows = Core.parseCSV(Core.decode(await f.arrayBuffer())), hi = Core.acharCabecalho(rows);
-  if (hi < 0) { toast('Não achei o cabeçalho em ' + f.name + '.'); return null; }
+/* ---- leitores por tipo (etapa 7a): cada um devolve [{nome, rows}] ---- */
+const EXTS = ['csv', 'txt', 'tsv', 'xlsx', 'xls', 'ods', 'json', 'xml', 'zip'], MAXCOL = 200, ZIP = { arqs: 50, total: 200 * 1048576 };
+const p2 = n => (n < 10 ? '0' : '') + n;
+const numTxt = n => String(n).replace('.', ',');
+function dataTxt(d0) { const d = new Date(d0.getTime() + 30000); const s = p2(d.getUTCDate()) + '/' + p2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); return d.getUTCHours() || d.getUTCMinutes() ? s + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) : s; }
+function valorTxt(v) {
+  if (v == null) return '';
+  if (v instanceof Date) return isNaN(v) ? '' : dataTxt(v);
+  if (typeof v === 'number') return isFinite(v) ? numTxt(v) : '';
+  if (typeof v === 'boolean') return v ? 'Sim' : 'Não';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return String(v);
+}
+function lerPlanilha(buf, nome, ext) {
+  // assinatura do arquivo: .xlsx/.ods são zip ('PK'), .xls é OLE; texto qualquer com essa extensão é arquivo corrompido (o leitor o tomaria por CSV)
+  const u8 = new Uint8Array(buf);
+  const okAss = ext === 'xls' ? (u8[0] === 0xD0 && u8[1] === 0xCF && u8[2] === 0x11 && u8[3] === 0xE0) || u8[0] === 0x3C : (u8[0] === 0x50 && u8[1] === 0x4B);
+  if (!okAss) throw new Error('assinatura');
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true, sheetRows: 200001, cellFormula: false }), out = [];
+  wb.SheetNames.forEach(n => {
+    const ws = wb.Sheets[n]; if (!ws || !ws['!ref']) return;
+    const rg = XLSX.utils.decode_range(ws['!ref']), c1 = Math.min(rg.e.c, rg.s.c + MAXCOL - 1), r1 = Math.min(rg.e.r, rg.s.r + 200000), rows = [];
+    for (let r = rg.s.r; r <= r1; r++) {
+      const lin = []; let tem = false;
+      for (let c = rg.s.c; c <= c1; c++) { const ce = ws[XLSX.utils.encode_cell({ r, c })]; const s = !ce || ce.t === 'e' || ce.t === 'z' ? '' : valorTxt(ce.v); if (s) tem = true; lin.push(s); }
+      rows.push(lin);
+    }
+    if (rows.some(l => l.some(Boolean))) out.push({ aba: n, rows });
+  });
+  return out.map(t => ({ nome: out.length > 1 ? nome + ' - ' + t.aba : nome, rows: t.rows }));
+}
+function tabelaDeObjetos(lista, nome) {
+  const lin = lista.filter(o => o && typeof o === 'object' && !Array.isArray(o)); if (!lin.length) return [];
+  const idx = nulo(), cols = [];
+  lin.forEach(o => Object.keys(o).forEach(k => { if (!(k in idx) && cols.length < MAXCOL) { idx[k] = cols.length; cols.push(k); } }));
+  const rows = [cols.slice()]; lin.forEach(o => { const r = cols.map(() => ''); Object.keys(o).forEach(k => { if (k in idx) r[idx[k]] = valorTxt(o[k]); }); rows.push(r); });
+  return [{ nome, rows }];
+}
+function lerJSON(buf, nome) {
+  let j = JSON.parse(Core.decode(buf).replace(/^﻿/, ''));
+  if (j && typeof j === 'object' && !Array.isArray(j)) { const ks = Object.keys(j); j = ks.length === 1 ? j[ks[0]] : null; }
+  return Array.isArray(j) ? tabelaDeObjetos(j, nome) : [];
+}
+function lerXML(buf, nome) {
+  const d = new DOMParser().parseFromString(Core.decode(buf).replace(/^﻿/, ''), 'application/xml');
+  if (!d.documentElement || d.getElementsByTagName('parsererror').length) throw new Error('xml');
+  const grupos = new Map(), todos = d.getElementsByTagName('*'); let melhor = null;
+  for (let i = 0; i < todos.length; i++) {
+    const e = todos[i], p = e.parentNode; if (!p || p.nodeType !== 1) continue;
+    let m = grupos.get(p); if (!m) grupos.set(p, m = new Map());
+    let g = m.get(e.nodeName); if (!g) m.set(e.nodeName, g = []); g.push(e);
+    if (g.length > 1 && (!melhor || g.length > melhor.length) && g.every(x => !Array.from(x.children).some(c => c.children.length))) melhor = g;
+  }
+  if (!melhor) return [];
+  const idx = nulo(), cols = [], vals = melhor.map(e => {
+    const v = nulo(), add = (k, s) => { if (!(k in idx) && cols.length < MAXCOL) { idx[k] = cols.length; cols.push(k); } if (k in idx && !(k in v)) v[k] = s; };
+    Array.from(e.children).forEach(c => add(c.nodeName, c.textContent.trim())); Array.from(e.attributes).forEach(a => add(a.name, a.value)); return v;
+  });
+  const rows = [cols.slice()]; vals.forEach(v => rows.push(cols.map(k => v[k] || ''))); return [{ nome, rows }];
+}
+const extDe = n => { const m = /\.([^.\/]+)$/.exec(n); return m ? m[1].toLowerCase() : ''; };
+const semExt = n => n.replace(/^.*\//, '').replace(/\.[^.]+$/, '');
+function tabelasDe(buf, arq) {
+  const e = extDe(arq), nome = semExt(arq);
+  if (e === 'xlsx' || e === 'xls' || e === 'ods') return lerPlanilha(buf, nome, e);
+  if (e === 'json') return lerJSON(buf, nome);
+  if (e === 'xml') return lerXML(buf, nome);
+  return [{ nome, rows: Core.parseCSV(Core.decode(buf)) }];
+}
+function lerZipEntrada(en) {   // lê em partes e para ao passar do limite (não confia no tamanho declarado)
+  return new Promise((ok, no) => {
+    const partes = []; let n = 0, s = en.internalStream('uint8array');
+    s.on('data', d => { n += d.length; if (n > LIM.csv) { s.pause(); ok({ grande: true, n }); } else partes.push(d); }).on('error', no).on('end', () => ok({ n, partes })).resume();
+  });
+}
+async function lerZip(buf, arq) {
+  const z = await JSZip.loadAsync(buf), ent = [], lixo = [];
+  z.forEach((p, en) => { if (!en.dir) ent.push(p); });
+  ent.sort(); const ok = ent.filter(p => !/(^|\/)\.\.(\/|$)|^\/|^[A-Za-z]:|\\/.test(p) && extDe(p) !== '');
+  if (ok.length > ZIP.arqs) throw 'grande';
+  let tot = 0, decl = 0; ok.forEach(p => { decl += (z.files[p]._data && z.files[p]._data.uncompressedSize) || 0; }); if (decl > ZIP.total) throw 'grande';
+  const lidos = [];
+  for (const p of ok) {
+    const e = extDe(p);
+    if (!EXTS.includes(e) || e === 'zip') { lidos.push({ p, ign: true }); continue; }
+    const r = await lerZipEntrada(z.files[p]); tot += r.n; if (tot > ZIP.total) throw 'grande';
+    if (r.grande) { lidos.push({ p, grande: r.n }); continue; }
+    const b = new Uint8Array(r.n); let o = 0; r.partes.forEach(x => { b.set(x, o); o += x.length; }); lidos.push({ p, buf: b.buffer });
+  }
+  return lidos;
+}
+async function processar(arq, nome, rows) {
+  const hi = Core.acharCabecalho(rows);
+  if (hi < 0) { toast('Não achei o cabeçalho em ' + arq + '.'); return null; }
   const hdr = rows[hi].map(Core.t), corpo = rows.slice(hi + 1).filter(r => r.some(x => Core.t(x)));
   const sig = Core.assinatura(hdr);
   let fm = fmts[sig];
-  if (!fm) { fm = await perguntarColunas(f.name, hdr, corpo); if (!fm) return null; fmts[sig] = fm; store.set('raiox_fmt', fmts); }
+  if (!fm) { fm = await perguntarColunas(arq, hdr, corpo, nome); if (!fm) return null; fmts[sig] = fm; store.set('raiox_fmt', fmts); }
   return await importar(fm, corpo);
+}
+async function lerBuf(buf, arq, res) {   // um arquivo (ou um de dentro do zip) -> uma ou mais tabelas, cada uma pelo caminho de sempre
+  let ts; try { ts = tabelasDe(buf, arq); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
+  if (!ts.length) { toast('Não achei o cabeçalho em ' + arq + '.'); return; }
+  for (const t of ts) { const r = await processar(arq, t.nome, t.rows); if (r) res.push(r); }
+}
+async function lerArquivo(f) {
+  const res = [], e = extDe(f.name);
+  if (!EXTS.includes(e)) { toast(f.name + ': formato não suportado.'); return res; }
+  if (f.size > LIM.csv) { toast(f.name + ': arquivo grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.csv) + ').'); return res; }
+  const buf = await f.arrayBuffer();
+  if (e !== 'zip') { await lerBuf(buf, f.name, res); return res; }
+  let L; try { L = await lerZip(buf, f.name); } catch (x) { toast(x === 'grande' ? f.name + ': zip grande demais.' : 'Não consegui ler ' + f.name + '.'); return res; }
+  for (const x of L) {
+    if (x.ign) toast(x.p + ': formato não suportado (ignorado).');
+    else if (x.grande) toast(x.p + ': arquivo grande demais (o limite é ' + mb(LIM.csv) + ').');
+    else await lerBuf(x.buf, x.p, res);
+  }
+  return res;
 }
 async function importar(fm, corpo) {
   let c = fm.conjunto; const icod = fm.cols.findIndex(x => x.t === 'codigo'), campos = fm.cols.filter(x => x.t !== 'ignorar' && x.t !== 'codigo');
@@ -793,7 +903,7 @@ async function importar(fm, corpo) {
 async function carregar(files) {
   const msgs = [], tocados = [];
   for (const f of files) {
-    try { const r = await lerArquivo(f); if (r) { msgs.push(r.c + ': ' + r.lidos + ' lidos, ' + r.novos + ' novos'); if (tocados.indexOf(r.c) < 0) tocados.push(r.c); } }
+    try { for (const r of await lerArquivo(f)) { msgs.push(r.c + ': ' + r.lidos + ' lidos, ' + r.novos + ' novos'); if (tocados.indexOf(r.c) < 0) tocados.push(r.c); } }
     catch (e) { toast('Não consegui ler ' + f.name + '.'); }
   }
   $('#status').textContent = msgs.join(' · ');
