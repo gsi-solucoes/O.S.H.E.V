@@ -156,7 +156,7 @@ function perguntarColunas(arquivo, hdr, corpo, nome) {
   });
 }
 /* ---- leitores por tipo (etapa 7a): cada um devolve [{nome, rows}] ---- */
-const EXTS = ['csv', 'txt', 'tsv', 'xlsx', 'xls', 'ods', 'json', 'xml', 'zip'], MAXCOL = 200, ZIP = { arqs: 50, total: 200 * 1048576 };
+const EXTS = ['csv', 'txt', 'tsv', 'xlsx', 'xls', 'ods', 'json', 'xml', 'pdf', 'zip'], MAXCOL = 200, PDFPAG = 200, ZIP = { arqs: 50, total: 200 * 1048576 };
 const p2 = n => (n < 10 ? '0' : '') + n;
 const numTxt = n => String(n).replace('.', ',');
 function dataTxt(d0) { const d = new Date(d0.getTime() + 30000); const s = p2(d.getUTCDate()) + '/' + p2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); return d.getUTCHours() || d.getUTCMinutes() ? s + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) : s; }
@@ -261,6 +261,30 @@ async function lerZip(buf, arq) {
   }
   return lidos;
 }
+/* ---- conferência da leitura (PDF e, na 7c, OCR): conferir(arquivo, rows, baixas) -> rows editadas ou null ---- */
+function conferir(arquivo, rows, baixas) {
+  return new Promise(ok => {
+    const d = $('#dlgConf'), tb = $('#cfTab'), ba = new Set((baixas || []).map(b => b[0] + ',' + b[1])), nc = rows[0].length, hdr = rows[0].map(Core.t), cel = [];
+    $('#cfArq').textContent = 'Arquivo: ' + arquivo + '.'; $('#cfCont').textContent = 'Linhas lidas: ' + (rows.length - 1) + ' · Células marcadas: ' + ba.size;
+    const frag = document.createDocumentFragment(), cab = el('tr'), lin = (r, i) => { const tr = el('tr'), v = []; for (let j = 0; j < nc; j++) { const x = el('input', { type: 'text', value: Core.t(r[j]), 'aria-label': i ? 'Linha ' + i + ', ' + (hdr[j] || 'coluna ' + (j + 1)) : 'Cabeçalho, coluna ' + (j + 1) }); if (ba.has(i + ',' + j)) x.setAttribute('data-baixa', 'true'); v.push(x); tr.append(el('td', null, x)); } cel.push(v); return tr; };
+    cab.append(...lin(rows[0], 0).children); frag.append(el('thead', null, cab));
+    const corpo = el('tbody'); for (let i = 1; i < rows.length; i++) corpo.append(lin(rows[i], i)); frag.append(corpo);
+    tb.textContent = ''; tb.append(frag);
+    let res = null; d.onclose = () => { tb.textContent = ''; ok(res); };
+    $('#cfOk').onclick = () => { res = cel.map(v => v.map(x => x.value)); d.close(); }; $('#cfNao').onclick = () => d.close();
+    d.showModal();
+  });
+}
+let pdfjs;
+async function lerPdf(buf) {   // texto com posição de cada página -> tabela {rows, baixas} ou null (nada executado, sem rede)
+  if (!pdfjs) { const m = await import('./vendor/pdf.min.mjs'); m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; pdfjs = m; }
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), isEvalSupported: false, disableFontFace: true, useSystemFonts: false, enableXfa: false }).promise;
+  try {
+    const pgs = [];
+    for (let i = 1; i <= Math.min(doc.numPages, PDFPAG); i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); pgs.push(tc.items.filter(x => typeof x.str === 'string').map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); }
+    return Core.tabelaPdf(pgs, 20000);
+  } finally { doc.destroy(); }
+}
 async function processar(arq, nome, rows) {
   const hi = Core.acharCabecalho(rows);
   if (hi < 0) { toast('Não achei o cabeçalho em ' + arq + '.'); return null; }
@@ -271,6 +295,12 @@ async function processar(arq, nome, rows) {
   return await importar(fm, corpo);
 }
 async function lerBuf(buf, arq, res) {   // um arquivo (ou um de dentro do zip) -> uma ou mais tabelas, cada uma pelo caminho de sempre
+  if (extDe(arq) === 'pdf') {
+    let t; try { t = await lerPdf(buf); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
+    if (!t) { toast('Não encontrei uma tabela neste arquivo'); return; }
+    const rows = await conferir(arq, t.rows, t.baixas); if (!rows) return;
+    const r = await processar(arq, semExt(arq), rows); if (r) res.push(r); return;
+  }
   let ts; try { ts = await tabelasDe(buf, arq); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
   if (!ts.length) { toast('Não achei o cabeçalho em ' + arq + '.'); return; }
   for (const t of ts) { const r = await processar(arq, t.nome, t.rows); if (r) res.push(r); }

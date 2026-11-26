@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-f5p2ugF2m0PEw/2LuIY/y+2nlQJxQyZjJ2FaIW3vaOg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-wChWh0NzqFOEMlUsp8FXsKIIQTq1rbatx76pc4rbwIM='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -52,6 +52,8 @@ th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:u
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:70px;background:var(--band);color:#fff;padding:12px 18px;border-radius:10px;z-index:50;display:none;max-width:92vw}
 dialog{border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);max-width:min(760px,96vw);width:100%}
 dialog::backdrop{background:#0008}
+#cfTab input{width:100%;min-width:70px;box-sizing:border-box;font:inherit;padding:3px 5px}
+#cfTab input[data-baixa="true"]{background:#fde68a;border-color:#d97706;color:#111}
 footer{padding:16px max(4vw,14px);color:var(--muted);font-size:14px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 ol.passos{margin:8px 0 0;padding-left:22px}ol.passos li{margin:4px 0}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
@@ -78,7 +80,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
   <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
-    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.zip" multiple></label>
+    <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
   </div>
 </header>
@@ -189,6 +191,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
 <dialog id="dlgAba" aria-labelledby="abaTit"><h3 id="abaTit">Dê um nome à aba</h3><label class="f">Nome da aba<input type="text" id="abaNome" maxlength="30" autocomplete="off"></label><p id="abaErro" class="muted" role="alert" hidden></p><div class="row" style="margin-top:12px"><button type="button" class="prim" id="abaSalvar">Salvar</button><button type="button" id="abaCancela">Cancelar</button></div></dialog>
 <dialog id="dlgPainel" aria-labelledby="painelTit"><h3 id="painelTit">Seu painel</h3><ol id="painelLista" class="passos"></ol><div class="row" style="margin-top:12px"><button type="button" class="prim" id="painelFechar">Fechar</button></div></dialog>
+<dialog id="dlgConf" aria-labelledby="cfTit" style="max-width:min(1100px,96vw)"><h3 id="cfTit">Conferir leitura</h3><p class="muted" id="cfArq"></p><p class="muted">Confira a tabela lida. As células marcadas podem estar erradas.</p><p id="cfCont" class="muted" role="status"></p><div class="tw" style="max-height:55vh;overflow:auto;margin:10px 0"><table id="cfTab"></table></div><div class="row"><button type="button" class="prim" id="cfOk">Confirmar</button><button type="button" id="cfNao">Descartar</button></div></dialog>
 <dialog id="dlgPergunta"><h3 id="pgTit"></h3><p id="pgTxt"></p><div class="row" id="pgBtns"></div></dialog>
 
 <script src="vendor/jszip.min.js"></script>
@@ -594,11 +597,68 @@ var Core = (function () {
     var out = ev(ast); return out != null && isFinite(out) ? out : null;
   }
 
+  // PDF com texto (etapa 7b): paginas = [[{x, y, w, h, t}]] (pedaços de texto com posição) -> {rows, baixas:[[linha, coluna]]} ou null (R-124).
+  // rows[0] é o cabeçalho; baixas indexa rows (0 = cabeçalho). Linha = mesmo y (± metade do corpo); coluna = x de início (± 6 pt).
+  function tabelaPdf(paginas, maxLin) {
+    maxLin = maxLin || 20000;
+    var linhas = []; // por página: [[{x, t}]] (células já coladas)
+    paginas.forEach(function (itens) {
+      var its = itens.filter(function (i) { return t(i.t); }).sort(function (a, b) { return b.y - a.y; }), ls = [];
+      its.forEach(function (i) { var l = ls[ls.length - 1]; if (l && Math.abs(l.y - i.y) <= (l.h || 10) / 2) l.its.push(i); else ls.push({ y: i.y, h: i.h, its: [i] }); });
+      linhas.push(ls.map(function (l) {
+        var it = l.its.sort(function (a, b) { return a.x - b.x; }), nc = 0, nw = 0;
+        it.forEach(function (i) { nc += t(i.t).length; nw += i.w; });
+        var cw = nc ? nw / nc : 5, cel = [];
+        it.forEach(function (i) {
+          var c = cel[cel.length - 1], gap = c ? i.x - c.fim : 0;
+          if (c && gap < 1.5 * cw) { c.t += (gap > 0.15 * cw && !/\s$/.test(c.t) && !/^\s/.test(i.t) ? ' ' : '') + i.t; c.fim = i.x + i.w; }
+          else cel.push({ x: i.x, t: i.t, fim: i.x + i.w });
+        });
+        return cel.map(function (c) { return { x: c.x, t: t(c.t) }; });
+      }));
+    });
+    var tab = [], xs = [];
+    linhas.forEach(function (ls) { ls.forEach(function (l) { if (l.length >= 2) { tab.push(l); l.forEach(function (c) { xs.push(c.x); }); } }); });
+    if (tab.length < 2) return null;
+    xs.sort(function (a, b) { return a - b; });
+    var gr = [];
+    xs.forEach(function (x) { var g = gr[gr.length - 1]; if (g && x - g.ult <= 6) { g.n++; g.ult = x; g.soma += x; } else gr.push({ n: 1, ult: x, soma: x, ini: x }); });
+    var cols = gr.filter(function (g) { return g.n >= Math.max(2, tab.length * 0.25); }).map(function (g) { return g.ini; });
+    if (cols.length < 2) return null;
+    var colDe = function (x) { var j = 0; cols.forEach(function (c, k) { if (c <= x + 6) j = k; }); return j; };
+    var cabP = linhas[0] || [], hdr = null, hdrT = '', rows = [], baixas = [], lm = [];
+    // monta cada linha de tabela: texto por coluna + marcas (colisão de duas células na mesma coluna)
+    var monta = function (l) { var r = cols.map(function () { return ''; }), col = {}; l.forEach(function (c) { var j = colDe(c.x); if (r[j]) { r[j] += ' ' + c.t; col[j] = 1; } else r[j] = c.t; }); return { r: r, col: col, n: l.length }; };
+    for (var k = 0; k < cabP.length && !hdr; k++) { if (cabP[k].length < 2) continue; var m = monta(cabP[k]); if (m.r.every(function (x) { return x; })) { hdr = m; hdrT = m.r.join('\u0001'); cabP = { desde: k }; } }
+    if (!hdr) return null;
+    rows.push(hdr.r);
+    linhas.forEach(function (ls, p) {
+      ls.forEach(function (l, k) {
+        if (l.length < 2 || (p === 0 && k <= cabP.desde)) return;
+        var m = monta(l); if (m.r.join('\u0001') === hdrT) return;
+        if (rows.length > maxLin) return;
+        rows.push(m.r); lm.push(m);
+      });
+    });
+    if (rows.length < 2) return null;
+    // baixa confiança: vazia em linha com as demais preenchidas; nº de pedaços diferente do cabeçalho (colisão); foge do padrão número/data da coluna
+    var padrao = cols.map(function (c, j) {
+      var v = rows.slice(1).map(function (r) { return r[j]; }).filter(Boolean);
+      return v.length > 0 && v.filter(function (x) { return numero(x) !== null || dataISO(x) !== ''; }).length >= 0.9 * v.length;
+    });
+    lm.forEach(function (m, i) {
+      m.r.forEach(function (x, j) {
+        if ((!x && m.r.some(Boolean)) || m.col[j] || (x && padrao[j] && numero(x) === null && dataISO(x) === '')) baixas.push([i + 1, j]);
+      });
+    });
+    return { rows: rows, baixas: baixas };
+  }
+
   return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
-    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
+    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, t: t };
 })();
-const VERSAO = "02a57681e3";
+const VERSAO = "3e8fa9aa50";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -757,7 +817,7 @@ function perguntarColunas(arquivo, hdr, corpo, nome) {
   });
 }
 /* ---- leitores por tipo (etapa 7a): cada um devolve [{nome, rows}] ---- */
-const EXTS = ['csv', 'txt', 'tsv', 'xlsx', 'xls', 'ods', 'json', 'xml', 'zip'], MAXCOL = 200, ZIP = { arqs: 50, total: 200 * 1048576 };
+const EXTS = ['csv', 'txt', 'tsv', 'xlsx', 'xls', 'ods', 'json', 'xml', 'pdf', 'zip'], MAXCOL = 200, PDFPAG = 200, ZIP = { arqs: 50, total: 200 * 1048576 };
 const p2 = n => (n < 10 ? '0' : '') + n;
 const numTxt = n => String(n).replace('.', ',');
 function dataTxt(d0) { const d = new Date(d0.getTime() + 30000); const s = p2(d.getUTCDate()) + '/' + p2(d.getUTCMonth() + 1) + '/' + d.getUTCFullYear(); return d.getUTCHours() || d.getUTCMinutes() ? s + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) : s; }
@@ -862,6 +922,30 @@ async function lerZip(buf, arq) {
   }
   return lidos;
 }
+/* ---- conferência da leitura (PDF e, na 7c, OCR): conferir(arquivo, rows, baixas) -> rows editadas ou null ---- */
+function conferir(arquivo, rows, baixas) {
+  return new Promise(ok => {
+    const d = $('#dlgConf'), tb = $('#cfTab'), ba = new Set((baixas || []).map(b => b[0] + ',' + b[1])), nc = rows[0].length, hdr = rows[0].map(Core.t), cel = [];
+    $('#cfArq').textContent = 'Arquivo: ' + arquivo + '.'; $('#cfCont').textContent = 'Linhas lidas: ' + (rows.length - 1) + ' · Células marcadas: ' + ba.size;
+    const frag = document.createDocumentFragment(), cab = el('tr'), lin = (r, i) => { const tr = el('tr'), v = []; for (let j = 0; j < nc; j++) { const x = el('input', { type: 'text', value: Core.t(r[j]), 'aria-label': i ? 'Linha ' + i + ', ' + (hdr[j] || 'coluna ' + (j + 1)) : 'Cabeçalho, coluna ' + (j + 1) }); if (ba.has(i + ',' + j)) x.setAttribute('data-baixa', 'true'); v.push(x); tr.append(el('td', null, x)); } cel.push(v); return tr; };
+    cab.append(...lin(rows[0], 0).children); frag.append(el('thead', null, cab));
+    const corpo = el('tbody'); for (let i = 1; i < rows.length; i++) corpo.append(lin(rows[i], i)); frag.append(corpo);
+    tb.textContent = ''; tb.append(frag);
+    let res = null; d.onclose = () => { tb.textContent = ''; ok(res); };
+    $('#cfOk').onclick = () => { res = cel.map(v => v.map(x => x.value)); d.close(); }; $('#cfNao').onclick = () => d.close();
+    d.showModal();
+  });
+}
+let pdfjs;
+async function lerPdf(buf) {   // texto com posição de cada página -> tabela {rows, baixas} ou null (nada executado, sem rede)
+  if (!pdfjs) { const m = await import('./vendor/pdf.min.mjs'); m.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.mjs'; pdfjs = m; }
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(buf), isEvalSupported: false, disableFontFace: true, useSystemFonts: false, enableXfa: false }).promise;
+  try {
+    const pgs = [];
+    for (let i = 1; i <= Math.min(doc.numPages, PDFPAG); i++) { const pg = await doc.getPage(i), tc = await pg.getTextContent(); pgs.push(tc.items.filter(x => typeof x.str === 'string').map(x => ({ x: x.transform[4], y: x.transform[5], w: x.width, h: x.height, t: x.str }))); pg.cleanup(); }
+    return Core.tabelaPdf(pgs, 20000);
+  } finally { doc.destroy(); }
+}
 async function processar(arq, nome, rows) {
   const hi = Core.acharCabecalho(rows);
   if (hi < 0) { toast('Não achei o cabeçalho em ' + arq + '.'); return null; }
@@ -872,6 +956,12 @@ async function processar(arq, nome, rows) {
   return await importar(fm, corpo);
 }
 async function lerBuf(buf, arq, res) {   // um arquivo (ou um de dentro do zip) -> uma ou mais tabelas, cada uma pelo caminho de sempre
+  if (extDe(arq) === 'pdf') {
+    let t; try { t = await lerPdf(buf); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
+    if (!t) { toast('Não encontrei uma tabela neste arquivo'); return; }
+    const rows = await conferir(arq, t.rows, t.baixas); if (!rows) return;
+    const r = await processar(arq, semExt(arq), rows); if (r) res.push(r); return;
+  }
   let ts; try { ts = await tabelasDe(buf, arq); } catch (e) { toast('Não consegui ler ' + arq + '.'); return; }
   if (!ts.length) { toast('Não achei o cabeçalho em ' + arq + '.'); return; }
   for (const t of ts) { const r = await processar(arq, t.nome, t.rows); if (r) res.push(r); }

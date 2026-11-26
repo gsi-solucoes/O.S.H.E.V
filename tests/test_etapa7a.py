@@ -202,7 +202,7 @@ def test_R110_botao_aceita_os_formatos_novos_e_varios_arquivos(page):
     acc = page.locator("input[type=file]").first.get_attribute("accept") or ""
     for ext in [".csv", ".txt", ".tsv", ".xlsx", ".xls", ".ods", ".json", ".xml", ".zip"]:
         assert ext in acc.lower().split(",") or ext in acc.lower(), f"{ext} fora do accept: {acc!r}"
-    assert ".xlsm" not in acc.lower() and ".xlsb" not in acc.lower() and ".pdf" not in acc.lower()
+    assert ".xlsm" not in acc.lower() and ".xlsb" not in acc.lower()   # .pdf passou a valer na 7b (R-120)
     assert page.locator("input[type=file]").first.get_attribute("multiple") is not None
 
 
@@ -501,7 +501,7 @@ def test_R112_planilha_vazia_nao_acho_cabecalho(page, tmp_path):
     assert codigos(page) == set()
 
 
-@pytest.mark.parametrize("nome", ["macro.xlsm", "doc.pdf", "foto.png", "bin.xlsb", "texto.docx"])
+@pytest.mark.parametrize("nome", ["macro.xlsm", "doc.rtf", "foto.png", "bin.xlsb", "texto.docx"])
 def test_R112_formato_nao_suportado_mensagem_exata(page, tmp_path, nome):
     p = grava(tmp_path, nome, b"%PDF-1.4 conteudo qualquer\x00\x01\x02")
     msgs = enviar_vendo_mensagens(page, p)
@@ -533,14 +533,14 @@ def test_regra5_zip_dentro_de_zip_nao_e_aberto_e_os_outros_entram(page, tmp_path
     assert not {f"V{900 + j:05d}" for j in range(3)} & cods, "o zip de dentro nao deveria ser aberto"
 
 
-def test_regra5_zip_com_pdf_ignora_so_o_pdf(page, tmp_path):
-    z = grava(tmp_path, "com_pdf.zip", zip_bytes([("a.csv", csv_forjado("p", 2)), ("contrato.pdf", b"%PDF-1.4 x"),
+def test_regra5_zip_com_arquivo_nao_suportado_ignora_so_ele(page, tmp_path):
+    z = grava(tmp_path, "com_pdf.zip", zip_bytes([("a.csv", csv_forjado("p", 2)), ("foto.png", b"\x89PNG\r\n"),
                                                    ("pasta/b.csv", csv_forjado("q", 3))]))
     msgs = enviar_vendo_mensagens(page, z)
     mapear_tudo(page)
     fechar_todos(page)
     msgs += " | ".join(page.evaluate("window.__tt"))
-    assert "contrato.pdf: formato não suportado (ignorado)." in msgs
+    assert "foto.png: formato não suportado (ignorado)." in msgs
     assert "com_pdf.zip: zip grande demais" not in msgs
     cods = codigos(page)
     assert {f"V{20 + j:05d}" for j in range(3)} | {f"V{30 + j:05d}" for j in range(3)} <= cods

@@ -79,6 +79,19 @@ apagar dados). Modelo de cada procedimento: -->
 
 **Regras e limites:** números saem com vírgula e sem milhar, datas como dd/mm/aaaa ⚖️ D-41; só os valores contam (fórmulas e macros nunca rodam; .xlsm, .xlsb e planilha com senha não são lidos ⚖️ D-42); cada arquivo até 50 MB; zip até 50 arquivos e 200 MB depois de aberto ⚖️ D-43. Mensagens: "Não achei o cabeçalho em <arquivo>.", "Não consegui ler <arquivo>.", "<arquivo>: formato não suportado.".
 
+### P-u. Carregar um relatório em PDF e conferir a leitura
+**Para que serve:** trazer os dados de um relatório PDF que tem texto (não escaneado), conferindo antes de guardar.
+
+| Você faz | O programa faz |
+|---|---|
+| Toca em **Carregar relatório** e escolhe o PDF (ou um .zip com PDF dentro) | Lê o texto de cada página no próprio aparelho, acha as colunas pela posição, tira título, rodapé e cabeçalhos repetidos ⚖️ D-52 |
+| Vê a janela **Conferir leitura** | Mostra a tabela lida, "Linhas lidas" e "Células marcadas"; células que parecem erradas ficam destacadas ⚖️ D-50 |
+| Corrige o que estiver errado direto na tabela | Guarda a correção |
+| **Confirmar** | Segue para "Esta coluna é o quê?" (só na primeira vez deste formato) e guarda os registros |
+| **Descartar** (ou Esc) | Não guarda nada |
+
+**Regras e limites:** se o PDF não tem tabela (um contrato, por exemplo) aparece "Não encontrei uma tabela neste arquivo" e nada é guardado. PDF com senha ou danificado: "Não consegui ler <arquivo>.". Até 200 páginas e 20 mil linhas ⚖️ D-51.
+
 ## Quadro das decisões (marcar na homologação)
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
@@ -99,3 +112,6 @@ apagar dados). Modelo de cada procedimento: -->
 | D-41 | Carregar planilha/JSON/XML | Número com vírgula e sem milhar, data dd/mm/aaaa, para o formato lembrado do CSV servir | Reaproveitar o que o usuário já respondeu | Perguntar de novo por tipo de arquivo: trivial | Sim | |
 | D-42 | Carregar planilha | .xlsm, .xlsb e planilha com senha não são lidos | Segurança (macros) e simplicidade | Aceitar .xlsb: tarefa pequena | Sim | |
 | D-43 | Carregar zip | Até 50 arquivos e 200 MB depois de aberto; acima disso nada do zip entra | Proteção contra arquivo-bomba | Mudar os números: trivial | Sim | |
+| D-50 | Carregar PDF | PDF sempre abre a conferência, mesmo sem nenhuma célula marcada | Espec. 7: tudo de PDF/OCR passa pela conferência | Pular a conferência quando tudo parece certo: tarefa pequena | Não | |
+| D-51 | Carregar PDF | Até 200 páginas e 20 mil linhas; acima disso corta em silêncio | Proteção do aparelho | Mudar os números: trivial | Sim | |
+| D-52 | Carregar PDF | Colunas achadas pela posição do texto; tabelas desenhadas só por linhas (sem alinhamento de texto) podem não ser lidas | Simplicidade, sem IA | Melhorar a leitura: tarefa maior | Sim | |

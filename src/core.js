@@ -398,8 +398,65 @@ var Core = (function () {
     var out = ev(ast); return out != null && isFinite(out) ? out : null;
   }
 
+  // PDF com texto (etapa 7b): paginas = [[{x, y, w, h, t}]] (pedaços de texto com posição) -> {rows, baixas:[[linha, coluna]]} ou null (R-124).
+  // rows[0] é o cabeçalho; baixas indexa rows (0 = cabeçalho). Linha = mesmo y (± metade do corpo); coluna = x de início (± 6 pt).
+  function tabelaPdf(paginas, maxLin) {
+    maxLin = maxLin || 20000;
+    var linhas = []; // por página: [[{x, t}]] (células já coladas)
+    paginas.forEach(function (itens) {
+      var its = itens.filter(function (i) { return t(i.t); }).sort(function (a, b) { return b.y - a.y; }), ls = [];
+      its.forEach(function (i) { var l = ls[ls.length - 1]; if (l && Math.abs(l.y - i.y) <= (l.h || 10) / 2) l.its.push(i); else ls.push({ y: i.y, h: i.h, its: [i] }); });
+      linhas.push(ls.map(function (l) {
+        var it = l.its.sort(function (a, b) { return a.x - b.x; }), nc = 0, nw = 0;
+        it.forEach(function (i) { nc += t(i.t).length; nw += i.w; });
+        var cw = nc ? nw / nc : 5, cel = [];
+        it.forEach(function (i) {
+          var c = cel[cel.length - 1], gap = c ? i.x - c.fim : 0;
+          if (c && gap < 1.5 * cw) { c.t += (gap > 0.15 * cw && !/\s$/.test(c.t) && !/^\s/.test(i.t) ? ' ' : '') + i.t; c.fim = i.x + i.w; }
+          else cel.push({ x: i.x, t: i.t, fim: i.x + i.w });
+        });
+        return cel.map(function (c) { return { x: c.x, t: t(c.t) }; });
+      }));
+    });
+    var tab = [], xs = [];
+    linhas.forEach(function (ls) { ls.forEach(function (l) { if (l.length >= 2) { tab.push(l); l.forEach(function (c) { xs.push(c.x); }); } }); });
+    if (tab.length < 2) return null;
+    xs.sort(function (a, b) { return a - b; });
+    var gr = [];
+    xs.forEach(function (x) { var g = gr[gr.length - 1]; if (g && x - g.ult <= 6) { g.n++; g.ult = x; g.soma += x; } else gr.push({ n: 1, ult: x, soma: x, ini: x }); });
+    var cols = gr.filter(function (g) { return g.n >= Math.max(2, tab.length * 0.25); }).map(function (g) { return g.ini; });
+    if (cols.length < 2) return null;
+    var colDe = function (x) { var j = 0; cols.forEach(function (c, k) { if (c <= x + 6) j = k; }); return j; };
+    var cabP = linhas[0] || [], hdr = null, hdrT = '', rows = [], baixas = [], lm = [];
+    // monta cada linha de tabela: texto por coluna + marcas (colisão de duas células na mesma coluna)
+    var monta = function (l) { var r = cols.map(function () { return ''; }), col = {}; l.forEach(function (c) { var j = colDe(c.x); if (r[j]) { r[j] += ' ' + c.t; col[j] = 1; } else r[j] = c.t; }); return { r: r, col: col, n: l.length }; };
+    for (var k = 0; k < cabP.length && !hdr; k++) { if (cabP[k].length < 2) continue; var m = monta(cabP[k]); if (m.r.every(function (x) { return x; })) { hdr = m; hdrT = m.r.join('\u0001'); cabP = { desde: k }; } }
+    if (!hdr) return null;
+    rows.push(hdr.r);
+    linhas.forEach(function (ls, p) {
+      ls.forEach(function (l, k) {
+        if (l.length < 2 || (p === 0 && k <= cabP.desde)) return;
+        var m = monta(l); if (m.r.join('\u0001') === hdrT) return;
+        if (rows.length > maxLin) return;
+        rows.push(m.r); lm.push(m);
+      });
+    });
+    if (rows.length < 2) return null;
+    // baixa confiança: vazia em linha com as demais preenchidas; nº de pedaços diferente do cabeçalho (colisão); foge do padrão número/data da coluna
+    var padrao = cols.map(function (c, j) {
+      var v = rows.slice(1).map(function (r) { return r[j]; }).filter(Boolean);
+      return v.length > 0 && v.filter(function (x) { return numero(x) !== null || dataISO(x) !== ''; }).length >= 0.9 * v.length;
+    });
+    lm.forEach(function (m, i) {
+      m.r.forEach(function (x, j) {
+        if ((!x && m.r.some(Boolean)) || m.col[j] || (x && padrao[j] && numero(x) === null && dataISO(x) === '')) baixas.push([i + 1, j]);
+      });
+    });
+    return { rows: rows, baixas: baixas };
+  }
+
   return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
-    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, t: t };
+    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, t: t };
 })();
 if (typeof module !== 'undefined') module.exports = Core;

@@ -140,7 +140,7 @@ try:
     from reportlab.lib.pagesizes import A4, landscape as _land
     from reportlab.pdfgen import canvas as _cv
 
-    def _pdf_tabela(nome, cab, linhas, titulo, x0=(30, 90, 170, 300, 380, 470, 530), por_pagina=38):
+    def _pdf_tabela(nome, cab, linhas, titulo, x0=(30, 90, 170, 300, 380, 470, 530), por_pagina=33):
         """Relatório de impressão: título, cabeçalho repetido em cada página, rodapé com número da página."""
         c = _cv.Canvas(str(D / nome), pagesize=_land(A4), invariant=1)
         w, h = _land(A4)
