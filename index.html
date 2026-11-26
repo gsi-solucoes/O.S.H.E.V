@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-0/V/SEIWbgJMKvARZFpvibBcfFASSoCAk8UUfJejOs4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-KguTx9o9sRd5fnZyooTBKTfkgS6Rjle/9Dcf/6C4dTQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -45,6 +45,7 @@ th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:u
 .jan{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 40px #0006;width:min(720px,96vw);max-height:80vh;display:flex;flex-direction:column}
 .jan header{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--band);color:#fff;border-radius:12px 12px 0 0;cursor:move;touch-action:none}
 .jan header b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jan header button{min-height:32px;padding:0 10px;background:#ffffff22;color:#fff;border-color:#ffffff44}
+.jan.max{left:0!important;top:0!important;width:100vw;height:100vh;max-height:100vh;border-radius:0}.jan.max header{border-radius:0}.chip.zero{opacity:.45}.h3abre,h3.abre{cursor:pointer}h3.abre::after{content:' ›';color:var(--accent)}
 .jan .corpo{overflow:auto;padding:10px}.jan.min .corpo,.jan.min .barra{display:none}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.chip{min-height:30px;padding:0 10px;font-size:13px;border-radius:99px}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .barra{display:flex;gap:8px;padding:8px 10px;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -79,7 +80,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <body>
 <header class="band top">
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
-  <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
+  <p>Leia um relatório (planilha, CSV, JSON, XML, zip, PDF ou foto), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
     <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip,.jpg,.jpeg,.png" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
@@ -112,8 +113,8 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
     </details>
     <div class="kpis" id="kpis">
       <button class="kpi" id="kTotal"><b>0</b><span>Total de registros</span></button>
-      <div class="kpi" id="kAnt"><b>—</b><span>Mais antigo</span></div>
-      <div class="kpi" id="kNov"><b>—</b><span>Mais novo</span></div>
+      <button class="kpi" id="kAnt"><b>—</b><span>Mais antigo</span></button>
+      <button class="kpi" id="kNov"><b>—</b><span>Mais novo</span></button>
     </div>
     <div id="blocos" class="grid2"></div>
     <nav id="abasPainel" class="abasLay" aria-label="Abas do painel" hidden></nav>
@@ -707,7 +708,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "63c3dd8d1d";
+const VERSAO = "87c955a0fe";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -851,9 +852,10 @@ function perguntarColunas(arquivo, hdr, corpo, nome) {
       tp.value = pal[j];
       return { nome, tp, tr: el('tr', null, el('td', { text: Core.t(h) }), el('td', { text: ex.slice(0, 40) }), el('td', null, nome), el('td', null, tp)) };
     });
-    f.append(el('h3', { text: 'Esta coluna é o quê?' }), el('p', { class: 'muted', text: 'Arquivo: ' + arquivo + '. Responda uma vez: o formato fica lembrado. Escolha uma coluna como Código (identifica cada registro).' }),
+    f.append(el('h3', { text: 'Esta coluna é o quê?' }), el('p', { class: 'muted', text: 'Arquivo: ' + arquivo + '. Confira o que o programa entendeu de cada coluna. À esquerda, a coluna como veio no arquivo e um exemplo. À direita, o nome e o tipo que ele sugeriu: troque o que estiver errado. Marque uma coluna como Código (o que identifica cada registro) e toque em Confirmar. Você só faz isso uma vez por formato.' }),
       el('label', { class: 'f' }, 'Nome do relatório', nomeRel),
-      el('div', { class: 'tw', style: 'max-height:50vh;overflow:auto;margin:10px 0' }, el('table', null, el('thead', null, el('tr', null, ['Coluna', 'Exemplo', 'Nome do campo', 'Tipo'].map(x => el('th', { text: x })))), el('tbody', null, linhas.map(l => l.tr)))), erro,
+      el('div', { class: 'tw', style: 'max-height:50vh;overflow:auto;margin:10px 0' }, el('table', null, el('thead', null, el('tr', null, ['Coluna', 'Exemplo', 'Nome do campo', 'Tipo de dado'].map(x => el('th', { text: x })))), el('tbody', null, linhas.map(l => l.tr)))), erro,
+      el('p', { class: 'muted', id: 'legTipos', text: 'Tipo de dado: Código = identifica cada registro (só um); Data = dia, com ou sem hora; Categoria = valores que se repetem, para agrupar (ex.: região, vendedor); Situação = andamento (aberto, entregue, cancelado); Número = para somar ou fazer média; Texto = texto livre; Ignorar = não guarda.' }),
       el('div', { class: 'row' },
         el('button', { class: 'prim', type: 'button', id: 'colOk', text: 'Confirmar', onclick: () => {
           const tipos = linhas.map(l => l.tp.value), nc = tipos.filter(x => x === 'codigo').length;
@@ -1261,6 +1263,8 @@ function render() {
   $('#kAnt b').textContent = datas.length ? fmtData(datas[0]) : '—'; $('#kNov b').textContent = datas.length ? fmtData(datas[datas.length - 1]) : '—';
   $('#kAnt span').textContent = 'Mais antigo' + (cd && ds.length > 1 ? ' (' + cd + ')' : ''); $('#kNov span').textContent = 'Mais novo' + (cd && ds.length > 1 ? ' (' + cd + ')' : '');
   $('#kTotal').onclick = () => abrirJanela('Todos os registros', L, c);
+  const dia = r => String(r.v[cd] || '').slice(0, 10), pontaData = (alvo, nome) => () => { if (!datas.length) return; const d = String(alvo).slice(0, 10); abrirJanela(nome + ' (' + fmtData(alvo) + ')', L.filter(r => dia(r) === d), c); };
+  $('#kAnt').onclick = pontaData(datas[0], 'Mais antigo'); $('#kNov').onclick = pontaData(datas[datas.length - 1], 'Mais novo');
 
   const escolhidos = blocosEscolhidos(c); $('#kpis').hidden = $('#blocos').hidden = !!escolhidos.length; $('#blocosEsc').hidden = !escolhidos.length;
   const meusB = blocosMeus(c); $('#btnEntender').hidden = !(escolhidos.length || meusB.length); $('#blocosEsc').textContent = '';
@@ -1270,11 +1274,11 @@ function render() {
   const bl = $('#blocos'); bl.textContent = '';
   if (!escolhidos.length) cats.slice(0, 3).forEach(cat => {
     const g = [...agrupa(L, r => r.v[cat.n])].sort((a, b) => b[1].length - a[1].length).slice(0, 8).map(([k, l]) => [k, l.length, l]);
-    if (g.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Por ' + cat.n }), barras(g, (k, l) => abrirJanela(cat.n + ': ' + k, l, c))));
+    if (g.length) bl.append(cartao({ regs: L, nome: 'Por ' + cat.n }, barras(g, (k, l) => abrirJanela(cat.n + ': ' + k, l, c))));
   });
   if (cd && !escolhidos.length) {
     const g = [...agrupa(L, r => (r.v[cd] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).slice(-12).map(([k, l]) => [k.slice(5) + '/' + k.slice(0, 4), l.length, l]);
-    if (g.length) bl.append(el('div', { class: 'card' }, el('h3', { text: 'Por mês (' + cd + ')' }), barras(g, (k, l) => abrirJanela('Mês ' + k, l, c))));
+    if (g.length) bl.append(cartao({ regs: L, nome: 'Por mês (' + cd + ')' }, barras(g, (k, l) => abrirJanela('Mês ' + k, l, c))));
   }
   if (ds.length >= 2 && !escolhidos.length) bl.append(cartaoTempo(L, c, ds));
   const txs = camposDe(c, 'texto');
@@ -1324,7 +1328,11 @@ function top10(gr, valor) {
   if (resto.length) t.push(['Outros', resto]); return t.map(([k, l]) => [k, valor ? valor(l) : l.length, l]);
 }
 const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'button', onclick: abrir }, pre, el('b', { text: val }), suf);
-const cartao = (b, ...kids) => el('div', { class: 'card bloco' }, el('h3', { text: b.nome }), ...kids);
+const cartao = (b, ...kids) => {
+  const h = el('h3', { text: b.nome });
+  if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => abrirJanela(b.nome, b.regs, F.conjunto); h.classList.add('abre'); h.tabIndex = 0; h.title = 'Ver todos os registros deste bloco'; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
+  return el('div', { class: 'card bloco' }, h, ...kids);
+};
 
 // catálogo de indicadores possíveis do conjunto: só entram os que dá para calcular (ex() devolve null quando não dá)
 function catalogo(c, soIds) {
@@ -1332,25 +1340,25 @@ function catalogo(c, soIds) {
   const abrir = (t, l) => abrirJanela(t, l, c), SEP = '\u0001', out = [];
   out.push({ id: 'total', grupo: 'num', nome: 'Total de registros', oque: 'quantos registros há', conta: 'contagem de todos os registros', campos: 'nenhum campo específico, conta os registros',
     ex: L => L.length ? fmtI(L.length) + (L.length === 1 ? ' registro' : ' registros') : null,
-    desenha: L => cartao({ nome: 'Total de registros' }, kpiBtn('', fmtI(L.length), L.length === 1 ? ' registro' : ' registros', () => abrir('Todos os registros', L))) });
+    desenha: L => cartao({ regs: L, nome: 'Total de registros' }, kpiBtn('', fmtI(L.length), L.length === 1 ? ' registro' : ' registros', () => abrir('Todos os registros', L))) });
   cs.forEach(k => out.push({ id: 'cat' + SEP + k.n, grupo: 'graf', nome: 'Por ' + k.n, oque: 'quantos registros há em cada ' + k.n + ' (os 10 maiores; o resto em Outros)', conta: 'contagem de registros por ' + k.n, campos: k.n,
     ex: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])); return g.length ? k.n + ': ' + g[0][0] + ' lidera com ' + fmtI(g[0][1].length) : null; },
     graf: L => ({ itens: top10(ordenaGrupos(agrupa(L, r => r.v[k.n]))), abrir: (n, l) => abrir(k.n + ': ' + n, l) }),
-    desenha: L => cartao({ nome: 'Por ' + k.n }, barras(top10(ordenaGrupos(agrupa(L, r => r.v[k.n]))), (n, l) => abrir(k.n + ': ' + n, l))) }));
+    desenha: L => cartao({ regs: L, nome: 'Por ' + k.n }, barras(top10(ordenaGrupos(agrupa(L, r => r.v[k.n]))), (n, l) => abrir(k.n + ': ' + n, l))) }));
   ns.forEach(k => out.push({ id: 'num' + SEP + k.n, grupo: 'num', nome: k.n + ' (soma, média e mediana)', oque: 'a soma, a média e a mediana de ' + k.n, conta: 'soma, média e mediana do campo ' + k.n, campos: k.n,
     ex: L => { const v = numeros(L, k.n); return v.length ? 'Soma: ' + fmtN(v.reduce((a, b) => a + b, 0)) + ' · Média: ' + fmtN(v.reduce((a, b) => a + b, 0) / v.length) + ' · Mediana: ' + fmtN(Core.mediana(v)) : null; },
     desenha: L => { const v = numeros(L, k.n), com = L.filter(r => Core.numero(r.v[k.n]) != null), soma = v.reduce((a, b) => a + b, 0), ab = () => abrir(k.n, com);
-      return cartao({ nome: k.n + ' (soma, média e mediana)' }, kpiBtn('Soma: ', v.length ? fmtN(soma) : '—', '', ab), kpiBtn('Média: ', v.length ? fmtN(soma / v.length) : '—', '', ab), kpiBtn('Mediana: ', v.length ? fmtN(Core.mediana(v)) : '—', '', ab)); } }));
+      return cartao({ regs: L, nome: k.n + ' (soma, média e mediana)' }, kpiBtn('Soma: ', v.length ? fmtN(soma) : '—', '', ab), kpiBtn('Média: ', v.length ? fmtN(soma / v.length) : '—', '', ab), kpiBtn('Mediana: ', v.length ? fmtN(Core.mediana(v)) : '—', '', ab)); } }));
   ns.forEach(k => cs.forEach(g => out.push({ id: 'numcat' + SEP + k.n + SEP + g.n, grupo: 'graf', nome: k.n + ' por ' + g.n, oque: 'quanto ' + k.n + ' soma em cada ' + g.n + ' (os 10 maiores; o resto em Outros)', conta: 'soma do campo ' + k.n + ', separada por ' + g.n, campos: k.n + ', ' + g.n,
     ex: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]); return m.length ? 'Maior soma: ' + m[0][0] + ' (' + fmtN(m[0][2]) + ')' : null; },
     graf: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]); return { itens: top10(m.map(x => [x[0], x[1]]), l => numeros(l, k.n).reduce((a, b) => a + b, 0)).map(x => [x[0], x[1], x[2], fmtN(x[1])]), abrir: (n, l) => abrir(k.n + ' por ' + g.n + ': ' + n, l) }; },
     desenha: L => { const m = ordenaGrupos(agrupa(L.filter(r => Core.numero(r.v[k.n]) != null), r => r.v[g.n])).map(([n, l]) => [n, l, numeros(l, k.n).reduce((a, b) => a + b, 0)]).sort((a, b) => b[2] - a[2]);
-      return cartao({ nome: k.n + ' por ' + g.n }, barras(top10(m.map(x => [x[0], x[1]]), l => numeros(l, k.n).reduce((a, b) => a + b, 0)).map(x => [x[0], x[1], x[2], fmtN(x[1])]), (n, l) => abrir(k.n + ' por ' + g.n + ': ' + n, l))); } })));
+      return cartao({ regs: L, nome: k.n + ' por ' + g.n }, barras(top10(m.map(x => [x[0], x[1]]), l => numeros(l, k.n).reduce((a, b) => a + b, 0)).map(x => [x[0], x[1], x[2], fmtN(x[1])]), (n, l) => abrir(k.n + ' por ' + g.n + ': ' + n, l))); } })));
   ds.forEach(k => out.push({ id: 'mes' + SEP + k.n, grupo: 'graf', nome: 'Evolução por mês (' + k.n + ')', oque: 'quantos registros há em cada mês', conta: 'registros por mês do campo ' + k.n, campos: k.n, dataCampo: k.n,
     ex: L => { const g = [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => b[1].length - a[1].length || (a[0] < b[0] ? -1 : 1)); return g.length ? 'Mês com mais registros: ' + fmtM(g[0][0]) + ' (' + fmtI(g[0][1].length) + ')' : null; },
     graf: L => ({ itens: [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).map(([m, l]) => [fmtM(m), l.length, l]), abrir: (m, l) => abrir('Mês ' + m, l) }),
     desenha: L => { const g = [...agrupa(L, r => (r.v[k.n] || '').slice(0, 7))].sort((a, b) => a[0] < b[0] ? -1 : 1).map(([m, l]) => [fmtM(m), l.length, l]);
-      return cartao({ nome: 'Evolução por mês (' + k.n + ')' }, barras(g, (m, l) => abrir('Mês ' + m, l))); } }));
+      return cartao({ regs: L, nome: 'Evolução por mês (' + k.n + ')' }, barras(g, (m, l) => abrir('Mês ' + m, l))); } }));
   if (ds.length >= 2) out.push({ id: 'tempo', grupo: 'num', nome: 'Tempo entre duas datas', get oque() { const p = parTempo(ds); return 'o tempo que passa entre ' + p[0] + ' e ' + p[1] + ', em faixas e dentro do prazo'; }, get conta() { const p = parTempo(ds); return 'mediana do tempo entre ' + p[0] + ' e ' + p[1]; }, get campos() { return parTempo(ds).join(', '); }, get dataCampo() { return parTempo(ds)[0]; },
     ex: L => { const p = parTempo(ds), it = paresTempo(L, p[0], p[1]); return it.length ? 'Mediana: ' + Core.hm(Core.mediana(it.map(x => x[1]))) : null; },
     desenha: L => cartaoTempo(L, c, ds, 'Tempo entre duas datas') });
@@ -1358,21 +1366,21 @@ function catalogo(c, soIds) {
     ex: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0); return g.length ? g[0][0] + ': ' + fmtP(100 * g[0][1].length / n) : null; },
     graf: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0); return { itens: g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), abrir: (v, l) => abrir(k.n + ': ' + v, l) }; },
     desenha: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0);
-      return cartao({ nome: '% por ' + k.n }, barras(g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), (v, l) => abrir(k.n + ': ' + v, l))); } }));
+      return cartao({ regs: L, nome: '% por ' + k.n }, barras(g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), (v, l) => abrir(k.n + ': ' + v, l))); } }));
   campos.filter(k => k.t !== 'codigo' && k.t !== 'ignorar').forEach(k => out.push({ id: 'vazio' + SEP + k.n, grupo: 'num', nome: 'Sem valor em ' + k.n, oque: 'quantos registros estão sem ' + k.n, conta: 'registros com o campo ' + k.n + ' vazio', campos: k.n,
     ex: L => { const n = L.filter(r => !r.v[k.n]).length; return n ? fmtI(n) + ' sem valor em ' + k.n : null; },
-    desenha: L => { const l = L.filter(r => !r.v[k.n]); return cartao({ nome: 'Sem valor em ' + k.n }, kpiBtn('', fmtI(l.length), ' sem valor em ' + k.n, () => abrir('Sem valor em ' + k.n, l))); } }));
+    desenha: L => { const l = L.filter(r => !r.v[k.n]); return cartao({ regs: l, nome: 'Sem valor em ' + k.n }, kpiBtn('', fmtI(l.length), ' sem valor em ' + k.n, () => abrir('Sem valor em ' + k.n, l))); } }));
   if (ds.length && ss.length) {
     const sit = ss[0].n, dat = () => campoData(c);
     const lista = L => L.filter(r => r.v[dat()] && emAberto(r, sit)).sort((a, b) => a.v[dat()] < b.v[dat()] ? -1 : 1);
     out.push({ id: 'aberto', grupo: 'num', nome: 'Mais antigos em aberto', oque: 'o registro em aberto mais antigo e quantos estão em aberto', get conta() { return 'registros em aberto mais antigos pela data ' + dat(); }, get campos() { return dat() + ', ' + sit; }, get dataCampo() { return dat(); },
       ex: L => { const l = lista(L); return l.length ? 'Mais antigo: ' + fmtData(l[0].v[dat()]) : null; },
-      desenha: L => { const l = lista(L); return cartao({ nome: 'Mais antigos em aberto' }, kpiBtn('Mais antigo: ', l.length ? fmtData(l[0].v[dat()]) : '—', '', () => abrir('Mais antigos em aberto', l)), el('p', { class: 'muted', text: fmtI(l.length) + ' em aberto' })); } });
+      desenha: L => { const l = lista(L); return cartao({ regs: l, nome: 'Mais antigos em aberto' }, kpiBtn('Mais antigo: ', l.length ? fmtData(l[0].v[dat()]) : '—', '', () => abrir('Mais antigos em aberto', l)), el('p', { class: 'muted', text: fmtI(l.length) + ' em aberto' })); } });
   }
   (contas[c] || []).forEach(x => { const f = compilaConta(c, x.formula); if (!f.ok) return; const cf = camposFormula(f.ast);
     out.push({ id: 'conta' + SEP + x.nome, grupo: 'num', nome: x.nome, oque: 'a conta personalizada ' + x.nome, conta: x.formula, campos: cf.length ? cf.join(', ') : 'nenhum campo específico, conta os registros',
       ex: L => fmtConta(valorConta(c, x.nome, L)),
-      desenha: L => cartao({ nome: x.nome }, kpiBtn('', fmtConta(valorConta(c, x.nome, L)), '', () => abrir(x.nome, L))) }); });
+      desenha: L => cartao({ regs: L, nome: x.nome }, kpiBtn('', fmtConta(valorConta(c, x.nome, L)), '', () => abrir(x.nome, L))) }); });
   return (soIds ? out.filter(x => soIds.indexOf(x.id) >= 0) : out).filter(x => x.ex(todos) != null);
 }
 // blocos escolhidos do conjunto, na ordem da especificação: números, gráficos (cada grupo na ordem em que foram marcados); [] = painel da etapa 1
@@ -1566,7 +1574,7 @@ function desenhaItem(b, i, L, c) {
   const g = b.graf(L), it = g.itens, kids = []; let forma = f;
   if (f === 'pizza' && it.length > 8) { forma = 'barras'; kids.push(el('p', { class: 'muted', text: 'Pizza com mais de 8 fatias: mostrando barras' })); }
   const corpo = forma === 'barras' ? barras(it, g.abrir) : forma === 'tabela' ? tabelaForma(it, g.abrir) : forma === 'linha' ? linhaSvg(it, g.abrir) : pizzaSvg(it, g.abrir);
-  const card = cartao(b, ...kids, corpo); card.setAttribute('data-forma', forma); return card;
+  const card = cartao(b.aplica ? Object.assign({}, b, { regs: b.aplica(L) }) : Object.assign({}, b, { regs: L }), ...kids, corpo); card.setAttribute('data-forma', forma); return card;
 }
 function renderLay(c, L, ed) {
   const lay = layGet(c), aberta = abaAberta(c, lay), nav = $('#abasPainel'), grade = $('#blocosEsc'); abaAb[c] = aberta.id;
@@ -1759,7 +1767,7 @@ function camposPed(ped, c) {
 function blocoMeu(c, ped, idx) {
   const nome = resumoPed(ped, c);
   return { nome, ped, oque: 'o indicador pedido por escrito (' + nome + ')', conta: contaPed(ped, c), campos: camposPed(ped, c), filtrosProprios: [filtrosPedTxt(ped, c), perTxt(ped.periodo)].filter(Boolean).join('; '), aplica: L => listaPed(ped, L, c).base,
-    desenha: L => cartao({ nome }, corpoPed(ped, L, c, false, nome), el('button', { type: 'button', text: 'Remover', onclick: () => { meus[c].splice(idx, 1); salvaMeus(); render(); } })) };
+    desenha: L => cartao({ regs: listaPed(ped, L, c).base, nome }, corpoPed(ped, L, c, false, nome), el('button', { type: 'button', text: 'Remover', onclick: () => { meus[c].splice(idx, 1); salvaMeus(); render(); } })) };
 }
 const blocosMeus = c => (conjs[c] && meus[c] || []).map((p, i) => blocoMeu(c, p, i));
 const blocosPainel = c => (blocosVis(c) || blocosEscolhidos(c)).concat(blocosMeus(c));
@@ -1862,20 +1870,28 @@ function salvarConta() {
 /* ---------- janelas flutuantes ---------- */
 let nJan = 0;
 function abrirJanela(titulo, lista, c) {
-  const campos = conjs[c].campos, cats = campos.filter(x => x.t === 'categoria' || x.t === 'situacao').slice(0, 2), sel = {};
-  const filtrada = () => lista.filter(r => cats.every(k => !sel[k.n] || !sel[k.n].size || sel[k.n].has(r.v[k.n])));
+  const campos = conjs[c].campos, cats = campos.filter(x => x.t === 'categoria' || x.t === 'situacao').slice(0, 2), sel = {}, todas = {}; let lim = 200;
+  const filtrada = (exc) => lista.filter(r => cats.every(k => k === exc || !sel[k.n] || !sel[k.n].size || sel[k.n].has(r.v[k.n])));
   const j = el('div', { class: 'jan', role: 'dialog', 'aria-label': titulo }), corpo = el('div', { class: 'corpo' }), info = el('p', { class: 'muted' });
   const w = Math.min(720, window.innerWidth * 0.96); j.style.left = Math.max(4, Math.min(20 + (nJan % 8) * 28, window.innerWidth - w - 4)) + 'px'; j.style.top = (70 + (nJan % 8) * 28) + 'px'; nJan++;
   const tit = el('b', { text: titulo + ' (' + lista.length + ')' });
   const dock = el('button', { type: 'button', text: titulo, onclick: () => { j.style.display = ''; dock.remove(); } });
   const hd = el('header', null, tit,
     el('button', { type: 'button', 'aria-label': 'Minimizar', text: '_', onclick: () => { j.style.display = 'none'; $('#dock').append(dock); } }),
+    el('button', { type: 'button', 'aria-label': 'Maximizar', text: '□', onclick: e => { const m = j.classList.toggle('max'); e.currentTarget.setAttribute('aria-label', m ? 'Restaurar' : 'Maximizar'); e.currentTarget.textContent = m ? '❐' : '□'; } }),
     el('button', { type: 'button', 'aria-label': 'Fechar', text: '×', onclick: () => { j.remove(); dock.remove(); } }));
   const desenha = () => {
     const f = filtrada(); corpo.textContent = '';
-    cats.forEach(k => { const g = [...agrupa(lista, r => r.v[k.n])].sort((a, b) => b[1].length - a[1].length).slice(0, 8); if (g.length) corpo.append(el('div', { class: 'chips' }, el('span', { class: 'muted', text: k.n + ':' }), g.map(([v, l]) => el('button', { type: 'button', class: 'chip' + (sel[k.n] && sel[k.n].has(v) ? ' on' : ''), text: v + ' (' + l.length + ')', onclick: () => { const s = sel[k.n] || (sel[k.n] = new Set()); s.has(v) ? s.delete(v) : s.add(v); desenha(); } })))); });
+    cats.forEach(k => {
+      const base = agrupa(filtrada(k), r => r.v[k.n]), g = [...agrupa(lista, r => r.v[k.n])].sort((a, b) => b[1].length - a[1].length).map(([v, l]) => [v, (base.get(v) || []).length]);
+      if (!g.length) return;
+      const vis = todas[k.n] ? g : g.filter(([v], i) => i < 8 || (sel[k.n] && sel[k.n].has(v)));
+      corpo.append(el('div', { class: 'chips' }, el('span', { class: 'muted', text: k.n + ':' }), vis.map(([v, n]) => el('button', { type: 'button', class: 'chip' + (sel[k.n] && sel[k.n].has(v) ? ' on' : '') + (n ? '' : ' zero'), text: v + ' (' + n + ')', onclick: () => { const s = sel[k.n] || (sel[k.n] = new Set()); s.has(v) ? s.delete(v) : s.add(v); desenha(); } })),
+        g.length > 8 ? el('button', { type: 'button', class: 'chip mais', text: todas[k.n] ? 'menos' : 'mais… (' + (g.length - vis.length) + ')', onclick: () => { todas[k.n] = !todas[k.n]; desenha(); } }) : null));
+    });
     const txt = cats.map(k => sel[k.n] && sel[k.n].size ? k.n + ': ' + [...sel[k.n]].join(', ') : '').filter(Boolean).join(' · ');
-    info.textContent = (txt ? 'Seleção: ' + txt + ' · ' : '') + f.length + ' registros' + (f.length > 200 ? ' (mostrando 200)' : ''); corpo.append(info, el('div', { class: 'tw' }, tabela(campos, f.slice(0, 200))));
+    info.textContent = (txt ? 'Seleção: ' + txt + ' · ' : '') + f.length + ' registros' + (f.length > lim ? ' (mostrando ' + lim + ')' : ''); corpo.append(info, el('div', { class: 'tw' }, tabela(campos, f.slice(0, lim))));
+    if (f.length > lim) corpo.append(el('button', { type: 'button', class: 'maisReg', text: 'Mostrar mais', onclick: () => { lim += 100; desenha(); } }));
     corpo._f = f; corpo._txt = txt;
   };
   const barra = el('div', { class: 'barra' },
@@ -1885,7 +1901,7 @@ function abrirJanela(titulo, lista, c) {
   j.append(hd, corpo, barra); document.body.append(j); desenha();
   j.addEventListener('pointerdown', () => { j.style.zIndex = 20 + (++abrirJanela.z || (abrirJanela.z = 1)); });
   hd.addEventListener('pointerdown', e => {
-    if (e.target.closest('button')) return; const r = j.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; hd.setPointerCapture(e.pointerId);
+    if (e.target.closest('button') || j.classList.contains('max')) return; const r = j.getBoundingClientRect(), dx = e.clientX - r.left, dy = e.clientY - r.top; hd.setPointerCapture(e.pointerId);
     hd.onpointermove = ev => { j.style.left = Math.max(0, Math.min(window.innerWidth - 60, ev.clientX - dx)) + 'px'; j.style.top = Math.max(0, Math.min(window.innerHeight - 40, ev.clientY - dy)) + 'px'; };
     hd.onpointerup = () => { hd.onpointermove = hd.onpointerup = null; };
   });

@@ -45,6 +45,7 @@ th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:u
 .jan{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 40px #0006;width:min(720px,96vw);max-height:80vh;display:flex;flex-direction:column}
 .jan header{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--band);color:#fff;border-radius:12px 12px 0 0;cursor:move;touch-action:none}
 .jan header b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jan header button{min-height:32px;padding:0 10px;background:#ffffff22;color:#fff;border-color:#ffffff44}
+.jan.max{left:0!important;top:0!important;width:100vw;height:100vh;max-height:100vh;border-radius:0}.jan.max header{border-radius:0}.chip.zero{opacity:.45}.h3abre,h3.abre{cursor:pointer}h3.abre::after{content:' ›';color:var(--accent)}
 .jan .corpo{overflow:auto;padding:10px}.jan.min .corpo,.jan.min .barra{display:none}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.chip{min-height:30px;padding:0 10px;font-size:13px;border-radius:99px}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .barra{display:flex;gap:8px;padding:8px 10px;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -79,7 +80,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <body>
 <header class="band top">
   <h1><span id="logoTopo"></span>Raio X do Relatório <span id="clienteTopo" class="cli"></span></h1>
-  <p>Leia um relatório (CSV), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
+  <p>Leia um relatório (planilha, CSV, JSON, XML, zip, PDF ou foto), veja os números e gere o Excel. Tudo no seu aparelho, sem enviar nada para a internet.</p>
   <div class="cmd">
     <label class="btn prim pick">Carregar relatório<input type="file" id="arquivo" accept=".csv,.txt,.tsv,.xlsx,.xls,.ods,.json,.xml,.pdf,.zip,.jpg,.jpeg,.png" multiple></label>
     <span id="status" class="muted" style="color:#c9d3ee" role="status"></span>
@@ -112,8 +113,8 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
     </details>
     <div class="kpis" id="kpis">
       <button class="kpi" id="kTotal"><b>0</b><span>Total de registros</span></button>
-      <div class="kpi" id="kAnt"><b>—</b><span>Mais antigo</span></div>
-      <div class="kpi" id="kNov"><b>—</b><span>Mais novo</span></div>
+      <button class="kpi" id="kAnt"><b>—</b><span>Mais antigo</span></button>
+      <button class="kpi" id="kNov"><b>—</b><span>Mais novo</span></button>
     </div>
     <div id="blocos" class="grid2"></div>
     <nav id="abasPainel" class="abasLay" aria-label="Abas do painel" hidden></nav>

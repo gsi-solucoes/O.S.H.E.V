@@ -42,7 +42,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | Você faz | O programa faz |
 |---|---|
 | Toca em **Carregar relatório** e escolhe um ou vários arquivos | Acha a linha do cabeçalho sozinho e lê cada arquivo no aparelho |
-| (formato que ele nunca viu) | Abre **Esta coluna é o quê?**: para cada coluna mostra um exemplo, o nome do campo (dá para trocar) e o tipo já sugerido: Ignorar, Código, Data, Categoria, Situação, Texto, Número ⚖️ D-16. Mostra também o **Nome do relatório** (padrão: o nome do arquivo) |
+| (formato que ele nunca viu) | Abre **Esta coluna é o quê?**: para cada coluna mostra um exemplo, o nome do campo (dá para trocar) e o **Tipo de dado** já sugerido: Ignorar, Código, Data, Categoria, Situação, Texto, Número ⚖️ D-16. Mostra também o **Nome do relatório** (padrão: o nome do arquivo). O texto do topo explica o que conferir, e embaixo da tabela uma legenda diz o que é cada tipo (Código, Data, Categoria, Situação, Número, Texto, Ignorar) |
 | Escolhe **uma** coluna como **Código** (o que identifica cada registro) e toca em **Confirmar** | Guarda os registros e lembra o formato: da próxima vez, o mesmo conjunto de colunas não pergunta de novo. Sem Código, ou com dois: "Escolha exatamente uma coluna como Código." |
 | Carrega o mesmo arquivo outra vez (ou uma versão nova) | Não duplica: registro com o mesmo código é atualizado campo a campo; valor vazio no arquivo novo não apaga o que já havia ⚖️ D-06. No topo: "vendas: 500 lidos, 0 novos" |
 | Carrega outro arquivo com o mesmo campo código e códigos que já existem | Junta no relatório que já tem esses códigos, somando os campos novos ⚖️ D-05 |
@@ -71,7 +71,9 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | Você faz | O programa faz |
 |---|---|
 | Abre **Filtros** e escolhe **Relatório**, **Período** (Tudo, Mês ou De–até), **Campo de data**, **Campo categoria** e **Valor**, ou escreve em **Buscar texto** | Recalcula todos os blocos, o "Seu painel" e o Excel com o recorte |
-| Toca em qualquer número ou barra | Abre uma janela com os registros por trás dele: dá para arrastar, **Minimizar**, filtrar, **Imprimir**, **Copiar** ("Copiado.") e **Limpar seleção** |
+| Toca em qualquer número ou barra, em **Mais antigo** / **Mais novo** (registros daquele dia) ou no **título** de um bloco (ele traz um ›: todos os registros do bloco) | Abre uma janela com os registros por trás dele: dá para arrastar, **Minimizar**, **Maximizar (□)** e voltar, filtrar, **Imprimir**, **Copiar** ("Copiado.") e **Limpar seleção** |
+| Na janela, toca nos botões de uma fileira (ex.: Região "Centro") | As outras fileiras se ajustam, como a segmentação do Excel: a contagem passa a valer só para a seleção e o que ficou com 0 aparece apagado. Cada fileira mostra os 8 maiores e **mais…** mostra todos; os selecionados não somem |
+| Chega ao fim da lista da janela | **Mostrar mais** traz mais 100 registros |
 
 **Regras e limites:** a lista Registros mostra os 50 mais novos primeiro; **Mostrar mais** traz mais 100 de cada vez; o Excel leva todos.
 
