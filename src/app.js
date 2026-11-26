@@ -619,7 +619,7 @@ function top10(gr, valor) {
 const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'button', onclick: abrir }, pre, el('b', { text: val }), suf);
 const cartao = (b, ...kids) => {
   const h = el('h3', { text: b.nome });
-  if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => abrirJanela(b.nome, b.regs, F.conjunto); h.classList.add('abre'); h.tabIndex = 0; h.title = 'Ver todos os registros deste bloco'; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
+  if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => abrirJanela(b.nome, b.regs, F.conjunto); h.classList.add('abre'); h.tabIndex = 0; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
   return el('div', { class: 'card bloco' }, h, ...kids);
 };
 

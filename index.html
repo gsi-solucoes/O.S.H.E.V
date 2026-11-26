@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-KguTx9o9sRd5fnZyooTBKTfkgS6Rjle/9Dcf/6C4dTQ='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-16aOnPtTIpiCDXdUKY9hG+GpyNq28HyxCILopS6Lp+E='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -45,7 +45,7 @@ th{position:sticky;top:0;background:var(--panel);font-size:12px;text-transform:u
 .jan{position:fixed;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 40px #0006;width:min(720px,96vw);max-height:80vh;display:flex;flex-direction:column}
 .jan header{display:flex;gap:8px;align-items:center;padding:8px 10px;background:var(--band);color:#fff;border-radius:12px 12px 0 0;cursor:move;touch-action:none}
 .jan header b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.jan header button{min-height:32px;padding:0 10px;background:#ffffff22;color:#fff;border-color:#ffffff44}
-.jan.max{left:0!important;top:0!important;width:100vw;height:100vh;max-height:100vh;border-radius:0}.jan.max header{border-radius:0}.chip.zero{opacity:.45}.h3abre,h3.abre{cursor:pointer}h3.abre::after{content:' ›';color:var(--accent)}
+.jan.max{left:0!important;top:0!important;width:100vw;height:100vh;max-height:100vh;border-radius:0}.jan.max header{border-radius:0}.chip.zero{opacity:.45}.h3abre,h3.abre{cursor:pointer}h3.abre::after{content:' ›' / '';color:var(--accent)}
 .jan .corpo{overflow:auto;padding:10px}.jan.min .corpo,.jan.min .barra{display:none}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}.chip{min-height:30px;padding:0 10px;font-size:13px;border-radius:99px}.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .barra{display:flex;gap:8px;padding:8px 10px;border-top:1px solid var(--line);flex-wrap:wrap}
@@ -708,7 +708,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "87c955a0fe";
+const VERSAO = "c8743d62d4";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -1330,7 +1330,7 @@ function top10(gr, valor) {
 const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'button', onclick: abrir }, pre, el('b', { text: val }), suf);
 const cartao = (b, ...kids) => {
   const h = el('h3', { text: b.nome });
-  if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => abrirJanela(b.nome, b.regs, F.conjunto); h.classList.add('abre'); h.tabIndex = 0; h.title = 'Ver todos os registros deste bloco'; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
+  if (b.regs && F.conjunto && conjs[F.conjunto]) { const ab = () => abrirJanela(b.nome, b.regs, F.conjunto); h.classList.add('abre'); h.tabIndex = 0; h.onclick = ab; h.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ab(); } }; }
   return el('div', { class: 'card bloco' }, h, ...kids);
 };
 
