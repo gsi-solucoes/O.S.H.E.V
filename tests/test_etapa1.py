@@ -419,3 +419,39 @@ def test_CSP_meta_presente(page):
     csp = page.locator("meta[http-equiv='Content-Security-Policy']").get_attribute("content")
     for parte in ["default-src 'self'", "connect-src 'self'", "worker-src 'self' blob:"]:
         assert parte in csp
+
+
+def _ped(campo):
+    return {"medida": "soma", "campo": campo, "agrupar": None, "filtros": [], "periodo": None}
+
+
+def _restaurar(page, texto, botao):
+    abrir_config(page)
+    with page.expect_file_chooser() as fc:
+        page.get_by_role("button", name="Restaurar backup").click()
+    fc.value.set_files([{"name": "b.json", "mimeType": "application/json", "buffer": texto.encode()}])
+    page.wait_for_timeout(500)
+    page.get_by_role("button", name=botao, exact=True).click()
+    page.wait_for_timeout(800)
+
+
+def test_F60_somar_junta_meus_indicadores_sem_repetir_ate_50(page):
+    """P-06 (espec. seção 13): 'Somar' junta a lista atual com a do backup, sem repetir, até 50."""
+    import json
+    carregar(page, "vendas.csv")
+    _, txt = backup(page)
+    b = json.loads(txt)
+    cj = list(b["conjs"].keys())[0]
+    a, c, d = _ped("A"), _ped("C"), _ped("D")
+    b["meus"] = {cj: [a, c]}
+    _restaurar(page, json.dumps(b), "Substituir")           # atual = [A, C]
+    b["meus"] = {cj: [c, d]}
+    _restaurar(page, json.dumps(b), "Somar")                # backup = [C, D]
+    _, depois = backup(page)
+    assert json.loads(depois)["meus"][cj] == [a, c, d]
+    # limite de 50: o que passar fica de fora
+    b["meus"] = {cj: [_ped("X%d" % i) for i in range(50)]}
+    _restaurar(page, json.dumps(b), "Somar")
+    _, cheio = backup(page)
+    lista = json.loads(cheio)["meus"][cj]
+    assert len(lista) == 50 and lista[:3] == [a, c, d]

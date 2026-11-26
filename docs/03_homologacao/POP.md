@@ -27,4 +27,4 @@ apagar dados). Modelo de cada procedimento: -->
 ## Quadro das decisões (marcar na homologação)
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
-| D-01 | Backup e restaurar | "Somar" junta "Meus indicadores" (sem repetir, até 50). Espec. seção 13, P-06; F-60 implementa | Não perde o que o usuário já escolheu | "Troca": tarefa pequena, com teste | Sim | |
+| D-01 | Backup e restaurar | "Somar" junta "Meus indicadores" (sem repetir, até 50). Espec. seção 13, P-06; implementado na F-60 (26/11/2026, com teste) | Não perde o que o usuário já escolheu | "Troca": tarefa pequena, com teste | Sim | |
