@@ -1,8 +1,9 @@
-# Raio X do Relatório — Especificação v1.6
+# Raio X do Relatório — Especificação v1.7
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v1.7 (26/11/2026, tarefa F-58, coordenador): seção 0.8 "etapa 7a: planilhas, JSON, XML e zip" (R-110 a R-112, regras, CA-70 a CA-72 e CA-75a, decisões D-40 a D-43).
 - v1.6 (26/11/2026, tarefa F-57, coordenador): seção 0.7 "Nomes e regras — etapa 6" (R-100 a R-108, modelo do layout, regras, decisões D-30 a D-34).
 - v1.5 (26/11/2026, tarefa F-55, Especificador): seção 0.6 "Nomes e regras — etapa 5" (R-90 a R-95, fórmula, textos de erro, pedido escrito com conta, decisões D-20 a D-23).
 - v1.4 (26/11/2026, tarefa F-53, Especificador): seção 0.5 "Nomes e estrutura — etapa 4" (R-80 a R-89: planilha de painel, células-âncora, tipos e formatos de célula, capa); seção 4 completada (CA-41 a CA-43 detalhados, CA-45 a CA-50 novos; CA-40 e CA-44 adiados para a etapa 6 com teste `skip`). Na etapa 4 o painel tem uma única aba implícita, `Painel`. Nenhuma regra de negócio nova além das decisões de formato registradas na 0.5.
@@ -442,7 +443,31 @@ Mesmas regras da 0.1 (rótulos exatos; testes localizam por rótulo/texto/`aria-
 
 **O que quero**
 | Formato | Como lê |
-|---|---|
+|### 0.8 Nomes e regras — etapa 7a: planilhas, JSON, XML e zip (v1.7, 26/11/2026, F-58)
+
+PDF (7b, F-64) e imagem com OCR (7c, F-65) **não** entram aqui. Mesmas regras da 0.1. Tudo local, sem rede, sem servidor. Leitor de planilha: `vendor/xlsx.full.min.js` (SheetJS 0.20.3).
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-110 | `Carregar relatório` (R-02) passa a aceitar `.csv .txt .tsv .xlsx .xls .ods .json .xml .zip` | botão | mesmo botão, vários arquivos de tipos misturados |
+| R-111 | `Esta coluna é o quê?` (tela já existente) | janela | cada tabela nova passa por ela, uma vez por formato de colunas (o formato lembrado vale para qualquer tipo de arquivo: `vendas.csv` e `vendas.xlsx` com as mesmas colunas usam o mesmo formato) |
+| R-112 | mensagens (toast), exatas | texto | arquivo de tipo não suportado: `<arquivo>: formato não suportado.`; arquivo sem tabela legível (ou planilha vazia): `Não achei o cabeçalho em <arquivo>.`; arquivo corrompido: `Não consegui ler <arquivo>.`; zip com arquivo de dentro não suportado: `<arquivo>: formato não suportado (ignorado).` (os outros do zip seguem); zip passando dos limites: `<arquivo>: zip grande demais.` |
+
+**Regras.**
+1. **Planilha (.xlsx, .xls, .ods):** cada aba com dados vira uma tabela candidata; a primeira linha com cabeçalho é achada como no CSV. Aba vazia é ignorada. Com **uma** aba, o nome sugerido do relatório (em `Esta coluna é o quê?`) é o do arquivo sem extensão; com **mais de uma**, `<arquivo> - <aba>` (cada aba é um conjunto à parte). Só os valores entram (fórmulas valem o resultado guardado; nunca são executadas).
+2. **Valores:** número vira texto com vírgula decimal e sem separador de milhar (`2014,78`); inteiro sem casas; data (célula de data) vira `dd/mm/aaaa` e, se tem hora, `dd/mm/aaaa hh:mm`; célula vazia, vazio; verdadeiro/falso viram `Sim`/`Não`; erro de célula (`#DIV/0!` etc.) vira vazio. Com isso `vendas.xlsx` dá **os mesmos resultados** de `vendas.csv` (CA-70).
+3. **JSON:** lista de objetos (ou objeto com **uma** propriedade que é essa lista); colunas = união das chaves na ordem em que aparecem (até 200); valor texto/número/booleano como na regra 2 (número JSON com `.` vira vírgula); objeto ou lista dentro de um valor vira o texto JSON dele. Qualquer outra forma = `Não achei o cabeçalho em <arquivo>.`
+4. **XML:** acha o elemento que mais se repete (mesmo nome, mesmo pai) cujos filhos são elementos simples; cada repetição é uma linha, colunas = nomes dos filhos (e atributos do elemento, depois) na ordem em que aparecem. Sem repetição = `Não achei o cabeçalho em <arquivo>.`
+5. **Zip:** abre e lê cada arquivo de dentro (qualquer pasta, qualquer mistura de tipos desta tabela), na ordem alfabética do caminho; zip dentro de zip não é aberto (`formato não suportado (ignorado)`). Limites: até 50 arquivos úteis e 200 MB no total depois de descompactar (medidos pelo tamanho declarado e conferidos na leitura); acima disso `zip grande demais` e nada do zip entra.
+6. **Limites:** cada arquivo (ou arquivo dentro do zip) até 50 MB (o limite do CSV); planilha até 200 colunas e 200 mil linhas por aba (o excedente é cortado em silêncio); nome de coluna/aba só entra na tela por `textContent`.
+7. **Nada executa:** sem `eval`, sem macros (um `.xlsm`/`.xlsb` não é aceito), sem links externos, sem rede. Chave de coluna chamada `__proto__`/`constructor` é coluna comum.
+8. O mesmo registro vindo de dois arquivos se junta pelo código como já faz (CA-80, CA-81).
+
+**Critérios (v1.7).** CA-70 `vendas.xlsx`, CA-71 `vendas.xls` e `vendas.ods`, CA-72 `vendas.json` e `vendas.xml`: os mesmos resultados de `vendas.csv` (total, por cliente, valor total) conferidos pelo backup e pelo painel. CA-75a `vendas_mistura.zip` (CSV + XLSX + JSON dentro de uma pasta): os três lidos (mesmos códigos: 500 vendas + 300 chamados; o XLSX e o JSON repetem as vendas do CSV de vendas sem duplicar, pois juntam por código). CA-70b `vendas_2abas.xlsx`: dois conjuntos (`vendas_2abas - Vendas` e `vendas_2abas - Chamados`) com 500 e 300 registros. CA-110x: arquivos forjados (zip com 60 arquivos; JSON de lista aninhada; XML sem repetição; `.xlsx` truncado; nome de coluna `__proto__`) → só mensagens R-112, nada trava e `({}).polluted` continua `undefined`.
+
+**Decisões (v1.7):** D-40 cada aba é um relatório à parte (espec. 7: "cada aba vira um conjunto candidato"). D-41 número sai com vírgula e sem milhar, data como `dd/mm/aaaa`, para o mesmo formato lembrado do CSV servir. D-42 `.xlsm`, `.xlsb` e `.xlsx` com senha não são lidos. D-43 limites de zip (50 arquivos, 200 MB).
+
+---|---|
 | CSV / TXT (`;`, `,`, tab; UTF-8 ou Windows-1252) | direto (atual) |
 | Excel .xlsx, .xls, .ods | biblioteca local; cada aba vira um conjunto candidato |
 | JSON (lista de objetos) e XML (elementos repetidos) | direto |

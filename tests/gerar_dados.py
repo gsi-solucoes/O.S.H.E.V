@@ -56,3 +56,61 @@ for i in range(1, 201):
     p2.append([f"V{i:05d}", pr])
 p2.append(["V90001", "Alta"])
 grava("vendas_parte2.csv", ["Código", "Prioridade"], p2)
+
+
+# ---------- etapa 7a: os mesmos dados de vendas em outros formatos (F-58) ----------
+import json as _json, shutil as _shutil, subprocess as _sp, tempfile as _tmp, zipfile as _zf
+from xml.sax.saxutils import escape as _esc
+_ci = [dict(zip(CAB_V, r)) for r in vendas]
+
+
+def _num(s):
+    return float(s.replace(",", "."))
+
+
+def _dt(s):
+    return datetime.datetime.strptime(s, "%d/%m/%Y")
+
+
+# JSON: lista de objetos (valores como no CSV, texto)
+(D / "vendas.json").write_text(_json.dumps(_ci, ensure_ascii=False, indent=1), encoding="utf-8")
+# XML: elementos repetidos <registro> dentro de <relatorio>
+with open(D / "vendas.xml", "w", encoding="utf-8") as _f:
+    _f.write('<?xml version="1.0" encoding="UTF-8"?>\n<relatorio>\n')
+    for _r in _ci:
+        _f.write("  <registro>" + "".join(f"<{_k}>{_esc(_v)}</{_k}>" for _k, _v in _r.items()) + "</registro>\n")
+    _f.write("</relatorio>\n")
+try:
+    import openpyxl as _ox
+    _wb = _ox.Workbook()
+    _ws = _wb.active
+    _ws.title = "Vendas"
+    _ws.append(CAB_V)
+    for _r in vendas:
+        _ws.append([_r[0], _dt(_r[1]), _r[2], _r[3], _r[4], _num(_r[5]), _r[6]])
+    for _row in _ws.iter_rows(min_row=2, min_col=2, max_col=2):
+        _row[0].number_format = "dd/mm/yyyy"
+    _wb.save(D / "vendas.xlsx")
+    # duas abas: Vendas + Chamados (cada aba vira um conjunto candidato)
+    _ws2 = _wb.create_sheet("Chamados")
+    _ws2.append(["Código", "Abertura", "Conclusão", "Categoria", "Responsável", "Situação"])
+    for _r in chamados:
+        _ws2.append(_r)
+    _wb.save(D / "vendas_2abas.xlsx")
+    # xls e ods pelo LibreOffice (se existir); sem ele, os testes desses formatos são pulados
+    _so = _shutil.which("soffice") or "/usr/bin/soffice"
+    if pathlib.Path(_so).exists():
+        for _fmt in ("xls", "ods"):
+            _t = pathlib.Path(_tmp.mkdtemp())
+            _sp.run([_so, "--headless", f"-env:UserInstallation=file://{_t}/p", "--convert-to", _fmt, "--outdir", str(_t), str(D / "vendas.xlsx")],
+                    check=False, stdout=_sp.DEVNULL, stderr=_sp.DEVNULL, timeout=120)
+            if (_t / f"vendas.{_fmt}").exists():
+                _shutil.copy(_t / f"vendas.{_fmt}", D / f"vendas.{_fmt}")
+            _shutil.rmtree(_t, ignore_errors=True)
+    # zip com mistura: CSV + XLSX + JSON
+    with _zf.ZipFile(D / "vendas_mistura.zip", "w", _zf.ZIP_DEFLATED) as _z:
+        _z.write(D / "chamados.csv", "chamados.csv")
+        _z.write(D / "vendas.xlsx", "vendas.xlsx")
+        _z.write(D / "vendas.json", "pasta/vendas.json")
+except ImportError:
+    pass

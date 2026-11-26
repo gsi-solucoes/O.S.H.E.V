@@ -1,0 +1,4502 @@
+[
+ {
+  "Código": "V00001",
+  "Data": "05/01/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "652,09",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00002",
+  "Data": "24/09/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "2014,78",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00003",
+  "Data": "02/06/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2293,42",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00004",
+  "Data": "24/11/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "756,75",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00005",
+  "Data": "14/11/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1150,77",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00006",
+  "Data": "04/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1983,54",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00007",
+  "Data": "10/01/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1036,56",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00008",
+  "Data": "03/03/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1095,49",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00009",
+  "Data": "12/04/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1608,36",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00010",
+  "Data": "05/06/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "323,90",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00011",
+  "Data": "03/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "1488,35",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00012",
+  "Data": "12/04/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "88,37",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00013",
+  "Data": "02/04/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2052,51",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00014",
+  "Data": "21/09/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1109,85",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00015",
+  "Data": "02/05/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1192,30",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00016",
+  "Data": "09/11/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "309,62",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00017",
+  "Data": "24/04/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "867,15",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00018",
+  "Data": "03/01/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "660,57",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00019",
+  "Data": "26/01/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1606,35",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00020",
+  "Data": "13/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1304,86",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00021",
+  "Data": "20/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "732,28",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00022",
+  "Data": "22/10/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2072,65",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00023",
+  "Data": "10/04/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2246,77",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00024",
+  "Data": "29/09/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1480,39",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00025",
+  "Data": "04/08/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1958,01",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00026",
+  "Data": "13/06/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "331,61",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00027",
+  "Data": "05/03/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "145,42",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00028",
+  "Data": "20/10/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1115,88",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00029",
+  "Data": "10/10/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "929,00",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00030",
+  "Data": "07/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1301,97",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00031",
+  "Data": "13/06/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "646,63",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00032",
+  "Data": "14/08/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1723,99",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00033",
+  "Data": "16/06/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "52,08",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00034",
+  "Data": "07/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "1259,28",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00035",
+  "Data": "13/02/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "412,93",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00036",
+  "Data": "13/11/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "909,40",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00037",
+  "Data": "30/10/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1592,31",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00038",
+  "Data": "24/11/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "365,78",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00039",
+  "Data": "01/08/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1739,90",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00040",
+  "Data": "25/02/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "561,12",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00041",
+  "Data": "07/02/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "871,00",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00042",
+  "Data": "20/02/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1262,05",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00043",
+  "Data": "16/09/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1936,43",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00044",
+  "Data": "27/08/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2360,59",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00045",
+  "Data": "21/05/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "956,36",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00046",
+  "Data": "19/03/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "244,56",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00047",
+  "Data": "21/06/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "36,44",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00048",
+  "Data": "07/07/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1573,99",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00049",
+  "Data": "19/04/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "46,04",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00050",
+  "Data": "01/02/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1720,38",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00051",
+  "Data": "24/11/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "2424,07",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00052",
+  "Data": "20/02/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1704,62",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00053",
+  "Data": "25/08/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "385,26",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00054",
+  "Data": "24/04/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1732,19",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00055",
+  "Data": "07/07/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "2277,98",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00056",
+  "Data": "07/09/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "2094,69",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00057",
+  "Data": "08/03/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1689,78",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00058",
+  "Data": "26/03/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "754,50",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00059",
+  "Data": "31/07/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "313,14",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00060",
+  "Data": "14/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "1442,48",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00061",
+  "Data": "11/10/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2046,87",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00062",
+  "Data": "05/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1279,88",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00063",
+  "Data": "19/11/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1961,49",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00064",
+  "Data": "27/06/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1822,46",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00065",
+  "Data": "29/03/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "738,10",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00066",
+  "Data": "21/11/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2238,89",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00067",
+  "Data": "20/06/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "1331,64",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00068",
+  "Data": "02/03/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2388,60",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00069",
+  "Data": "26/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "800,50",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00070",
+  "Data": "20/01/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "1798,37",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00071",
+  "Data": "19/04/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1179,51",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00072",
+  "Data": "01/02/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1995,96",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00073",
+  "Data": "01/06/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1062,14",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00074",
+  "Data": "10/05/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "811,41",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00075",
+  "Data": "18/07/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1373,50",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00076",
+  "Data": "16/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "82,32",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00077",
+  "Data": "23/06/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "999,28",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00078",
+  "Data": "08/01/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "170,87",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00079",
+  "Data": "01/02/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "2002,39",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00080",
+  "Data": "04/06/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1452,05",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00081",
+  "Data": "26/11/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1106,79",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00082",
+  "Data": "03/04/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2072,90",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00083",
+  "Data": "31/07/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1520,28",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00084",
+  "Data": "10/08/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2291,60",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00085",
+  "Data": "19/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "14,73",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00086",
+  "Data": "09/03/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1861,02",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00087",
+  "Data": "27/11/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1295,94",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00088",
+  "Data": "24/06/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "459,91",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00089",
+  "Data": "05/07/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "816,06",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00090",
+  "Data": "01/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "1080,45",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00091",
+  "Data": "02/08/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "956,56",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00092",
+  "Data": "19/05/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "406,88",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00093",
+  "Data": "24/08/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "475,82",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00094",
+  "Data": "09/09/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1268,83",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00095",
+  "Data": "22/10/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "112,05",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00096",
+  "Data": "25/07/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1697,07",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00097",
+  "Data": "03/01/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1860,41",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00098",
+  "Data": "12/03/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1787,66",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00099",
+  "Data": "29/07/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "78,02",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00100",
+  "Data": "07/02/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1157,64",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00101",
+  "Data": "10/04/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1937,13",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00102",
+  "Data": "29/05/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1961,86",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00103",
+  "Data": "30/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2024,28",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00104",
+  "Data": "13/07/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2029,89",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00105",
+  "Data": "16/03/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1752,06",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00106",
+  "Data": "31/01/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "531,16",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00107",
+  "Data": "25/06/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1794,07",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00108",
+  "Data": "16/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "322,10",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00109",
+  "Data": "11/03/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "669,34",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00110",
+  "Data": "27/09/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "350,61",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00111",
+  "Data": "12/01/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "81,28",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00112",
+  "Data": "11/02/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1691,47",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00113",
+  "Data": "23/04/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "745,45",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00114",
+  "Data": "10/08/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "575,32",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00115",
+  "Data": "04/02/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2265,91",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00116",
+  "Data": "25/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "584,99",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00117",
+  "Data": "10/01/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "234,97",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00118",
+  "Data": "08/04/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2398,43",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00119",
+  "Data": "27/01/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "2181,49",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00120",
+  "Data": "08/03/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "357,42",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00121",
+  "Data": "12/02/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "130,70",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00122",
+  "Data": "07/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "1259,46",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00123",
+  "Data": "07/10/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1648,39",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00124",
+  "Data": "31/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2010,44",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00125",
+  "Data": "29/05/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2115,30",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00126",
+  "Data": "05/02/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "1280,42",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00127",
+  "Data": "13/01/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1116,58",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00128",
+  "Data": "29/01/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "551,40",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00129",
+  "Data": "07/04/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1448,72",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00130",
+  "Data": "18/07/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1908,79",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00131",
+  "Data": "24/05/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "572,66",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00132",
+  "Data": "18/11/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "418,97",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00133",
+  "Data": "13/04/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "85,56",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00134",
+  "Data": "25/02/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "756,39",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00135",
+  "Data": "16/11/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1209,75",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00136",
+  "Data": "19/06/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "340,76",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00137",
+  "Data": "10/10/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1796,61",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00138",
+  "Data": "17/10/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1440,84",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00139",
+  "Data": "01/03/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "174,58",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00140",
+  "Data": "16/07/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "450,54",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00141",
+  "Data": "05/06/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1959,19",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00142",
+  "Data": "17/08/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1707,19",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00143",
+  "Data": "26/06/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1861,33",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00144",
+  "Data": "05/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1095,23",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00145",
+  "Data": "11/04/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "116,54",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00146",
+  "Data": "07/01/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "42,94",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00147",
+  "Data": "27/11/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1685,69",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00148",
+  "Data": "14/02/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1927,99",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00149",
+  "Data": "28/07/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "257,34",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00150",
+  "Data": "18/03/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "510,92",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00151",
+  "Data": "16/05/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2104,15",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00152",
+  "Data": "29/05/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "2295,35",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00153",
+  "Data": "03/07/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "583,23",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00154",
+  "Data": "18/08/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "691,09",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00155",
+  "Data": "25/02/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "621,07",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00156",
+  "Data": "05/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "316,78",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00157",
+  "Data": "23/11/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2118,22",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00158",
+  "Data": "05/09/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1449,56",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00159",
+  "Data": "17/05/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2307,15",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00160",
+  "Data": "27/09/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "940,99",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00161",
+  "Data": "29/05/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1916,34",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00162",
+  "Data": "03/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1390,15",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00163",
+  "Data": "02/02/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "100,31",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00164",
+  "Data": "24/06/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1155,31",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00165",
+  "Data": "10/01/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "818,54",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00166",
+  "Data": "21/06/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1850,36",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00167",
+  "Data": "08/10/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "2158,21",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00168",
+  "Data": "25/08/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "574,32",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00169",
+  "Data": "05/09/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1039,42",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00170",
+  "Data": "24/04/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "398,06",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00171",
+  "Data": "26/04/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1193,77",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00172",
+  "Data": "22/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "193,43",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00173",
+  "Data": "02/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1172,89",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00174",
+  "Data": "28/02/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "229,12",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00175",
+  "Data": "14/11/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1478,93",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00176",
+  "Data": "06/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "456,91",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00177",
+  "Data": "28/08/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1359,13",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00178",
+  "Data": "14/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "2319,43",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00179",
+  "Data": "01/03/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1789,26",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00180",
+  "Data": "21/04/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1993,33",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00181",
+  "Data": "05/11/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "1958,53",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00182",
+  "Data": "23/03/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "878,50",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00183",
+  "Data": "15/09/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "659,58",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00184",
+  "Data": "10/03/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2272,15",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00185",
+  "Data": "16/04/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "625,44",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00186",
+  "Data": "06/09/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1940,36",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00187",
+  "Data": "07/08/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1097,81",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00188",
+  "Data": "21/05/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "949,04",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00189",
+  "Data": "04/09/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2441,84",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00190",
+  "Data": "02/05/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2402,02",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00191",
+  "Data": "21/06/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "470,16",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00192",
+  "Data": "22/10/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1290,39",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00193",
+  "Data": "25/03/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "969,83",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00194",
+  "Data": "29/07/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "112,64",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00195",
+  "Data": "23/05/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "273,40",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00196",
+  "Data": "14/11/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1384,66",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00197",
+  "Data": "16/02/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2425,48",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00198",
+  "Data": "12/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "2323,98",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00199",
+  "Data": "10/03/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2492,36",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00200",
+  "Data": "18/03/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1041,83",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00201",
+  "Data": "10/11/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "147,41",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00202",
+  "Data": "22/10/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "134,99",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00203",
+  "Data": "24/09/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1958,06",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00204",
+  "Data": "27/09/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "2478,73",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00205",
+  "Data": "04/02/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1748,96",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00206",
+  "Data": "17/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "894,90",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00207",
+  "Data": "28/01/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "129,81",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00208",
+  "Data": "29/10/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1064,54",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00209",
+  "Data": "05/01/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1540,29",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00210",
+  "Data": "04/09/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "921,76",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00211",
+  "Data": "27/09/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "2483,51",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00212",
+  "Data": "17/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1951,95",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00213",
+  "Data": "06/08/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1911,74",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00214",
+  "Data": "18/10/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1245,09",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00215",
+  "Data": "21/09/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2351,71",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00216",
+  "Data": "29/10/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "445,73",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00217",
+  "Data": "26/01/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "2337,50",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00218",
+  "Data": "02/07/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "183,10",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00219",
+  "Data": "14/11/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2257,92",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00220",
+  "Data": "17/10/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2326,48",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00221",
+  "Data": "16/11/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "10,62",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00222",
+  "Data": "29/03/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "875,53",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00223",
+  "Data": "22/10/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1295,17",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00224",
+  "Data": "03/06/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2083,68",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00225",
+  "Data": "16/05/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1855,32",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00226",
+  "Data": "02/02/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1854,16",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00227",
+  "Data": "09/07/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "2413,38",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00228",
+  "Data": "10/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "704,00",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00229",
+  "Data": "01/09/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "564,53",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00230",
+  "Data": "28/02/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1335,39",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00231",
+  "Data": "02/06/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "1176,73",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00232",
+  "Data": "24/11/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1355,03",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00233",
+  "Data": "31/05/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2479,47",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00234",
+  "Data": "20/03/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "34,81",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00235",
+  "Data": "05/08/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2306,92",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00236",
+  "Data": "04/10/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2032,01",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00237",
+  "Data": "21/05/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1335,59",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00238",
+  "Data": "19/08/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "176,71",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00239",
+  "Data": "21/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "326,81",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00240",
+  "Data": "30/06/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "878,73",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00241",
+  "Data": "14/04/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1652,69",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00242",
+  "Data": "20/08/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "1075,71",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00243",
+  "Data": "04/07/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1880,43",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00244",
+  "Data": "13/03/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2403,16",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00245",
+  "Data": "18/01/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1279,30",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00246",
+  "Data": "27/04/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1284,45",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00247",
+  "Data": "16/05/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1639,47",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00248",
+  "Data": "16/10/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "570,14",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00249",
+  "Data": "17/06/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1385,20",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00250",
+  "Data": "18/04/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "193,38",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00251",
+  "Data": "30/10/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1841,60",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00252",
+  "Data": "27/08/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "524,26",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00253",
+  "Data": "18/10/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1541,38",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00254",
+  "Data": "17/02/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "361,04",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00255",
+  "Data": "17/05/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "1613,71",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00256",
+  "Data": "02/05/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "1679,71",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00257",
+  "Data": "03/05/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1738,32",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00258",
+  "Data": "06/06/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1917,70",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00259",
+  "Data": "06/03/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2390,85",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00260",
+  "Data": "11/01/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "51,67",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00261",
+  "Data": "24/11/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "762,05",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00262",
+  "Data": "07/11/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1106,53",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00263",
+  "Data": "29/04/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1298,45",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00264",
+  "Data": "17/05/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1787,92",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00265",
+  "Data": "22/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "2451,42",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00266",
+  "Data": "19/01/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "210,31",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00267",
+  "Data": "10/06/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "45,15",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00268",
+  "Data": "30/04/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "452,84",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00269",
+  "Data": "13/07/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1165,16",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00270",
+  "Data": "12/01/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "971,70",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00271",
+  "Data": "05/11/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "414,70",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00272",
+  "Data": "27/09/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "702,88",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00273",
+  "Data": "18/11/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1945,88",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00274",
+  "Data": "17/01/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1419,38",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00275",
+  "Data": "27/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "440,14",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00276",
+  "Data": "16/11/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "372,26",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00277",
+  "Data": "10/11/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1030,66",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00278",
+  "Data": "20/03/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1805,42",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00279",
+  "Data": "25/10/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "285,49",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00280",
+  "Data": "09/02/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1928,02",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00281",
+  "Data": "03/11/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "364,29",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00282",
+  "Data": "26/03/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "864,70",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00283",
+  "Data": "25/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2447,32",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00284",
+  "Data": "27/10/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2089,19",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00285",
+  "Data": "30/01/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1014,54",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00286",
+  "Data": "24/06/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2035,32",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00287",
+  "Data": "29/09/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1051,93",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00288",
+  "Data": "02/09/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1708,94",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00289",
+  "Data": "16/02/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2330,01",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00290",
+  "Data": "05/04/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1359,73",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00291",
+  "Data": "24/08/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2144,96",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00292",
+  "Data": "07/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2417,70",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00293",
+  "Data": "18/02/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1406,14",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00294",
+  "Data": "10/11/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1921,85",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00295",
+  "Data": "09/02/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1931,33",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00296",
+  "Data": "17/02/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1736,58",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00297",
+  "Data": "15/04/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "225,57",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00298",
+  "Data": "16/03/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "1587,65",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00299",
+  "Data": "28/03/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1368,11",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00300",
+  "Data": "14/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "433,21",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00301",
+  "Data": "17/01/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "2450,85",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00302",
+  "Data": "24/05/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "800,27",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00303",
+  "Data": "08/11/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "109,04",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00304",
+  "Data": "28/10/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "1190,01",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00305",
+  "Data": "03/07/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "489,78",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00306",
+  "Data": "27/09/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "49,65",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00307",
+  "Data": "08/07/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2297,29",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00308",
+  "Data": "28/09/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "782,27",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00309",
+  "Data": "19/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "72,92",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00310",
+  "Data": "24/09/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1545,01",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00311",
+  "Data": "10/11/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "433,66",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00312",
+  "Data": "07/01/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1823,28",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00313",
+  "Data": "24/08/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1985,80",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00314",
+  "Data": "13/04/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1483,96",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00315",
+  "Data": "13/03/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1468,82",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00316",
+  "Data": "01/03/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "233,13",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00317",
+  "Data": "21/03/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1339,03",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00318",
+  "Data": "11/01/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "358,38",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00319",
+  "Data": "05/10/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1122,90",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00320",
+  "Data": "16/05/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "2070,28",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00321",
+  "Data": "07/03/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "2142,39",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00322",
+  "Data": "25/11/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "2244,99",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00323",
+  "Data": "24/05/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1481,38",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00324",
+  "Data": "24/11/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "432,59",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00325",
+  "Data": "29/10/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "618,25",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00326",
+  "Data": "11/02/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "2259,08",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00327",
+  "Data": "04/01/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "20,79",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00328",
+  "Data": "31/03/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1896,52",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00329",
+  "Data": "10/10/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "1285,32",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00330",
+  "Data": "11/05/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "2349,86",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00331",
+  "Data": "06/09/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1313,66",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00332",
+  "Data": "27/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "496,26",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00333",
+  "Data": "14/03/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "63,33",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00334",
+  "Data": "20/06/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1863,08",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00335",
+  "Data": "07/10/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1763,97",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00336",
+  "Data": "09/03/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2348,85",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00337",
+  "Data": "26/10/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "641,41",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00338",
+  "Data": "12/07/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1872,16",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00339",
+  "Data": "09/06/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1239,58",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00340",
+  "Data": "16/06/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "482,05",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00341",
+  "Data": "19/03/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "646,62",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00342",
+  "Data": "19/01/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "2065,43",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00343",
+  "Data": "25/03/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "1860,55",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00344",
+  "Data": "22/04/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1115,28",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00345",
+  "Data": "21/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "211,84",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00346",
+  "Data": "09/09/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "21,26",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00347",
+  "Data": "18/03/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "875,62",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00348",
+  "Data": "20/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1464,33",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00349",
+  "Data": "07/09/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "1037,02",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00350",
+  "Data": "14/09/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "2451,61",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00351",
+  "Data": "14/11/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "898,89",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00352",
+  "Data": "03/04/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1839,43",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00353",
+  "Data": "25/11/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2181,71",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00354",
+  "Data": "25/10/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "24,37",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00355",
+  "Data": "27/04/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1916,92",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00356",
+  "Data": "12/10/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1593,68",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00357",
+  "Data": "15/08/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "2139,61",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00358",
+  "Data": "24/05/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1171,23",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00359",
+  "Data": "27/06/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "985,05",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00360",
+  "Data": "19/04/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "636,32",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00361",
+  "Data": "23/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1167,66",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00362",
+  "Data": "21/01/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "394,36",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00363",
+  "Data": "18/04/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1392,26",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00364",
+  "Data": "13/10/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2064,38",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00365",
+  "Data": "06/02/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "1438,48",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00366",
+  "Data": "19/10/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "779,29",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00367",
+  "Data": "06/05/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1061,71",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00368",
+  "Data": "29/09/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1048,18",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00369",
+  "Data": "14/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2138,67",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00370",
+  "Data": "08/05/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "673,41",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00371",
+  "Data": "05/01/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "303,97",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00372",
+  "Data": "20/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1333,35",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00373",
+  "Data": "05/06/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "735,45",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00374",
+  "Data": "27/10/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1864,03",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00375",
+  "Data": "12/01/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "713,39",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00376",
+  "Data": "17/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1629,70",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00377",
+  "Data": "02/09/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "972,59",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00378",
+  "Data": "26/03/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1001,29",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00379",
+  "Data": "08/01/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "273,16",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00380",
+  "Data": "06/04/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2450,19",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00381",
+  "Data": "14/01/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "345,90",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00382",
+  "Data": "05/05/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1380,98",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00383",
+  "Data": "16/11/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "58,12",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00384",
+  "Data": "14/10/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1669,35",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00385",
+  "Data": "07/03/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1638,68",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00386",
+  "Data": "15/04/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2420,38",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00387",
+  "Data": "10/10/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1637,99",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00388",
+  "Data": "11/06/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "645,47",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00389",
+  "Data": "11/02/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "253,21",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00390",
+  "Data": "06/02/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "202,26",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00391",
+  "Data": "19/05/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2398,74",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00392",
+  "Data": "21/04/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "1966,65",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00393",
+  "Data": "20/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2428,85",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00394",
+  "Data": "11/10/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "846,00",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00395",
+  "Data": "22/01/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1005,21",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00396",
+  "Data": "07/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2245,41",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00397",
+  "Data": "10/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1527,04",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00398",
+  "Data": "03/05/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1692,91",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00399",
+  "Data": "14/07/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1215,57",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00400",
+  "Data": "30/10/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "324,86",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00401",
+  "Data": "23/01/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "826,41",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00402",
+  "Data": "08/05/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "614,85",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00403",
+  "Data": "12/03/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "234,18",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00404",
+  "Data": "18/08/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1511,03",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00405",
+  "Data": "31/07/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1837,47",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00406",
+  "Data": "13/07/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1040,07",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00407",
+  "Data": "12/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2324,48",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00408",
+  "Data": "02/05/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "1233,81",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00409",
+  "Data": "28/01/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "798,08",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00410",
+  "Data": "14/03/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1837,59",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00411",
+  "Data": "14/04/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "956,04",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00412",
+  "Data": "09/06/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "1295,99",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00413",
+  "Data": "22/08/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "1705,46",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00414",
+  "Data": "27/09/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Sul",
+  "Vendedor": "Carla Teste",
+  "Valor": "251,38",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00415",
+  "Data": "01/11/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "1562,18",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00416",
+  "Data": "30/04/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1333,81",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00417",
+  "Data": "28/09/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1917,29",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00418",
+  "Data": "25/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "62,54",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00419",
+  "Data": "25/02/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1961,22",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00420",
+  "Data": "26/07/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "436,25",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00421",
+  "Data": "09/07/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "61,32",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00422",
+  "Data": "19/02/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "887,56",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00423",
+  "Data": "28/06/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "461,97",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00424",
+  "Data": "21/06/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2329,96",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00425",
+  "Data": "06/09/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1920,66",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00426",
+  "Data": "05/02/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "2352,29",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00427",
+  "Data": "16/06/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "464,30",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00428",
+  "Data": "05/06/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1371,92",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00429",
+  "Data": "08/11/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "692,10",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00430",
+  "Data": "19/09/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2328,34",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00431",
+  "Data": "23/02/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1132,88",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00432",
+  "Data": "30/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "346,26",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00433",
+  "Data": "02/05/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1329,94",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00434",
+  "Data": "25/04/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Leste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2067,56",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00435",
+  "Data": "15/01/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2305,29",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00436",
+  "Data": "20/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "148,29",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00437",
+  "Data": "08/08/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "924,74",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00438",
+  "Data": "20/09/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "2286,64",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00439",
+  "Data": "20/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "1801,79",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00440",
+  "Data": "09/09/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "293,76",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00441",
+  "Data": "28/06/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "351,30",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00442",
+  "Data": "10/07/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1802,53",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00443",
+  "Data": "25/06/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1241,83",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00444",
+  "Data": "27/11/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "876,22",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00445",
+  "Data": "11/04/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1250,28",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00446",
+  "Data": "07/11/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "1443,93",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00447",
+  "Data": "27/08/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "1617,75",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00448",
+  "Data": "15/01/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "1569,27",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00449",
+  "Data": "15/04/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1744,59",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00450",
+  "Data": "12/07/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1868,34",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00451",
+  "Data": "15/09/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "1906,13",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00452",
+  "Data": "18/09/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "992,61",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00453",
+  "Data": "07/07/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "2151,88",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00454",
+  "Data": "08/08/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1511,87",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00455",
+  "Data": "11/07/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2468,00",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00456",
+  "Data": "16/11/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1723,53",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00457",
+  "Data": "11/07/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1225,10",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00458",
+  "Data": "23/08/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "342,13",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00459",
+  "Data": "03/05/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1796,56",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00460",
+  "Data": "12/09/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1096,74",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00461",
+  "Data": "20/08/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Centro",
+  "Vendedor": "Ana Teste",
+  "Valor": "2054,54",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00462",
+  "Data": "02/10/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "558,40",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00463",
+  "Data": "09/08/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1780,86",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00464",
+  "Data": "12/04/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Norte",
+  "Vendedor": "Elisa Teste",
+  "Valor": "1384,97",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00465",
+  "Data": "23/11/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Oeste",
+  "Vendedor": "Elisa Teste",
+  "Valor": "2004,73",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00466",
+  "Data": "16/11/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "993,95",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00467",
+  "Data": "20/07/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Diego Teste",
+  "Valor": "1028,29",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00468",
+  "Data": "11/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1268,71",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00469",
+  "Data": "19/03/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Centro",
+  "Vendedor": "Carla Teste",
+  "Valor": "2146,03",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00470",
+  "Data": "05/04/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2247,27",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00471",
+  "Data": "09/05/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2144,83",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00472",
+  "Data": "31/10/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1897,84",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00473",
+  "Data": "24/05/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1626,60",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00474",
+  "Data": "16/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Norte",
+  "Vendedor": "Carla Teste",
+  "Valor": "1829,32",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00475",
+  "Data": "28/10/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "408,49",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00476",
+  "Data": "01/09/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "1858,02",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00477",
+  "Data": "30/06/2026",
+  "Cliente": "Beta Distribuidora",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2359,11",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00478",
+  "Data": "10/09/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "2480,46",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00479",
+  "Data": "10/03/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1036,37",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00480",
+  "Data": "08/09/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1298,79",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00481",
+  "Data": "08/03/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Oeste",
+  "Vendedor": "Ana Teste",
+  "Valor": "935,60",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00482",
+  "Data": "24/08/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "963,11",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00483",
+  "Data": "30/06/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Sul",
+  "Vendedor": "Ana Teste",
+  "Valor": "1077,98",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00484",
+  "Data": "30/05/2026",
+  "Cliente": "Delta Moveis",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1158,46",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00485",
+  "Data": "06/05/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "1431,48",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00486",
+  "Data": "14/06/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Leste",
+  "Vendedor": "Carla Teste",
+  "Valor": "2017,18",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00487",
+  "Data": "13/11/2026",
+  "Cliente": "Kappa Calcados",
+  "Região": "Norte",
+  "Vendedor": "Diego Teste",
+  "Valor": "1385,51",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00488",
+  "Data": "07/02/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1355,61",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00489",
+  "Data": "25/10/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "824,28",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00490",
+  "Data": "20/08/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Centro",
+  "Vendedor": "Elisa Teste",
+  "Valor": "966,91",
+  "Situação": "Pendente"
+ },
+ {
+  "Código": "V00491",
+  "Data": "06/04/2026",
+  "Cliente": "Iota Cosmeticos",
+  "Região": "Oeste",
+  "Vendedor": "Bruno Teste",
+  "Valor": "1913,56",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00492",
+  "Data": "13/10/2026",
+  "Cliente": "Theta Brinquedos",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "1990,11",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00493",
+  "Data": "29/04/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Bruno Teste",
+  "Valor": "79,97",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00494",
+  "Data": "11/08/2026",
+  "Cliente": "Epsilon Tecidos",
+  "Região": "Oeste",
+  "Vendedor": "Diego Teste",
+  "Valor": "2058,16",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00495",
+  "Data": "18/05/2026",
+  "Cliente": "Eta Livraria",
+  "Região": "Sul",
+  "Vendedor": "Diego Teste",
+  "Valor": "2063,33",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00496",
+  "Data": "10/11/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Centro",
+  "Vendedor": "Bruno Teste",
+  "Valor": "11,26",
+  "Situação": "Em transporte"
+ },
+ {
+  "Código": "V00497",
+  "Data": "29/04/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Leste",
+  "Vendedor": "Ana Teste",
+  "Valor": "666,30",
+  "Situação": "Cancelado"
+ },
+ {
+  "Código": "V00498",
+  "Data": "15/03/2026",
+  "Cliente": "Zeta Ferragens",
+  "Região": "Oeste",
+  "Vendedor": "Carla Teste",
+  "Valor": "1695,20",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00499",
+  "Data": "01/05/2026",
+  "Cliente": "Alfa Comercial",
+  "Região": "Norte",
+  "Vendedor": "Ana Teste",
+  "Valor": "290,38",
+  "Situação": "Entregue"
+ },
+ {
+  "Código": "V00500",
+  "Data": "04/02/2026",
+  "Cliente": "Gama Papelaria",
+  "Região": "Sul",
+  "Vendedor": "Bruno Teste",
+  "Valor": "2034,93",
+  "Situação": "Cancelado"
+ }
+]
