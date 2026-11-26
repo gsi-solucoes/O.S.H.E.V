@@ -133,3 +133,48 @@ try:
             _z.writestr(_zi, (D / _orig).read_bytes())
 except ImportError:
     pass
+
+
+# ---------- etapa 7b: PDFs de teste (F-64) ----------
+try:
+    from reportlab.lib.pagesizes import A4, landscape as _land
+    from reportlab.pdfgen import canvas as _cv
+
+    def _pdf_tabela(nome, cab, linhas, titulo, x0=(30, 90, 170, 300, 380, 470, 530), por_pagina=38):
+        """Relatório de impressão: título, cabeçalho repetido em cada página, rodapé com número da página."""
+        c = _cv.Canvas(str(D / nome), pagesize=_land(A4), invariant=1)
+        w, h = _land(A4)
+        pag = 0
+        for ini in range(0, len(linhas), por_pagina):
+            pag += 1
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(30, h - 30, titulo)
+            c.setFont("Helvetica-Bold", 9)
+            for x, t in zip(x0, cab):
+                c.drawString(x, h - 55, t)
+            c.setFont("Helvetica", 9)
+            y = h - 72
+            for lin in linhas[ini:ini + por_pagina]:
+                for x, t in zip(x0, lin):
+                    c.drawString(x, y, str(t))
+                y -= 14
+            c.setFont("Helvetica", 8)
+            c.drawString(30, 20, f"Página {pag}")
+            c.showPage()
+        c.save()
+
+    _pdf_tabela("vendas.pdf", CAB_V, vendas, "Relatório de vendas")
+    # PDF que não é tabela (contrato): só parágrafos
+    _c = _cv.Canvas(str(D / "contrato.pdf"), pagesize=A4, invariant=1)
+    _c.setFont("Helvetica", 11)
+    _y = 800
+    for _t in ["CONTRATO DE PRESTAÇÃO DE SERVIÇOS", "", "Pelo presente instrumento particular, as partes abaixo",
+               "qualificadas ajustam entre si o que segue, mediante as", "cláusulas e condições adiante estipuladas.", "",
+               "Cláusula primeira. O objeto deste contrato é a prestação de", "serviços de consultoria, conforme proposta anexa.", "",
+               "Cláusula segunda. O prazo de vigência é de doze meses."]:
+        _c.drawString(60, _y, _t)
+        _y -= 18
+    _c.showPage()
+    _c.save()
+except ImportError:
+    pass

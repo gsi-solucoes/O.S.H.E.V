@@ -1,8 +1,9 @@
-# Raio X do Relatório — Especificação v1.7
+# Raio X do Relatório — Especificação v1.8
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v1.8 (26/11/2026, tarefa F-64, coordenador): seção 0.9 "etapa 7b: PDF com texto e tela de conferência" (R-120 a R-125, regras, CA-73, CA-73b a d, CA-77, decisões D-50 a D-52).
 - v1.7 (26/11/2026, tarefa F-58, coordenador): seção 0.8 "etapa 7a: planilhas, JSON, XML e zip" (R-110 a R-112, regras, CA-70 a CA-72 e CA-75a, decisões D-40 a D-43).
 - v1.6 (26/11/2026, tarefa F-57, coordenador): seção 0.7 "Nomes e regras — etapa 6" (R-100 a R-108, modelo do layout, regras, decisões D-30 a D-34).
 - v1.5 (26/11/2026, tarefa F-55, Especificador): seção 0.6 "Nomes e regras — etapa 5" (R-90 a R-95, fórmula, textos de erro, pedido escrito com conta, decisões D-20 a D-23).
@@ -491,6 +492,31 @@ PDF (7b, F-64) e imagem com OCR (7c, F-65) **não** entram aqui. Mesmas regras d
 **Critérios (v1.7).** CA-70 `vendas.xlsx`, CA-71 `vendas.xls` e `vendas.ods`, CA-72 `vendas.json` e `vendas.xml`: os mesmos resultados de `vendas.csv` (total, por cliente, valor total) conferidos pelo backup e pelo painel. CA-75a `vendas_mistura.zip` (CSV + XLSX + JSON dentro de uma pasta): os três lidos (mesmos códigos: 500 vendas + 300 chamados; o XLSX e o JSON repetem as vendas do CSV de vendas sem duplicar, pois juntam por código). CA-70b `vendas_2abas.xlsx`: dois conjuntos (`vendas_2abas - Vendas` e `vendas_2abas - Chamados`) com 500 e 300 registros. CA-110x: arquivos forjados (zip com 60 arquivos; JSON de lista aninhada; XML sem repetição; `.xlsx` truncado; nome de coluna `__proto__`) → só mensagens R-112, nada trava e `({}).polluted` continua `undefined`.
 
 **Decisões (v1.7):** D-40 cada aba é um relatório à parte (espec. 7: "cada aba vira um conjunto candidato"). D-41 número sai com vírgula e sem milhar, data como `dd/mm/aaaa`, para o mesmo formato lembrado do CSV servir. D-42 `.xlsm`, `.xlsb` e `.xlsx` com senha não são lidos. D-43 limites de zip (50 arquivos, 200 MB).
+
+### 0.9 Nomes e regras — etapa 7b: PDF com texto e tela de conferência (v1.8, 26/11/2026, F-64)
+
+Foto/PDF escaneado com OCR **não** entram aqui (7c, F-65), mas a **tela de conferência** é feita para servir às duas. Leitor de PDF: `vendor/pdf.min.mjs` + `vendor/pdf.worker.min.mjs` (pdf.js 5.7.284, local, carregado só quando um PDF é escolhido; sem rede). Mesmas regras da 0.1.
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-120 | `Carregar relatório` (R-02) aceita também `.pdf` | botão | e `.pdf` dentro de `.zip` (regra 6 da 0.8 deixa de ignorar PDF) |
+| R-121 | janela `Conferir leitura` (`<dialog>` com `aria-labelledby`, título exato `Conferir leitura`) | janela | abre depois de ler um PDF (e, na 7c, uma imagem), **antes** de qualquer dado entrar; mostra `Arquivo: <nome>.` e `Confira a tabela lida. As células marcadas podem estar erradas.` |
+| R-122 | tabela editável: cada célula é um `<input type="text">` com `aria-label` = `Linha <n>, <coluna>` (n começa em 1 na primeira linha **de dados**; a linha de cabeçalho é `Cabeçalho, coluna <j>`, j a partir de 1) | tabela | o usuário corrige o texto; célula de baixa confiança tem `data-baixa="true"` e fundo destacado |
+| R-123 | botões `Confirmar` e `Descartar` | botões | `Confirmar` segue para `Esta coluna é o quê?` (formato lembrado se já houver) e importa o que está na tabela (com as correções); `Descartar` fecha e nada entra; `Esc` = `Descartar` |
+| R-124 | mensagem (toast) `Não encontrei uma tabela neste arquivo` | texto exato (sem ponto final) | PDF sem texto em colunas (ex.: contrato) ou com menos de 2 colunas ou menos de 2 linhas; nenhuma janela abre, nada entra |
+| R-125 | texto `Linhas lidas: <n>` e `Células marcadas: <m>` na janela | texto | contagens da tabela mostrada |
+
+**Regras.**
+1. **Texto do PDF:** o leitor pega cada pedaço de texto com sua posição (x, y) por página. Pedaços com o mesmo y (tolerância de metade do corpo da letra) formam uma linha; as colunas vêm dos x onde os pedaços começam: x parecidos (tolerância de 6 pontos) entre muitas linhas formam uma coluna. Pedaços muito próximos na mesma linha (espaço menor que 1,5 vez a largura média de um caractere) pertencem à mesma célula (nome com espaço, "Zeta Ferragens").
+2. **Relatório de impressão:** a linha de cabeçalho é a primeira linha de tabela da 1ª página que tem texto em todas as colunas; **linhas iguais ao cabeçalho nas páginas seguintes são descartadas**; linhas com um só pedaço (título "Relatório de vendas", rodapé "Página 3") são descartadas. Se depois disso restarem menos de 2 colunas ou 2 linhas: R-124.
+3. **Baixa confiança** (`data-baixa="true"`): célula vazia numa linha que tem as demais preenchidas; célula de linha com número de colunas diferente do cabeçalho; texto de uma coluna que foge do padrão dela (coluna em que ≥ 90% das células são número/data e esta não é). Toda a tabela do PDF com texto correto tem 0 células marcadas (o PDF de teste `vendas.pdf` não pode ter células marcadas).
+4. **Várias páginas e vários PDFs do mesmo formato (mesmo cabeçalho)** viram uma só tabela de conferência por PDF; cada PDF abre a sua janela, em sequência.
+5. Limites: PDF até 50 MB (limite do CSV) e até 200 páginas e 20 mil linhas; acima disso corta em silêncio. Senha/arquivo corrompido: `Não consegui ler <arquivo>.`. Nada do PDF é executado (`isEvalSupported: false`, sem scripts do PDF, sem rede).
+6. Depois de `Confirmar`, o caminho é o de sempre (`Esta coluna é o quê?`, formato lembrado, junção por código). Valores entram como texto da célula (datas dd/mm/aaaa e números com vírgula, como no CSV).
+
+**Critérios (v1.8).** CA-73 `vendas.pdf` (relatório de impressão de 500 vendas em várias páginas, cabeçalho repetido, título e rodapé em cada página): janela `Conferir leitura` com 500 linhas, **0 células marcadas**, cabeçalho `Código, Data, Cliente, Região, Vendedor, Valor, Situação`; após `Confirmar` (e responder `Esta coluna é o quê?`) os mesmos resultados do CSV (total, por cliente, soma). CA-73b: editar uma célula na conferência (ex.: trocar o cliente de uma linha) e confirmar → o valor corrigido entra. CA-73c: `Descartar` → nada entra (backup sem registros). CA-77 `contrato.pdf` → toast `Não encontrei uma tabela neste arquivo` e nenhuma janela. CA-73d: o mesmo `vendas.pdf` dentro de um `.zip` com um CSV → o CSV entra e o PDF abre a conferência. CA-110y: PDF corrompido (bytes cortados) → `Não consegui ler <arquivo>.`; offline (rede bloqueada) o PDF é lido igual.
+
+**Decisões (v1.8):** D-50 PDF abre sempre a conferência, mesmo sem célula marcada (espec. 7: "tudo que vem por OCR ou PDF passa pela tela de conferência"). D-51 limites de 200 páginas/20 mil linhas. D-52 colunas pela posição do texto (sem aprender de tabelas desenhadas por linhas).
 
 ---
 
