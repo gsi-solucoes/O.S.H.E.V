@@ -528,3 +528,46 @@ def test_CA50_abas_do_painel_igual_a_planilha(page, tmp_path):
     titulos = titulos_blocos_excel(parse_painel(wb["Painel"]))
     abas = page.evaluate('() => window.__abasPainel("vendas")')
     assert abas == [{"nome": "Painel", "blocos": titulos}], abas
+
+
+# ---- F-54: regressão da revisão de segurança da etapa 4 (SEG4) ----
+def csv_tmp(tmp_path, nome, linhas):
+    p = tmp_path / nome
+    p.write_text("\n".join(linhas) + "\n", encoding="utf-8")
+    return p
+
+
+def carrega_csv(page, caminho):
+    enviar(page, caminho)
+    mapear_se_preciso(page)
+    cancelar = dlg(page, JANELA).get_by_role("button", name="Cancelar", exact=True)
+    if cancelar.is_visible():
+        cancelar.click()
+        page.wait_for_timeout(300)
+
+
+def test_SEG4_M1_relatorio_chamado_painel_exporta(page, tmp_path):
+    p = csv_tmp(tmp_path, "painel.csv", ["Código;Cliente;Valor", "1;A;10,00", "2;B;20,00"])
+    abrir_painel(page)
+    carrega_csv(page, p)
+    wb = gerar(page, tmp_path)
+    assert "Painel" in wb.sheetnames and len({n.lower() for n in wb.sheetnames}) == len(wb.sheetnames), wb.sheetnames
+
+
+def test_SEG4_M1_nomes_que_diferem_so_na_caixa(page, tmp_path):
+    a = csv_tmp(tmp_path, "Vendas.csv", ["Código;Cliente;Valor", "1;A;10,00"])
+    b = csv_tmp(tmp_path, "vendas2.csv", ["Código;Cliente;Valor", "1;A;10,00"])
+    carrega_csv(page, a)
+    carrega_csv(page, b)
+    wb = gerar(page, tmp_path, "Tudo numa planilha")
+    assert len({n.lower() for n in wb.sheetnames}) == len(wb.sheetnames), wb.sheetnames
+
+
+def test_SEG4_B1_numero_gigante_nao_vira_infinity(page, tmp_path):
+    p = csv_tmp(tmp_path, "grande.csv", ["Código;Cliente;Valor", "1;A;" + "9" * 400, "2;B;5,00"])
+    carrega_csv(page, p)
+    wb = gerar(page, tmp_path)
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for c in row:
+                assert not (isinstance(c.value, float) and (c.value != c.value or c.value in (float("inf"), float("-inf")))), (ws.title, c.coordinate)

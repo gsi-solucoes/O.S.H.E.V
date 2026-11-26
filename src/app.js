@@ -638,7 +638,10 @@ function imprimir(titulo, lista, campos, sel) {
 
 /* ---------- Excel ---------- */
 function baixar(blob, nome) { const a = el('a', { href: URL.createObjectURL(blob), download: nome }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
-function nomeAba(wb, n) { let b = n.replace(/[\[\]:*?\/\\]/g, ' ').slice(0, 28) || 'Aba', x = b, i = 2; while (wb.getWorksheet(x)) x = b.slice(0, 26) + ' ' + i++; return x; }
+function nomeAba(wb, n) {   // M-1 (etapa 4): o ExcelJS recusa nome repetido sem diferenciar maiúsculas, com ' nas pontas e "History"
+  let b = n.replace(/[\[\]:*?\/\\]/g, ' ').replace(/^'+|'+$/g, '').trim().slice(0, 28) || 'Aba', x = b, i = 2;
+  const usado = k => k.toLowerCase() === 'history' || wb.worksheets.some(w => w.name.toLowerCase() === k.toLowerCase());
+  while (usado(x)) x = b.slice(0, 26) + ' ' + i++; return x; }
 const agoraTxt = () => { const d = new Date(); return z2(d.getDate()) + '/' + z2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z2(d.getHours()) + ':' + z2(d.getMinutes()); };
 // R-87: cada ponta vem do filtro quando ele a define; senão, da menor/maior data dos registros filtrados
 function periodoCapa(datas) {
@@ -730,9 +733,9 @@ function abasPainelXl(c, L) {
 window.__abasPainel = nome => { const c = achaConj(nome); return c && conjs[c] ? JSON.parse(JSON.stringify(abasPainelXl(c, filtrar(c)).filter(a => !a.escondida).map(a => ({ nome: a.nome, blocos: a.blocos.map(b => b.titulo) })))) : []; };
 function abaPainel(wb, nomeFinal, c, ab, L, campos) {
   const ws = wb.addWorksheet(nomeFinal); ws.columns = [{ width: 38 }, { width: 22 }, { width: 26 }, { width: 22 }];
-  const put = (row, col, v) => { const cl = ws.getCell(row, col); if (v && typeof v === 'object' && !(v instanceof Date)) { cl.value = v.n; cl.numFmt = v.f; } else cl.value = primitivoXL(v); return cl; };
+  const put = (row, col, v) => { const cl = ws.getCell(row, col); if (v && typeof v === 'object' && !(v instanceof Date)) { cl.value = isFinite(v.n) ? v.n : '—'; cl.numFmt = v.f; } else cl.value = primitivoXL(v); return cl; };
   const neg = cl => { cl.font = { bold: true }; return cl; };
-  ws.getCell('A1').value = ab.nome; ws.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF0F2A4A' } }; ws.getCell('A2').value = 'Relatório: ' + c;
+  ws.getCell('A1').value = primitivoXL(ab.nome); ws.getCell('A1').font = { size: 16, bold: true, color: { argb: 'FF0F2A4A' } }; ws.getCell('A2').value = primitivoXL('Relatório: ' + c);
   let r = 4, meuFeito = false;
   ab.blocos.forEach(b => {
     if (b.meu && !meuFeito) { meuFeito = true; neg(put(r++, 1, 'Meus indicadores')); }
@@ -756,7 +759,7 @@ function abaPainel(wb, nomeFinal, c, ab, L, campos) {
 function abasDoArquivo(wb, grupos) { grupos.forEach(g => abasPainelXl(g.c, g.lista).filter(a => !a.escondida).forEach(a => abaPainel(wb, nomeAba(wb, grupos.length > 1 ? a.nome + ' - ' + g.c : a.nome), g.c, a, g.lista, g.campos))); }
 function aba(wb, nome, campos, linhas, comRel) {
   const ws = wb.addWorksheet(nomeAba(wb, nome)), cols = (comRel ? [{ n: 'Relatório', t: 'texto' }] : []).concat(campos);
-  ws.addRow(cols.map(c => c.n)); const h = ws.getRow(1); h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; });
+  ws.addRow(cols.map(c => primitivoXL(c.n))); const h = ws.getRow(1); h.font = { bold: true, color: { argb: 'FFFFFFFF' } }; h.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F2A4A' } }; });
   linhas.forEach(({ r, c }) => ws.addRow(cols.map((k, i) => {
     if (comRel && i === 0) return primitivoXL(c); return celulaReg(k, r); })));
   cols.forEach((k, i) => { const col = ws.getColumn(i + 1); let w = k.n.length; ws.eachRow({ includeEmpty: false }, (row, n) => { if (n < 400) { const x = row.getCell(i + 1).value; w = Math.max(w, x instanceof Date ? 16 : String(x == null ? '' : x).length); } }); col.width = Math.min(60, w + 3); if (k.t === 'data') col.numFmt = 'dd/mm/yyyy hh:mm'; });
