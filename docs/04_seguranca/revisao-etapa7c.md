@@ -80,3 +80,6 @@
 
 ## Correção
 (a preencher pela fábrica)
+
+## Correção (F-68, 26/11/2026)
+M-1 (leitor que não carrega em 30 s vira a mensagem da R-134), B-1 (correção por coluna só em célula com dígito), B-2 (teto de 10 min por envio e 60 s por página de PDF escaneado; sem botão de parar, decisão provisória) e B-3 (versões e licença registradas em `vendor/LEIA-ME.md`) corrigidos, com 2 testes de regressão (`test_f68_*`); etapa 7c: 15 verdes.

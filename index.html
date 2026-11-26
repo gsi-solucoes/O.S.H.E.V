@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-mHz/6n2x7tgnbdTBgOJb/siiRwWFU91SuU+l+CDTRe0='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-a+ki5SBNsvvlWecmLpMFxp7GMQmInyMUrTWLyNr40KY='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -684,7 +684,7 @@ var Core = (function () {
       var dec = modo === 'num' && cel.filter(function (x) { return DEC.test(troca(x)); }).length >= 0.8 * cel.length;   // coluna de valores com 2 casas
       var ln = {}, ml = 0; if (modo === 'cod') { cel.forEach(function (x) { ln[x.length] = (ln[x.length] || 0) + 1; }); Object.keys(ln).forEach(function (k) { if (!ml || ln[k] > ln[ml]) ml = +k; }); }   // tamanho mais comum dos códigos
       for (var i = 1; i < rows.length; i++) {
-        var x = rows[i][j]; if (!x) continue;
+        var x = rows[i][j]; if (!x || !/\d/.test(x)) continue;   // célula sem nenhum dígito ("Isento", "N/D") nunca é trocada
         var y = modo === 'cod' ? cod(x.replace(/\s+/g, '')) || x : troca(x);   // código não tem espaço
         if (modo === 'cod' && ml && y.length === ml + 1 && y.indexOf('00') > 0) y = y.replace('00', '0');   // um zero a mais (letra O lida em dobro)
         if (dec && !DEC.test(y)) { if (/^\d+ \d{2}$/.test(y)) y = y.replace(' ', ','); else if (/^\d{3,}$/.test(y)) y = y.slice(0, -2) + ',' + y.slice(-2); }   // vírgula lida como espaço ou perdida
@@ -706,7 +706,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "03d796ec8e";
+const VERSAO = "202c2bb7e0";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -1006,7 +1006,7 @@ async function lerPdf(buf) {   // texto com posição de cada página -> tabela 
   } finally { clearTimeout(tempo); doc.destroy(); }
 }
 /* ---- OCR no aparelho (etapa 7c): imagem e PDF escaneado; só arquivos de vendor/ocr/, nunca rede externa ---- */
-const OCR = { lim: 20, ms: 120000, max: 3000, min: 1600 }, IMGS = ['jpg', 'jpeg', 'png'];
+const OCR = { lim: 20, ms: 120000, carga: 30000, envio: 600000, pag: 60000, max: 3000, min: 1600 }, IMGS = ['jpg', 'jpeg', 'png'];
 let ocrW = null, ocrTxt = n => 'Lendo a imagem… ' + n + '%';
 const ocrUrl = p => new URL('vendor/ocr/' + p, location.href).href;
 function toastFim() { const t = $('#toast'); if (/^Lendo a /.test(t.textContent)) t.style.display = 'none'; }
@@ -1015,7 +1015,8 @@ async function ocrPronto() {   // 1ª vez: injeta tesseract.min.js e cria o leit
   try {
     if (!window.Tesseract) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = ocrUrl('tesseract.min.js'); sc.onload = ok; sc.onerror = () => no(new Error('script')); document.head.append(sc); });
     const simd = WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
-    const w = await Tesseract.createWorker('por', 1, { workerPath: ocrUrl('worker.min.js'), corePath: ocrUrl('core/tesseract-core-' + (simd ? 'simd-' : '') + 'lstm.wasm.js'), langPath: ocrUrl('lang'), workerBlobURL: false, gzip: true, cacheMethod: 'none', logger: m => { if (m.status === 'recognizing text') toast(ocrTxt(Math.round(m.progress * 100))); } });
+    const quem = { w: null }, espera = new Promise((_, no) => setTimeout(() => { if (!quem.w) no(new Error('leitor')); }, OCR.carga));   // arquivo do leitor que não chega (404, queda de rede): desiste em 30 s
+    const w = await Promise.race([Tesseract.createWorker('por', 1, { workerPath: ocrUrl('worker.min.js'), corePath: ocrUrl('core/tesseract-core-' + (simd ? 'simd-' : '') + 'lstm.wasm.js'), langPath: ocrUrl('lang'), workerBlobURL: false, gzip: true, cacheMethod: 'none', logger: m => { if (m.status === 'recognizing text') toast(ocrTxt(Math.round(m.progress * 100))); } }), espera]); quem.w = w;
     await w.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' }); ocrW = w;
   } catch (e) { ocrW = null; throw 'indisp'; }
   return ocrW;
@@ -1039,10 +1040,10 @@ function ocrPartes(x) {   // limpa e reparte uma palavra do leitor: letras repet
   });
   return out;
 }
-async function ocrLer(cv) {   // canvas -> palavras [{t, x0, y0, x1, y1, c}]; passou de 120 s: abandona (worker.terminate)
+async function ocrLer(cv, ms) {   // canvas -> palavras [{t, x0, y0, x1, y1, c}]; passou de 120 s: abandona (worker.terminate)
   const blob = await new Promise(ok => cv.toBlob(ok, 'image/png')); if (!blob) throw 'img';
   const w = await ocrPronto(); let tempo;
-  const lim = new Promise((_, no) => { tempo = setTimeout(() => { try { w.terminate(); } catch (e) { /* já parou */ } ocrW = null; no('tempo'); }, OCR.ms); });
+  const lim = new Promise((_, no) => { tempo = setTimeout(() => { try { w.terminate(); } catch (e) { /* já parou */ } ocrW = null; no('tempo'); }, ms || OCR.ms); });
   try {
     const r = await Promise.race([w.recognize(blob, {}, { blocks: true }), lim]), ws = [];
     (r.data.blocks || []).forEach(b => b.paragraphs.forEach(pa => pa.lines.forEach(l => l.words.forEach(x => ocrPartes(x).forEach(q => ws.push(q))))));
@@ -1108,16 +1109,17 @@ async function lerItem(it, resta) {   // imagem ou PDF escaneado -> { t: {rows, 
       ocrTxt = () => 'Lendo a página ' + i + ' de ' + np + '…'; toast(ocrTxt());
       const pg = await doc.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: Math.min(4, 2000 / Math.max(v0.width, v0.height)) }), c0 = document.createElement('canvas');
       c0.width = Math.round(v.width); c0.height = Math.round(v.height); await pg.render({ canvasContext: c0.getContext('2d'), canvas: c0, viewport: v }).promise; pg.cleanup();
-      const cv = melhora(c0, c0.width, c0.height); if (i === 1) mini = miniatura(cv); pgs.push(await ocrLer(cv));
+      const cv = melhora(c0, c0.width, c0.height); if (i === 1) mini = miniatura(cv); pgs.push(await ocrLer(cv, OCR.pag));
     }
   } finally { doc.destroy(); ocrTxt = n => 'Lendo a imagem… ' + n + '%'; }
   return { t: Core.tabelaOcr(pgs), mini, n: np };
 }
 async function lerImagens(fila) {   // R-133: mesmo cabeçalho = uma janela; devolve os resultados já importados
-  const res = [], gr = new Map(); let n = 0;
+  const res = [], gr = new Map(), t0 = Date.now(); let n = 0;
   try {
     for (const it of fila) {
       if (n >= OCR.lim) { toast(it.nome + ': limite de 20 imagens.'); continue; }
+      if (Date.now() - t0 > OCR.envio) { toast(it.nome + ': tempo esgotado.'); continue; }   // teto de 10 min por envio
       toast(ocrTxt(0));
       try {
         const r = await lerItem(it, OCR.lim - n); n += r.n;

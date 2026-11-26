@@ -27,7 +27,7 @@ import re, io, time
 import pytest
 from conftest import DADOS
 from test_etapa1 import (le_csv, enviar, mapear_se_preciso, fechar_acompanhar, backup)
-from test_etapa7a import (confere_vendas, mapear_tudo, fechar_todos, codigos, zip_bytes, grava, vivo, N, VENDAS,
+from test_etapa7a import (enviar_vendo_mensagens, confere_vendas, mapear_tudo, fechar_todos, codigos, zip_bytes, grava, vivo, N, VENDAS,
                           CHAMADOS, por_codigo)
 from test_etapa7b import conf, conf_visivel, grade, CAB, TOAST_SEM_TABELA
 
@@ -399,3 +399,18 @@ def test_pdf_escaneado_so_imagem_mesma_conferencia_linhas_1_a_30(pg, tmp_path):
     b = backup(pg)[1]
     assert {c for c in por_codigo(b) if c.startswith("V")} == {r["Código"] for r in VENDAS[:30]}
     confere_vendas(b, VENDAS[:30])
+
+
+# ---------- F-68: Médio e Baixos da revisão de segurança da etapa 7c (regressão) ----------
+def test_f68_regra3_nao_estraga_texto_sem_digito_em_coluna_de_codigo(page):
+    r = page.evaluate("""() => Core.corrigeOcr([['Código', 'Obs'], ['VOOOO1', 'Isento'], ['V00002', 'N/D'], ['V00003', 'x']], [])""")
+    assert [1, 0] in r and [1, 1] not in r and [2, 1] not in r
+
+
+def test_f68_arquivo_do_leitor_que_nao_chega_vira_mensagem_em_ate_40s(page):
+    import time
+    page.context.route("**/vendor/ocr/lang/*", lambda rota: rota.fulfill(status=404, body=""))
+    t0 = time.time()
+    msgs = enviar_vendo_mensagens(page, DADOS / "vendas_foto_1.jpg", espera=45000)
+    assert "O leitor de imagens ainda não está disponível neste aparelho. Use uma vez com internet." in msgs
+    assert time.time() - t0 < 60

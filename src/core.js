@@ -484,7 +484,7 @@ var Core = (function () {
       var dec = modo === 'num' && cel.filter(function (x) { return DEC.test(troca(x)); }).length >= 0.8 * cel.length;   // coluna de valores com 2 casas
       var ln = {}, ml = 0; if (modo === 'cod') { cel.forEach(function (x) { ln[x.length] = (ln[x.length] || 0) + 1; }); Object.keys(ln).forEach(function (k) { if (!ml || ln[k] > ln[ml]) ml = +k; }); }   // tamanho mais comum dos códigos
       for (var i = 1; i < rows.length; i++) {
-        var x = rows[i][j]; if (!x) continue;
+        var x = rows[i][j]; if (!x || !/\d/.test(x)) continue;   // célula sem nenhum dígito ("Isento", "N/D") nunca é trocada
         var y = modo === 'cod' ? cod(x.replace(/\s+/g, '')) || x : troca(x);   // código não tem espaço
         if (modo === 'cod' && ml && y.length === ml + 1 && y.indexOf('00') > 0) y = y.replace('00', '0');   // um zero a mais (letra O lida em dobro)
         if (dec && !DEC.test(y)) { if (/^\d+ \d{2}$/.test(y)) y = y.replace(' ', ','); else if (/^\d{3,}$/.test(y)) y = y.slice(0, -2) + ',' + y.slice(-2); }   // vírgula lida como espaço ou perdida

@@ -297,7 +297,7 @@ async function lerPdf(buf) {   // texto com posição de cada página -> tabela 
   } finally { clearTimeout(tempo); doc.destroy(); }
 }
 /* ---- OCR no aparelho (etapa 7c): imagem e PDF escaneado; só arquivos de vendor/ocr/, nunca rede externa ---- */
-const OCR = { lim: 20, ms: 120000, max: 3000, min: 1600 }, IMGS = ['jpg', 'jpeg', 'png'];
+const OCR = { lim: 20, ms: 120000, carga: 30000, envio: 600000, pag: 60000, max: 3000, min: 1600 }, IMGS = ['jpg', 'jpeg', 'png'];
 let ocrW = null, ocrTxt = n => 'Lendo a imagem… ' + n + '%';
 const ocrUrl = p => new URL('vendor/ocr/' + p, location.href).href;
 function toastFim() { const t = $('#toast'); if (/^Lendo a /.test(t.textContent)) t.style.display = 'none'; }
@@ -306,7 +306,8 @@ async function ocrPronto() {   // 1ª vez: injeta tesseract.min.js e cria o leit
   try {
     if (!window.Tesseract) await new Promise((ok, no) => { const sc = document.createElement('script'); sc.src = ocrUrl('tesseract.min.js'); sc.onload = ok; sc.onerror = () => no(new Error('script')); document.head.append(sc); });
     const simd = WebAssembly.validate(new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11]));
-    const w = await Tesseract.createWorker('por', 1, { workerPath: ocrUrl('worker.min.js'), corePath: ocrUrl('core/tesseract-core-' + (simd ? 'simd-' : '') + 'lstm.wasm.js'), langPath: ocrUrl('lang'), workerBlobURL: false, gzip: true, cacheMethod: 'none', logger: m => { if (m.status === 'recognizing text') toast(ocrTxt(Math.round(m.progress * 100))); } });
+    const quem = { w: null }, espera = new Promise((_, no) => setTimeout(() => { if (!quem.w) no(new Error('leitor')); }, OCR.carga));   // arquivo do leitor que não chega (404, queda de rede): desiste em 30 s
+    const w = await Promise.race([Tesseract.createWorker('por', 1, { workerPath: ocrUrl('worker.min.js'), corePath: ocrUrl('core/tesseract-core-' + (simd ? 'simd-' : '') + 'lstm.wasm.js'), langPath: ocrUrl('lang'), workerBlobURL: false, gzip: true, cacheMethod: 'none', logger: m => { if (m.status === 'recognizing text') toast(ocrTxt(Math.round(m.progress * 100))); } }), espera]); quem.w = w;
     await w.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '1' }); ocrW = w;
   } catch (e) { ocrW = null; throw 'indisp'; }
   return ocrW;
@@ -330,10 +331,10 @@ function ocrPartes(x) {   // limpa e reparte uma palavra do leitor: letras repet
   });
   return out;
 }
-async function ocrLer(cv) {   // canvas -> palavras [{t, x0, y0, x1, y1, c}]; passou de 120 s: abandona (worker.terminate)
+async function ocrLer(cv, ms) {   // canvas -> palavras [{t, x0, y0, x1, y1, c}]; passou de 120 s: abandona (worker.terminate)
   const blob = await new Promise(ok => cv.toBlob(ok, 'image/png')); if (!blob) throw 'img';
   const w = await ocrPronto(); let tempo;
-  const lim = new Promise((_, no) => { tempo = setTimeout(() => { try { w.terminate(); } catch (e) { /* já parou */ } ocrW = null; no('tempo'); }, OCR.ms); });
+  const lim = new Promise((_, no) => { tempo = setTimeout(() => { try { w.terminate(); } catch (e) { /* já parou */ } ocrW = null; no('tempo'); }, ms || OCR.ms); });
   try {
     const r = await Promise.race([w.recognize(blob, {}, { blocks: true }), lim]), ws = [];
     (r.data.blocks || []).forEach(b => b.paragraphs.forEach(pa => pa.lines.forEach(l => l.words.forEach(x => ocrPartes(x).forEach(q => ws.push(q))))));
@@ -399,16 +400,17 @@ async function lerItem(it, resta) {   // imagem ou PDF escaneado -> { t: {rows, 
       ocrTxt = () => 'Lendo a página ' + i + ' de ' + np + '…'; toast(ocrTxt());
       const pg = await doc.getPage(i), v0 = pg.getViewport({ scale: 1 }), v = pg.getViewport({ scale: Math.min(4, 2000 / Math.max(v0.width, v0.height)) }), c0 = document.createElement('canvas');
       c0.width = Math.round(v.width); c0.height = Math.round(v.height); await pg.render({ canvasContext: c0.getContext('2d'), canvas: c0, viewport: v }).promise; pg.cleanup();
-      const cv = melhora(c0, c0.width, c0.height); if (i === 1) mini = miniatura(cv); pgs.push(await ocrLer(cv));
+      const cv = melhora(c0, c0.width, c0.height); if (i === 1) mini = miniatura(cv); pgs.push(await ocrLer(cv, OCR.pag));
     }
   } finally { doc.destroy(); ocrTxt = n => 'Lendo a imagem… ' + n + '%'; }
   return { t: Core.tabelaOcr(pgs), mini, n: np };
 }
 async function lerImagens(fila) {   // R-133: mesmo cabeçalho = uma janela; devolve os resultados já importados
-  const res = [], gr = new Map(); let n = 0;
+  const res = [], gr = new Map(), t0 = Date.now(); let n = 0;
   try {
     for (const it of fila) {
       if (n >= OCR.lim) { toast(it.nome + ': limite de 20 imagens.'); continue; }
+      if (Date.now() - t0 > OCR.envio) { toast(it.nome + ': tempo esgotado.'); continue; }   // teto de 10 min por envio
       toast(ocrTxt(0));
       try {
         const r = await lerItem(it, OCR.lim - n); n += r.n;
