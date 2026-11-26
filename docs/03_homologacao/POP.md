@@ -139,6 +139,8 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 **Regras e limites:** até 50 contas por relatório; nome até 60 e fórmula até 300 caracteres. A fórmula nunca executa código. Divisão por zero ou sem dados mostra "sem dados". `dias` é a média de dias entre as duas datas ⚖️ D-20. Contas valem só para o relatório em que foram criadas ⚖️ D-23. Entram no backup.
 
 ### P-z. Usar a versão Excel (macro) e ver os indicadores
+*Fica para a versão 2.0 (Galindo, 26/11/2026): não entra na homologação atual.*
+
 **Para que serve:** quem prefere o Excel no PC importa os arquivos, vê o painel e gera o relatório, com a mesma estrutura do app.
 
 | Você faz | O programa faz |
@@ -208,6 +210,7 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 **Meta (P-b), versão atual, depois do teste:** hoje não dá para ficar sem meta: campo vazio ou **0** volta para 90 (defeito). Ideia: campo vazio = sem meta (o bloco mostra só o percentual). O Galindo quer **testar antes** com um relatório de vendas (`tests/dados/vendas.csv`) e só então decidir (F-71).
 
 **Versão 2.0 (mudanças grandes, não entram agora; F-72):**
+0. **Macro do Excel (`excel/RaioX_Relatorio.bas`, P-z, D-24, F-49):** inteira para a V2; o Galindo não vai testar no Excel real agora. O botão **Gerar Excel do app** (P-g) continua na versão atual.
 1. **Clientes ou contratos separados:** seletor "Cliente ▾" no topo, com "+ Novo cliente"; cada um com relatórios, nome, logo, metas, painel e backup próprios; trocar com um toque, sem misturar (hoje é um cliente por aparelho e códigos iguais de clientes diferentes se juntam, D-05).
 2. **Histórico de alterações:** a cada carga, comparar registro a registro com o guardado; onde algum campo mudou, guardar a data da carga, o campo, o valor antigo e o novo. Mostrar ao passar o mouse no registro, botão "Exibir histórico" (todas as versões na lista) e extrair no Excel. Só aparece em registro que teve alteração (D-06, "Se mudar").
 3. **Compartilhar aprendizado com a GSI:** janela com campo de texto e print colado com Ctrl+V (só texto e print; nenhum outro arquivo; o app redesenha a imagem antes; aviso para não mandar dado pessoal; quem tem imagem salva abre, tira print e cola). Vai junto um arquivo só com as configurações (formatos de coluna, indicadores, sinônimos, contas), nunca os registros. Envio por e-mail para **solucaogsi@gmail.com**: no celular pelo compartilhar do aparelho (anexo junto); no computador baixa o pacote e abre o e-mail pronto. O app continua sem servidor.
@@ -215,30 +218,30 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 ## Quadro das decisões (marcar na homologação)
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
-| D-01 | Backup e restaurar | "Somar" junta "Meus indicadores" (sem repetir, até 50). Espec. seção 13, P-06; implementado na F-60 (26/11/2026, com teste) | Não perde o que o usuário já escolheu | "Troca": tarefa pequena, com teste | Sim | |
-| D-02 | Config | Config salva sozinha a cada letra; não há botão Salvar | Menos um passo; nada se perde | Pôr botão Salvar: trivial | Não | |
-| D-03 | Config | Logo até 2 MB, reduzido para até 240 px e guardado no aparelho | Não pesar no aparelho nem no Excel | Mudar os números: trivial | Sim | |
-| D-04 | Carregar relatório | Linha sem valor no Código fica de fora sem aviso | Sem código não dá para juntar nem atualizar | Avisar quantas ficaram de fora: tarefa pequena | Sim | |
-| D-05 | Carregar relatório | Arquivo com o mesmo campo código e códigos já guardados entra no relatório que já os tem (mesmo com outro nome de arquivo) | Juntar relatórios complementares do mesmo sistema | Perguntar antes de juntar: tarefa pequena | Sim | |
-| D-06 | Carregar relatório | Mesmo código: valor novo preenchido substitui o antigo; vazio não apaga | Arquivo novo é o mais atual; arquivo parcial não estraga | Guardar histórico de cada mudança: tarefa maior | Não | |
-| D-07 | O que acompanhar | Nada vem marcado; Cancelar mantém o painel padrão sem salvar | A escolha é da pessoa (nada fixo) | Já vir marcado o essencial: trivial | Sim | |
-| D-08 | Esta coluna é o quê? | Situação é sugerida pelo nome da coluna (situação, status, estado); a pessoa troca | Situação não dá para adivinhar pelos valores | Outras palavras: trivial | Sim | |
-| D-09 | O que acompanhar | "Em aberto" = situação que não começa com conclu-, finaliz-, encerr-, fechad-, entreg-, cancel-, resolvid-, pag- | Sem lista fixa de um ramo; serve para a maioria dos sistemas | Deixar a pessoa marcar quais situações são "fechadas": tarefa média | Sim | |
-| D-10 | Pedido escrito | "Este mês", "mês passado", "últimos N dias" contam a partir da data mais recente dos registros, não de hoje | Relatório antigo continua dando resposta | Usar a data de hoje: trivial | Sim | |
-| D-11 | Pedido escrito | Erro de digitação aceito com semelhança de 80% ou mais | Equilíbrio entre entender e não chutar | Mudar o número: trivial | Sim | |
-| D-12 | Excel | Sem fórmula, macro ou gráfico nativo; gráfico vira tabela com barra em texto (█) | Segurança e Excel igual à tela em qualquer versão | Gráfico nativo do Excel: tarefa média | Sim | |
-| D-13 | Apagar todos os dados | Apagar mantém Config, formatos lembrados e sinônimos | Próximo relatório entra sem perguntar de novo | Apagar tudo mesmo: trivial | Sim | |
-| D-14 | Backup / Somar | No "Somar", escolha do painel e formatos do backup valem por cima dos atuais; Config não muda (só no Substituir) | O backup traz o arranjo mais completo; não troca o cliente do aparelho | Perguntar item a item: tarefa média | Sim | |
-| D-15 | Painel | A faixa Total / Mais antigo / Mais novo fica sempre no topo, mesmo com escolha | Dá o tamanho e o período do relatório de relance | Esconder quando há escolha: trivial | Sim | |
-| D-16 | Esta coluna é o quê? | Tipos: Ignorar, Código, Data, Categoria, Situação, Texto, Número; data com hora é Data (não há "Data e hora" separado) | Menos escolhas; a hora é lida quando existe | Separar "Data e hora": tarefa pequena | Sim | |
-| D-20 | Criar conta personalizada | `dias(data1, data2)` devolve a **média** de dias entre as duas datas | A especificação não dizia qual estatística | Trocar por mediana: tarefa pequena, com teste | Sim | |
-| D-21 | Criar conta personalizada | Divisão por zero (ou resultado indefinido) mostra "sem dados" em vez de mensagem de erro | Espec. CA-53 pede "sem dados" | Mostrar erro: tarefa pequena | Não | |
-| D-22 | Criar conta personalizada | A sugestão de campo no erro sai em minúsculas ('valor'), como no exemplo da especificação | Seguir o CA-52 ao pé da letra | Mostrar o nome exato do campo: troca de texto | Sim | |
-| D-23 | Criar conta personalizada | Contas valem por relatório (não são globais); nome repetido substitui a antiga | Campos mudam de um relatório para outro | Contas globais: tarefa maior | Sim | |
-| D-24 | Versão Excel | O catálogo na macro é só o que cabe no Excel 2016: total, soma/média/mediana/mínimo/máximo, soma por categoria e registros por mês; o campo número é escolhido no Painel (B11) | Espec. 9b e seção 12 (fora do escopo: pedido escrito, layout, OCR) | Levar também % por situação e tempo entre datas: tarefa média | Sim | |
-| D-30 | Editar layout | A primeira aba chama `Painel` | Mesmo nome da planilha do Excel (etapa 4) | Outro nome: trivial | Não | |
-| D-31 | Editar layout | Duplicar cria a cópia na mesma aba, logo depois do original | Espec. não dizia onde | Cópia na aba escolhida: tarefa pequena | Sim | |
-| D-32 | Editar layout / Backup | Restaurar com "Somar" só traz layout de relatório sem layout | Evita desfazer o arranjo atual | Sobrescrever: trivial | Sim | |
+| D-01 | Backup e restaurar | "Somar" junta "Meus indicadores" (sem repetir, até 50). Espec. seção 13, P-06; implementado na F-60 (26/11/2026, com teste) | Não perde o que o usuário já escolheu | "Troca": tarefa pequena, com teste | Sim | **Fica** (26/11) |
+| D-02 | Config | Config salva sozinha a cada letra; não há botão Salvar | Menos um passo; nada se perde | Pôr botão Salvar: trivial | Não | **Fica** (26/11) |
+| D-03 | Config | Logo até 2 MB, reduzido para até 240 px e guardado no aparelho | Não pesar no aparelho nem no Excel | Mudar os números: trivial | Sim | **Fica** (26/11) |
+| D-04 | Carregar relatório | Linha sem valor no Código fica de fora sem aviso | Sem código não dá para juntar nem atualizar | Avisar quantas ficaram de fora: tarefa pequena | Sim | **Fica** (26/11) |
+| D-05 | Carregar relatório | Arquivo com o mesmo campo código e códigos já guardados entra no relatório que já os tem (mesmo com outro nome de arquivo) | Juntar relatórios complementares do mesmo sistema | Perguntar antes de juntar: tarefa pequena | Sim | **Fica** (26/11) |
+| D-06 | Carregar relatório | Mesmo código: valor novo preenchido substitui o antigo; vazio não apaga | Arquivo novo é o mais atual; arquivo parcial não estraga | Guardar histórico de cada mudança: tarefa maior | Não | **Fica** (26/11) |
+| D-07 | O que acompanhar | Nada vem marcado; Cancelar mantém o painel padrão sem salvar | A escolha é da pessoa (nada fixo) | Já vir marcado o essencial: trivial | Sim | **Fica** (26/11) |
+| D-08 | Esta coluna é o quê? | Situação é sugerida pelo nome da coluna (situação, status, estado); a pessoa troca | Situação não dá para adivinhar pelos valores | Outras palavras: trivial | Sim | **Fica** (26/11) |
+| D-09 | O que acompanhar | "Em aberto" = situação que não começa com conclu-, finaliz-, encerr-, fechad-, entreg-, cancel-, resolvid-, pag- | Sem lista fixa de um ramo; serve para a maioria dos sistemas | Deixar a pessoa marcar quais situações são "fechadas": tarefa média | Sim | **Fica** (26/11) |
+| D-10 | Pedido escrito | "Este mês", "mês passado", "últimos N dias" contam a partir da data mais recente dos registros, não de hoje | Relatório antigo continua dando resposta | Usar a data de hoje: trivial | Sim | **Fica** (26/11) |
+| D-11 | Pedido escrito | Erro de digitação aceito com semelhança de 80% ou mais | Equilíbrio entre entender e não chutar | Mudar o número: trivial | Sim | **Fica** (26/11) |
+| D-12 | Excel | Sem fórmula, macro ou gráfico nativo; gráfico vira tabela com barra em texto (█) | Segurança e Excel igual à tela em qualquer versão | Gráfico nativo do Excel: tarefa média | Sim | **Fica** (26/11) |
+| D-13 | Apagar todos os dados | Apagar mantém Config, formatos lembrados e sinônimos | Próximo relatório entra sem perguntar de novo | Apagar tudo mesmo: trivial | Sim | **Fica** (26/11) |
+| D-14 | Backup / Somar | No "Somar", escolha do painel e formatos do backup valem por cima dos atuais; Config não muda (só no Substituir) | O backup traz o arranjo mais completo; não troca o cliente do aparelho | Perguntar item a item: tarefa média | Sim | **Fica** (26/11) |
+| D-15 | Painel | A faixa Total / Mais antigo / Mais novo fica sempre no topo, mesmo com escolha | Dá o tamanho e o período do relatório de relance | Esconder quando há escolha: trivial | Sim | **Fica** (26/11) |
+| D-16 | Esta coluna é o quê? | Tipos: Ignorar, Código, Data, Categoria, Situação, Texto, Número; data com hora é Data (não há "Data e hora" separado) | Menos escolhas; a hora é lida quando existe | Separar "Data e hora": tarefa pequena | Sim | **Fica** (26/11) |
+| D-20 | Criar conta personalizada | `dias(data1, data2)` devolve a **média** de dias entre as duas datas | A especificação não dizia qual estatística | Trocar por mediana: tarefa pequena, com teste | Sim | **Fica** (26/11) |
+| D-21 | Criar conta personalizada | Divisão por zero (ou resultado indefinido) mostra "sem dados" em vez de mensagem de erro | Espec. CA-53 pede "sem dados" | Mostrar erro: tarefa pequena | Não | **Fica** (26/11) |
+| D-22 | Criar conta personalizada | A sugestão de campo no erro sai em minúsculas ('valor'), como no exemplo da especificação | Seguir o CA-52 ao pé da letra | Mostrar o nome exato do campo: troca de texto | Sim | **Fica** (26/11) |
+| D-23 | Criar conta personalizada | Contas valem por relatório (não são globais); nome repetido substitui a antiga | Campos mudam de um relatório para outro | Contas globais: tarefa maior | Sim | **Fica** (26/11) |
+| D-24 | Versão Excel | O catálogo na macro é só o que cabe no Excel 2016: total, soma/média/mediana/mínimo/máximo, soma por categoria e registros por mês; o campo número é escolhido no Painel (B11) | Espec. 9b e seção 12 (fora do escopo: pedido escrito, layout, OCR) | Levar também % por situação e tempo entre datas: tarefa média | Sim | **V2** (26/11: macro do Excel inteira fica para a versão 2.0) |
+| D-30 | Editar layout | A primeira aba chama `Painel` | Mesmo nome da planilha do Excel (etapa 4) | Outro nome: trivial | Não | **Fica** (26/11) |
+| D-31 | Editar layout | Duplicar cria a cópia na mesma aba, logo depois do original | Espec. não dizia onde | Cópia na aba escolhida: tarefa pequena | Sim | **Fica** (26/11) |
+| D-32 | Editar layout / Backup | Restaurar com "Somar" só traz layout de relatório sem layout | Evita desfazer o arranjo atual | Sobrescrever: trivial | Sim | **Fica** (26/11) |
 | D-33 | Editar layout | Tamanho não muda o Excel | Planilha não tem largura de bloco | Nenhum efeito possível | Não | |
 | D-34 | Editar layout | Formas permitidas por tipo de bloco: número só Número; por categoria Barras/Pizza/Tabela; por mês também Linha | "quando o tipo de dado permite" | Liberar mais formas: tarefa média | Sim | |
 | D-35 | Editar layout | A mensagem de apagar aba diz "Os N blocos dela vão para a primeira aba." (inclusive com 1 bloco) | Texto literal da espec. | Singular: trivial | Sim | |
