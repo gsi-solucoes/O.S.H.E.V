@@ -1,8 +1,9 @@
-# Raio X do Relatório — Especificação v1.5
+# Raio X do Relatório — Especificação v1.6
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v1.6 (26/11/2026, tarefa F-57, coordenador): seção 0.7 "Nomes e regras — etapa 6" (R-100 a R-108, modelo do layout, regras, decisões D-30 a D-34).
 - v1.5 (26/11/2026, tarefa F-55, Especificador): seção 0.6 "Nomes e regras — etapa 5" (R-90 a R-95, fórmula, textos de erro, pedido escrito com conta, decisões D-20 a D-23).
 - v1.4 (26/11/2026, tarefa F-53, Especificador): seção 0.5 "Nomes e estrutura — etapa 4" (R-80 a R-89: planilha de painel, células-âncora, tipos e formatos de célula, capa); seção 4 completada (CA-41 a CA-43 detalhados, CA-45 a CA-50 novos; CA-40 e CA-44 adiados para a etapa 6 com teste `skip`). Na etapa 4 o painel tem uma única aba implícita, `Painel`. Nenhuma regra de negócio nova além das decisões de formato registradas na 0.5.
 - v1.3 (25/11/2026): seção 0.4 "Nomes na tela — etapa 3".
@@ -412,6 +413,28 @@ Mesmas regras da 0.1 (rótulos exatos; testes localizam por rótulo/texto). Cont
 - CA-64: "Voltar ao padrão" → layout igual ao da etapa 2 para aquele conjunto.
 - CA-65: backup → apagar dados → restaurar → mesmo layout e mesmos registros.
 - CA-66: no celular (390 px), "subir" e "descer" mudam a ordem.
+
+### 0.7 Nomes e regras — etapa 6 (v1.6, 26/11/2026, F-57)
+
+Mesmas regras da 0.1 (rótulos exatos; testes localizam por rótulo/texto/`aria-label`). **Regra de ouro: sem layout editado, a tela e o Excel ficam idênticos aos das etapas 2 a 5** (nenhum teste antigo muda). O layout vale **por conjunto**.
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-100 | `Editar layout` / `Concluir edição` | botão (o mesmo botão troca de texto) | Painel, junto de `O que acompanhar`; só aparece quando há blocos escolhidos (etapa 2). Liga/desliga o modo edição |
+| R-101 | barra de abas `<nav aria-label="Abas do painel">` com um botão por aba (texto = nome da aba, `data-testid="aba"`) | navegação | A aba inicial chama `Painel`. **A barra só aparece com 2 ou mais abas ou em modo edição** |
+| R-102 | `Nova aba`, `Renomear aba`, `Apagar aba`, `Aba à esquerda`, `Aba à direita` | botões | só em modo edição; agem sobre a aba aberta. `Nova aba` e `Renomear aba` pedem o nome numa janela (campo `Nome da aba`, botões `Salvar` e `Cancelar`), até 30 caracteres, sem repetir (sem diferenciar maiúsculas/acentos); nome inválido: `role="alert"` com `escreva o nome da aba` ou `já existe uma aba com esse nome` |
+| R-103 | por bloco, em modo edição, um grupo `role="group"` com `aria-label` = `Controles de <título do bloco>` e dentro: botões `Subir`, `Descer`, `Esconder` (vira `Mostrar` no bloco escondido), `Duplicar`; selects `Mover para…`, `Tamanho`, `Forma` | controles | `Subir`/`Descer` valem em qualquer largura (no celular são os únicos meios; no computador o arrastar também funciona). `Subir` no 1º bloco e `Descer` no último não fazem nada (botão desabilitado) |
+| R-104 | `Tamanho`: opções `Pequeno`, `Médio`, `Grande` | select | padrão `Médio`. Na tela o bloco ocupa 1/3, 1/2 ou toda a largura (em 390 px sempre a largura toda). No Excel o tamanho não muda nada |
+| R-105 | `Forma`: opções `Número`, `Barras`, `Linha`, `Pizza`, `Tabela` | select | **só as formas que o dado permite**: bloco de um número só (cartão): apenas `Número`; bloco agrupado por categoria: `Barras`, `Pizza`, `Tabela`; agrupado por mês: também `Linha`. A forma de origem é a do padrão. Pizza com mais de 8 fatias vira `Barras` e mostra o aviso `Pizza com mais de 8 fatias: mostrando barras` |
+| R-106 | `Voltar ao padrão` | botão | em modo edição; pede confirmação (`Voltar ao padrão?`, botões `Voltar ao padrão` e `Cancelar`); apaga o layout do conjunto: ordem, abas, tamanhos, escondidos, duplicados e formas voltam ao da etapa 2 |
+| R-107 | confirmação ao apagar aba: `Apagar a aba <nome>?` com botões `Apagar` e `Cancelar`; texto `Os N blocos dela vão para a primeira aba.` (só se N > 0) | janela | sempre pergunta; não se apaga a última aba (o botão `Apagar aba` fica desabilitado quando há 1 aba) |
+| R-108 | bloco escondido: em modo edição aparece esmaecido (`data-escondido="true"`) com o botão `Mostrar`; fora do modo edição **não aparece** nem no Excel nem em `Seu painel` | | |
+
+**Modelo.** `layout[conjunto] = { abas: [{ id, nome }], itens: [{ k, id, aba, tam, oculto, forma }] }`, onde `id` é o do indicador (etapa 2/5) e `k` é a chave única do item (permite o mesmo indicador duas vezes, por `Duplicar`). Ausente = padrão. Salvo no navegador por conjunto e no **backup** (campo `layout`, validado como as contas: formato errado rejeita o arquivo inteiro; até 20 abas e 200 itens por conjunto; indicador que não existe mais é ignorado). Restaurar com `Substituir` troca; com `Somar` o layout do backup só entra para conjuntos que ainda não têm layout.
+
+**Regras.** (1) A ordem dos blocos é a da lista `itens`; a tela mostra os blocos da aba aberta, na ordem. (2) `Duplicar` cria uma cópia logo depois do original, **na mesma aba** (para outra aba: duplicar e depois `Mover para…`), com mesmo valor. (3) Apagar aba: os itens dela vão, na ordem, para o fim da 1ª aba. (4) Indicador desmarcado em `O que acompanhar` sai do layout (todas as cópias); indicador novo entra no fim da 1ª aba. (5) `Seu painel` e a planilha de cada aba do Excel seguem a ordem do layout; blocos escondidos ficam de fora. (6) **Excel (etapa 4):** uma planilha por aba do layout, na ordem das abas, com o nome da aba (1ª = `Painel`); aba sem blocos visíveis não gera planilha; a macro Excel não ganha layout (fora do escopo, seção 12). (7) O modo edição não se guarda: ao recarregar, volta desligado. (8) Arrastar: o bloco (`draggable`) solto sobre outro bloco da mesma aba ocupa o lugar dele; solto sobre o botão de outra aba vai para o fim dela.
+
+**Decisões (v1.6):** D-30 a aba inicial chama `Painel` (o mesmo nome da planilha do Excel da etapa 4). D-31 `Duplicar` cria a cópia na mesma aba. D-32 "Somar" no backup só traz layout de conjunto sem layout. D-33 tamanho não afeta o Excel. D-34 formas permitidas por tipo de bloco (tabela acima), a decisão do que "o tipo de dado permite".
 
 ---
 
