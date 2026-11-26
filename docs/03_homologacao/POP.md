@@ -38,6 +38,17 @@ apagar dados). Modelo de cada procedimento: -->
 
 **Regras e limites:** até 50 contas por relatório; nome até 60 e fórmula até 300 caracteres. A fórmula nunca executa código. Divisão por zero ou sem dados mostra "sem dados". `dias` é a média de dias entre as duas datas ⚖️ D-20. Contas valem só para o relatório em que foram criadas ⚖️ D-23. Entram no backup.
 
+### P-z. Usar a versão Excel (macro) e ver os indicadores
+**Para que serve:** quem prefere o Excel no PC importa os arquivos, vê o painel e gera o relatório, com a mesma estrutura do app.
+
+| Você faz | O programa faz |
+|---|---|
+| Importa os arquivos e diz o que é cada coluna | Junta os registros pelo código |
+| No Painel escolhe período, campo de data, campo de categoria, categoria e **campo número** | Mostra o total, a contagem por categoria e a tabela **Indicadores** (soma, média, mediana, mínimo, máximo, sem valor, soma por categoria, registros por mês) |
+| Clica em **Gerar relatório** | Cria um arquivo novo com Capa, Resumo, Indicadores e Registros, só com valores ⚖️ D-24 |
+
+**Regras e limites:** ficam de fora da versão Excel: pedido escrito, contas personalizadas, Editar layout, leitura de PDF e imagem, % por situação e tempo entre duas datas (Excel 2016 não comporta bem). O app tem tudo isso.
+
 ## Quadro das decisões (marcar na homologação)
 | ⚖️ | Onde (procedimento) | Decisão (como funciona) | Por quê | Se mudar | Provisória? | Galindo: Fica / Muda |
 |---|---|---|---|---|---|---|
@@ -46,3 +57,4 @@ apagar dados). Modelo de cada procedimento: -->
 | D-21 | Criar conta personalizada | Divisão por zero (ou resultado indefinido) mostra "sem dados" em vez de mensagem de erro | Espec. CA-53 pede "sem dados" | Mostrar erro: tarefa pequena | Não | |
 | D-22 | Criar conta personalizada | A sugestão de campo no erro sai em minúsculas ('valor'), como no exemplo da especificação | Seguir o CA-52 ao pé da letra | Mostrar o nome exato do campo: troca de texto | Sim | |
 | D-23 | Criar conta personalizada | Contas valem por relatório (não são globais); nome repetido substitui a antiga | Campos mudam de um relatório para outro | Contas globais: tarefa maior | Sim | |
+| D-24 | Versão Excel | O catálogo na macro é só o que cabe no Excel 2016: total, soma/média/mediana/mínimo/máximo, soma por categoria e registros por mês; o campo número é escolhido no Painel (B11) | Espec. 9b e seção 12 (fora do escopo: pedido escrito, layout, OCR) | Levar também % por situação e tempo entre datas: tarefa média | Sim | |

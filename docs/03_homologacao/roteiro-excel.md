@@ -15,7 +15,8 @@ Feito no Excel 2016 (Windows). Leva uns 10 minutos. Use o arquivo `tests/dados/v
 6. **Conferência (CA-110):** o Total e cada contagem de "Por Cliente" são iguais aos do app.
 7. Importe o mesmo arquivo de novo: nenhuma pergunta nova e o Total não muda (junção por código).
 8. Em "Período de" / "até" ponha um intervalo (ex.: 01/01/2026 a 30/06/2026), em "Categoria" escolha um cliente, clique em **Atualizar painel**: o Total e a tabela diminuem de acordo.
-9. Clique em **Gerar relatório (Excel)** e salve. Esperado: arquivo novo com abas **Capa** (Cliente Teste, Area Teste, período, filtros, total), **Resumo** e **Registros**, só com valores (sem fórmulas, sem macros).
+9. Clique em **Gerar relatório (Excel)** e salve. Esperado: arquivo novo com abas **Capa** (Cliente Teste, Area Teste, período, filtros, total), **Resumo**, **Indicadores** e **Registros**, só com valores (sem fórmulas, sem macros).
+9b. (F-56) No Painel, escolha em **Campo número (para somar)** o campo Valor e clique em **Atualizar painel**. Esperado: à direita (coluna F) a tabela **Indicadores**: Total de registros, Soma, Média, Mediana, Mínimo, Máximo, Registros sem valor, Soma por categoria e Registros por mês, iguais ao app. Mude o período e atualize: os números acompanham o filtro. A aba **Indicadores** do relatório traz a mesma tabela.
 10. Config → **Esquecer formatos lembrados**; importe de novo: as perguntas voltam.
 
 ## O que a oficina não cobre (conferir no Excel real)

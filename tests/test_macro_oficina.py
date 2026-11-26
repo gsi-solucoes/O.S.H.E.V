@@ -95,3 +95,48 @@ def test_sem_termos_proibidos_no_relatorio(relatorio):
 def test_macro_sem_alertas(relatorio):
     _, res = relatorio
     assert not [m for m in res["mensagens"] if m.startswith("[ALERTA]")]
+
+
+# ---------- F-56: indicadores na macro (catalogo da etapa 2, no que cabe no Excel 2016) ----------
+def _num(s):
+    return float(s.replace(".", "").replace(",", "."))
+
+
+def _indicadores(wb):
+    return [r for r in wb["Indicadores"].iter_rows(min_row=6, values_only=True) if r[0]]
+
+
+def test_aba_indicadores_com_soma_media_mediana(relatorio):
+    import statistics
+    wb, _ = relatorio
+    assert "Indicadores" in wb.sheetnames
+    vals = [_num(r["Valor"]) for r in le("vendas.csv")]
+    ind = {r[0]: r[2] for r in _indicadores(wb) if not r[1]}
+    assert ind["Total de registros"] == len(vals) + 1   # + V90001 da parte 2
+    assert ind["Soma de Valor"] == pytest.approx(sum(vals), abs=0.01)
+    assert ind["Média de Valor"] == pytest.approx(sum(vals) / len(vals), abs=0.01)
+    assert ind["Mediana de Valor"] == pytest.approx(statistics.median(vals), abs=0.01)
+    assert ind["Mínimo de Valor"] == pytest.approx(min(vals), abs=0.01)
+    assert ind["Máximo de Valor"] == pytest.approx(max(vals), abs=0.01)
+    assert ind["Registros sem valor em Valor"] == 1
+
+
+def test_indicadores_soma_por_categoria(relatorio):
+    wb, _ = relatorio
+    esperado = {}
+    for r in le("vendas.csv"):
+        esperado[r["Cliente"]] = esperado.get(r["Cliente"], 0) + _num(r["Valor"])
+    got = {r[1]: r[2] for r in _indicadores(wb) if r[0] == "Soma de Valor por Cliente"}
+    assert got.pop("(vazio)", 0) == 0
+    assert {k: round(v, 2) for k, v in got.items()} == {k: round(v, 2) for k, v in esperado.items()}
+
+
+def test_indicadores_registros_por_mes(relatorio):
+    from collections import Counter
+    wb, _ = relatorio
+    esperado = Counter()
+    for r in le("vendas.csv"):
+        d, m, a = r["Data"].split("/")
+        esperado[f"{m}/{a}"] += 1
+    got = {r[1]: r[2] for r in _indicadores(wb) if r[0] == "Registros por mês"}
+    assert got == dict(esperado)

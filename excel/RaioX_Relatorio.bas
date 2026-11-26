@@ -147,6 +147,12 @@ Private Sub MontarPainel()
     ws.Range("A7").Value = "Período de"
     ws.Range("C7").Value = "até"
     ws.Range("A8").Value = "Campo de data"
+    ws.Range("A11").Value = "Campo número (para somar)"
+    ws.Range("A11").Font.Bold = True
+    ws.Range("B11").Interior.Color = RGB(255, 249, 219)
+    ws.Range("F6").Value = "Indicadores"
+    ws.Range("F6").Font.Bold = True
+    ws.Range("F6").Font.Size = 14
     ws.Range("A9").Value = "Campo categoria"
     ws.Range("A10").Value = "Categoria"
     ws.Range("A7:A10").Font.Bold = True
@@ -158,7 +164,7 @@ Private Sub MontarPainel()
     ws.Range("A12:B12").Font.Bold = True
     ws.Range("A12:B12").Font.Size = 14
     ws.Range("B12").NumberFormat = "#,##0"
-    ws.Range("A5").Value = "Depois de mudar período, campo ou categoria, clique em Atualizar painel."
+    ws.Range("A5").Value = "Depois de mudar período, campos ou categoria, clique em Atualizar painel."
     ws.Range("A5").Font.Italic = True
     ws.Columns("A").ColumnWidth = 30
     ws.Columns("B").ColumnWidth = 22
@@ -167,6 +173,10 @@ Private Sub MontarPainel()
     ListaValidacao ws.Range("B8"), "=ListaCampos"
     ListaValidacao ws.Range("B9"), "=ListaCampos"
     ListaValidacao ws.Range("B10"), "=ListaCategorias"
+    ListaValidacao ws.Range("B11"), "=ListaCampos"
+    ws.Columns("F").ColumnWidth = 30
+    ws.Columns("G").ColumnWidth = 18
+    ws.Columns("H").ColumnWidth = 16
     ApagarBotoes ws
     NovoBotao ws, "Importar arquivos", "ImportarArquivos", ws.Range("A3").Left, ws.Range("A3").Top, 140
     NovoBotao ws, "Atualizar painel", "AtualizarPainel", ws.Range("A3").Left + 150, ws.Range("A3").Top, 130
@@ -1046,6 +1056,7 @@ Public Sub AtualizarPainel()
     ContarPorCategoria d, sel, n, ic, k, c, nk
     ws.Range("A2").Value = TextoCliente()
     ws.Range("B12").Value = n
+    EscreverIndicadores ws, d, nc, sel, n, ic, idt
     ws.Range("A14:C3000").Clear
     ws.Range("A14").Value = "Por " & NomeCampo(d, ic, "categoria (escolha o campo em B9)")
     ws.Range("B14").Value = "Registros"
@@ -1062,6 +1073,144 @@ Public Sub AtualizarPainel()
         ws.Range(ws.Cells(15, 2), ws.Cells(14 + nk, 2)).NumberFormat = "#,##0"
         If Not mOficina Then ws.Range(ws.Cells(15, 2), ws.Cells(14 + nk, 2)).FormatConditions.AddDatabar   ' LibreOffice nao tem barras de dados via VBA
     End If
+End Sub
+
+'------------------------------------------------------------ indicadores (catálogo da etapa 2, no que cabe no Excel 2016)
+Private Function CampoNumero(ByRef d As Variant, ByVal nc As Long) As Long
+    Dim ws As Worksheet
+    Set ws = Folha(SH_PAINEL)
+    If IndiceCampo(d, nc, CStr(ws.Range("B11").Value)) = 0 Then ws.Range("B11").Value = PrimeiroDoPapel(d, nc, "Valor")
+    CampoNumero = IndiceCampo(d, nc, CStr(ws.Range("B11").Value))
+End Function
+
+Private Sub OrdenarNumeros(ByRef a() As Double, ByVal lo As Long, ByVal hi As Long)
+    Dim i As Long, j As Long, p As Double, t As Double
+    Do While lo < hi
+        i = lo: j = hi: p = a((lo + hi) \ 2)
+        Do While i <= j
+            Do While a(i) < p: i = i + 1: Loop
+            Do While a(j) > p: j = j - 1: Loop
+            If i <= j Then
+                t = a(i): a(i) = a(j): a(j) = t
+                i = i + 1: j = j - 1
+            End If
+        Loop
+        If j - lo < hi - i Then
+            OrdenarNumeros a, lo, j
+            lo = i
+        Else
+            OrdenarNumeros a, i, hi
+            hi = j
+        End If
+    Loop
+End Sub
+
+' Monta a tabela Indicador | Detalhe | Valor (so valores, sem formulas). nl = linhas usadas.
+Private Function TabelaIndicadores(ByRef d As Variant, ByVal nc As Long, ByRef sel() As Long, ByVal n As Long, ByVal ic As Long, ByVal idt As Long, ByRef nl As Long) As Variant
+    Dim t() As Variant, iv As Long, i As Long, v As Variant, nv As Long, vals() As Double, soma As Double, nome As String
+    Dim dc As Object, dr As Object, ch As Variant, k() As String, nk As Long, s As String, mes() As String
+    ReDim t(1 To 4000, 1 To 3)
+    nl = 1
+    t(1, 1) = "Total de registros": t(1, 3) = n
+    iv = CampoNumero(d, nc)
+    If iv > 0 And n > 0 Then
+        nome = CStr(d(1, iv))
+        ReDim vals(1 To n)
+        For i = 1 To n
+            v = d(sel(i), iv)
+            If VarType(v) = vbDouble Or VarType(v) = vbLong Or VarType(v) = vbInteger Or VarType(v) = vbSingle Or VarType(v) = vbCurrency Then
+                nv = nv + 1
+                vals(nv) = CDbl(v)
+                soma = soma + vals(nv)
+            End If
+        Next i
+        If nv > 0 Then
+            OrdenarNumeros vals, 1, nv
+            nl = nl + 1: t(nl, 1) = "Soma de " & nome: t(nl, 3) = soma
+            nl = nl + 1: t(nl, 1) = "Média de " & nome: t(nl, 3) = soma / nv
+            nl = nl + 1: t(nl, 1) = "Mediana de " & nome
+            If nv Mod 2 = 1 Then t(nl, 3) = vals((nv + 1) \ 2) Else t(nl, 3) = (vals(nv \ 2) + vals(nv \ 2 + 1)) / 2
+            nl = nl + 1: t(nl, 1) = "Mínimo de " & nome: t(nl, 3) = vals(1)
+            nl = nl + 1: t(nl, 1) = "Máximo de " & nome: t(nl, 3) = vals(nv)
+        End If
+        nl = nl + 1: t(nl, 1) = "Registros sem valor em " & nome: t(nl, 3) = n - nv
+        If ic > 0 And nv > 0 Then
+            Set dc = Dic()
+            For i = 1 To n
+                v = d(sel(i), iv)
+                If VarType(v) = vbDouble Or VarType(v) = vbLong Or VarType(v) = vbInteger Or VarType(v) = vbSingle Or VarType(v) = vbCurrency Then
+                    s = CStr(d(sel(i), ic))
+                    If Len(s) = 0 Then s = "(vazio)"
+                    dc(s) = dc(s) + CDbl(v)
+                End If
+            Next i
+            nk = dc.Count
+            If nk > 0 And nk <= 200 Then
+                ReDim k(1 To nk)
+                i = 0
+                For Each ch In dc.Keys
+                    i = i + 1: k(i) = CStr(ch)
+                Next ch
+                OrdenarTexto k, nk
+                For i = 1 To nk
+                    nl = nl + 1
+                    t(nl, 1) = "Soma de " & nome & " por " & CStr(d(1, ic))
+                    t(nl, 2) = k(i)
+                    t(nl, 3) = dc(k(i))
+                Next i
+            End If
+        End If
+    End If
+    If idt > 0 And n > 0 Then
+        Set dr = Dic()
+        For i = 1 To n
+            v = d(sel(i), idt)
+            If VarType(v) = vbDate Or VarType(v) = vbDouble Then   ' o LibreOffice devolve a data como numero
+                s = Format$(CDate(CDbl(v)), "yyyy-mm")
+                dr(s) = dr(s) + 1
+            End If
+        Next i
+        nk = dr.Count
+        If nk > 0 And nk <= 300 Then
+            ReDim mes(1 To nk)
+            i = 0
+            For Each ch In dr.Keys
+                i = i + 1: mes(i) = CStr(ch)
+            Next ch
+            OrdenarTexto mes, nk
+            For i = 1 To nk
+                nl = nl + 1
+                t(nl, 1) = "Registros por mês"
+                t(nl, 2) = Mid$(mes(i), 6, 2) & "/" & Left$(mes(i), 4)
+                t(nl, 3) = dr(mes(i))
+            Next i
+        End If
+    End If
+    TabelaIndicadores = t
+End Function
+
+Private Sub EscreverTabelaIndicadores(ByVal ws As Worksheet, ByVal lin As Long, ByVal col As Long, ByRef d As Variant, ByVal nc As Long, ByRef sel() As Long, ByVal n As Long, ByVal ic As Long, ByVal idt As Long)
+    Dim t As Variant, nl As Long, i As Long, sai() As Variant
+    t = TabelaIndicadores(d, nc, sel, n, ic, idt, nl)
+    ws.Cells(lin, col).Value = "Indicador"
+    ws.Cells(lin, col + 1).Value = "Detalhe"
+    ws.Cells(lin, col + 2).Value = "Valor"
+    ws.Range(ws.Cells(lin, col), ws.Cells(lin, col + 2)).Font.Bold = True
+    ws.Range(ws.Cells(lin, col), ws.Cells(lin, col + 2)).Interior.Color = RGB(221, 235, 247)
+    ReDim sai(1 To nl, 1 To 3)
+    For i = 1 To nl
+        sai(i, 1) = t(i, 1)
+        sai(i, 2) = t(i, 2)
+        sai(i, 3) = t(i, 3)
+    Next i
+    ws.Range(ws.Cells(lin + 1, col), ws.Cells(lin + nl, col + 1)).NumberFormat = "@"
+    ws.Range(ws.Cells(lin + 1, col), ws.Cells(lin + nl, col + 2)).Value = sai
+    ws.Range(ws.Cells(lin + 1, col + 2), ws.Cells(lin + nl, col + 2)).NumberFormat = "#,##0.00"
+End Sub
+
+Private Sub EscreverIndicadores(ByVal ws As Worksheet, ByRef d As Variant, ByVal nc As Long, ByRef sel() As Long, ByVal n As Long, ByVal ic As Long, ByVal idt As Long)
+    ws.Range("F7:H4100").Clear
+    EscreverTabelaIndicadores ws, 7, 6, d, nc, sel, n, ic, idt
 End Sub
 
 Private Function TextoCliente() As String
@@ -1154,6 +1303,17 @@ Public Sub GerarRelatorio()
     ws.Range(ws.Cells(4 + nk, 1), ws.Cells(4 + nk, 2)).Font.Bold = True
     ws.Columns("A").ColumnWidth = 32
     ws.Columns("B").ColumnWidth = 14
+    Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.Count))
+    ws.Name = "Indicadores"
+    ws.Range("A1").Value = "Indicadores"
+    ws.Range("A1").Font.Bold = True
+    ws.Range("A1").Font.Size = 14
+    ws.Columns("A").ColumnWidth = 32
+    ws.Columns("B").ColumnWidth = 18
+    ws.Columns("C").ColumnWidth = 16
+    ws.Range("A3").Value = "(campo n" & ChrW(250) & "mero escolhido no Painel, B11)"
+    ws.Range("A3").Font.Italic = True
+    EscreverTabelaIndicadores ws, 5, 1, d, nc, sel, n, ic, idt
     Set ws = wb.Worksheets.Add(After:=wb.Worksheets(wb.Worksheets.Count))
     ws.Name = "Registros"
     ReDim sai(1 To n + 1, 1 To nc)
