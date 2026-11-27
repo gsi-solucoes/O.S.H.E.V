@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qHY+4vaVwC0QKr1U49eDrmk8VZoPWimkFxbC88IbZAs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-dDcUek0NLnmE4EClb9KnxlY2pmKmyn0a+2b3kXDI8xU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -738,6 +738,104 @@ var Core = (function () {
     if (ms == null) { m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); if (!m) return null; ms = new Date(+m[1], +m[2] - 1, +m[3]).getTime(); }
     return Math.floor((hojeMs - ms) / 86400000);
   }
+
+  // ---- "O que o Raio X encontrou" (9c.7, E2): regras fixas, sem IA. Devolve TODOS os achados na ordem de prioridade; o corte (2 por regra, 5 no total) é da tela.
+  // o = { regs:[{codigo,v}], campos:[{n,t}], cd, sit, aberto(r), hoje:'aaaa-mm-dd', hojeMs, par:[1ª data, 2ª data]|null, pares:n, fmtN, fmtP }
+  function achadosDe(o) {
+    var L = o.regs, campos = o.campos, cd = o.cd, sit = o.sit, hoje = o.hoje, out = [], ok = function (s) { return /^\d{4}-\d{2}-\d{2}/.test(s || ''); };
+    var d10 = function (s) { return (s || '').slice(0, 10); }, br = function (s) { return s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4); }, mmaa = function (m) { return m.slice(5) + '/' + m.slice(0, 4); };
+    var dh = function (s) { return s.length >= 16 ? s.slice(0, 16) : d10(s) + 'T00:00'; }, fI = function (n) { return n.toLocaleString('pt-BR'); };
+    var fN = o.fmtN || String, fP = o.fmtP || function (n) { return n.toFixed(1).replace('.', ',') + '%'; };
+    var datas = campos.filter(function (k) { return k.t === 'data'; }), nums = campos.filter(function (k) { return k.t === 'numero'; });
+    var cats = campos.filter(function (k) { return k.t === 'categoria' || k.t === 'situacao'; }), grupos = cats.filter(function (k) { return k.n !== sit; });
+    var aberto = sit ? function (r) { return o.aberto(r); } : function () { return false; };
+    var dia = function (s) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s); return Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000; };
+    var por = function (regra, lista) { lista.sort(function (a, b) { return b.ix.length - a.ix.length; }); lista.forEach(function (a) { a.regra = regra; out.push(a); }); };
+    var idx = function (f) { var r = []; L.forEach(function (x, i) { if (f(x, i)) r.push(i); }); return r; };
+    var A = [];
+    // A1 data no futuro
+    datas.forEach(function (k) {
+      var ix = idx(function (r) { return ok(r.v[k.n]) && d10(r.v[k.n]) > hoje; }); if (!ix.length) return;
+      var mx = ix.map(function (i) { return d10(L[i].v[k.n]); }).sort().pop();
+      A.push({ titulo: 'Datas no futuro', frase: fI(ix.length) + ' registros com ' + k.n + ' depois de hoje; a mais distante é ' + br(mx) + '.', porque: 'data maior que a data de hoje', ix: ix });
+    }); por('A1', A); A = [];
+    // A2 data final antes da inicial
+    if (o.par && o.par[0] && o.par[1] && o.par[0] !== o.par[1]) {
+      var a = o.par[0], b = o.par[1], ix2 = idx(function (r) { return ok(r.v[a]) && ok(r.v[b]) && dh(r.v[b]) < dh(r.v[a]); });
+      if (ix2.length) A.push({ titulo: 'Datas fora de ordem', frase: fI(ix2.length) + ' registros com ' + b + ' antes de ' + a + '.', porque: b + ' anterior a ' + a, ix: ix2 });
+    } por('A2', A); A = [];
+    // A3 parados há muito tempo
+    if (cd && sit) {
+      var id3 = {}, ix3 = idx(function (r, i) { if (!aberto(r) || !ok(r.v[cd])) return false; var d = idadeDias(r.v[cd], o.hojeMs); id3[i] = d; return d != null && d > 30; });
+      if (ix3.length) A.push({ titulo: 'Parados há muito tempo', frase: fI(ix3.length) + ' registros em aberto há mais de 30 dias; o mais antigo há ' + Math.max.apply(null, ix3.map(function (i) { return id3[i]; })) + ' dias.', porque: 'em aberto há mais de 30 dias', ix: ix3 });
+    } por('A3', A); A = [];
+    // A4 fora da curva
+    nums.forEach(function (k) {
+      var v = []; L.forEach(function (r) { var x = numero(r.v[k.n]); if (x != null) v.push(x); });
+      var med = mediana(v); if (med == null || !(med > 0)) return;
+      var ix = idx(function (r) { var x = numero(r.v[k.n]); return x != null && x > 3 * med; }); if (!ix.length) return;
+      var mi = ix[0]; ix.forEach(function (i) { var x = numero(L[i].v[k.n]), y = numero(L[mi].v[k.n]); if (x > y || (x === y && L[i].codigo < L[mi].codigo)) mi = i; });
+      A.push({ titulo: 'Valores fora da curva em ' + k.n, frase: fI(ix.length) + ' registros com ' + k.n + ' acima de 3 vezes a mediana (' + fN(3 * med) + '); o maior é ' + fN(numero(L[mi].v[k.n])) + ' (' + L[mi].codigo + ').', porque: 'mais de 3 vezes a mediana', ix: ix });
+    }); por('A4', A); A = [];
+    // meses com registros (sem data no futuro), usados por A5 e A6
+    var meses = []; if (cd) { var ms = {}; L.forEach(function (r) { if (ok(r.v[cd]) && d10(r.v[cd]) <= hoje) ms[r.v[cd].slice(0, 7)] = 1; }); meses = Object.keys(ms).sort(); }
+    // A5 pendências crescendo
+    if (cd && sit && meses.length >= 3) {
+      var u3 = meses.slice(-3), ln = u3.map(function (m) { return idx(function (r) { return aberto(r) && ok(r.v[cd]) && r.v[cd].slice(0, 7) === m; }); });
+      if (ln[0].length < ln[1].length && ln[1].length < ln[2].length)
+        A.push({ titulo: 'Pendências crescendo', frase: 'Os registros em aberto que entram a cada mês cresceram 3 meses seguidos: ' + u3.map(function (m, j) { return mmaa(m) + ' ' + ln[j].length; }).join(', ') + '.', porque: '3 meses seguidos de alta', ix: ln[0].concat(ln[1], ln[2]) });
+    } por('A5', A); A = [];
+    // A6 mudança brusca
+    if (cd && meses.length >= 2) {
+      var m1 = meses[meses.length - 2], m2 = meses[meses.length - 1];
+      var r1 = idx(function (r) { return ok(r.v[cd]) && r.v[cd].slice(0, 7) === m1; }), r2 = idx(function (r) { return ok(r.v[cd]) && r.v[cd].slice(0, 7) === m2; });
+      if (r1.length >= 20 && r2.length >= 20) {
+        cats.sort(function (x, y) { return (y.n === sit) - (x.n === sit); }).forEach(function (k) {
+          var vals = {}; r1.concat(r2).forEach(function (i) { var x = L[i].v[k.n]; if (x) vals[x] = 1; });
+          Object.keys(vals).sort().forEach(function (val) {
+            var i1 = r1.filter(function (i) { return L[i].v[k.n] === val; }), i2 = r2.filter(function (i) { return L[i].v[k.n] === val; });
+            var p1 = 100 * i1.length / r1.length, p2 = 100 * i2.length / r2.length;
+            if (Math.abs(p2 - p1) >= 15) A.push({ titulo: 'Mudança brusca em ' + k.n, frase: val + ' foi de ' + fP(p1) + ' em ' + mmaa(m1) + ' para ' + fP(p2) + ' em ' + mmaa(m2) + '.', porque: 'mudou 15 pontos ou mais de um mês para o outro', ix: i1.concat(i2) });
+          });
+        });
+      }
+    } por('A6', A); A = [];
+    // A7 concentração escondida
+    if (sit) {
+      var sv = {}; L.forEach(function (r) { if (r.v[sit]) sv[r.v[sit]] = 1; });
+      Object.keys(sv).sort().forEach(function (val) {
+        var base = idx(function (r) { return r.v[sit] === val; }); if (base.length < 10) return;
+        grupos.forEach(function (g) {
+          var gv = {}; L.forEach(function (r) { if (r.v[g.n]) gv[r.v[g.n]] = 1; });
+          Object.keys(gv).sort().forEach(function (gval) {
+            var ix = base.filter(function (i) { return L[i].v[g.n] === gval; }), pa = 100 * ix.length / base.length, pt = 100 * L.filter(function (r) { return r.v[g.n] === gval; }).length / L.length;
+            if (pa >= 50 && pa >= 2 * pt) A.push({ titulo: 'Concentração em ' + val, frase: g.n + ' ' + gval + ' responde por ' + fP(pa) + ' dos registros ' + val + ', mas só por ' + fP(pt) + ' do total.', porque: 'metade ou mais de uma situação num só grupo', ix: ix });
+          });
+        });
+      });
+    } por('A7', A); A = [];
+    // A8 buracos: (a) campo vazio, (b) dias sem registro
+    var saida = o.par && o.par[1] && sit ? o.par[1] : null;
+    campos.forEach(function (k) {
+      if (k.t === 'codigo' || !L.length) return;
+      var ix = idx(function (r) { if (String(r.v[k.n] == null ? '' : r.v[k.n]).trim() !== '') return false; return !(k.n === saida && aberto(r)); });
+      var p = 100 * ix.length / L.length;
+      if (ix.length && p >= 20) A.push({ titulo: 'Campo vazio: ' + k.n, frase: k.n + ' está vazio em ' + fP(p) + ' dos registros (' + fI(ix.length) + ').', porque: 'vazio em 20% ou mais', ix: ix });
+    });
+    datas.forEach(function (k) {
+      var com = idx(function (r) { return ok(r.v[k.n]) && d10(r.v[k.n]) <= hoje; }); if (com.length < 30) return;
+      var ds = {}; com.forEach(function (i) { ds[d10(L[i].v[k.n])] = 1; }); ds = Object.keys(ds).sort();
+      var best = null; for (var j = 1; j < ds.length; j++) { var d = dia(ds[j]) - dia(ds[j - 1]) - 1; if (d >= 14 && (!best || d > best.d)) best = { d: d, a: ds[j - 1], b: ds[j] }; }
+      if (!best) return;
+      var ix = com.filter(function (i) { var x = d10(L[i].v[k.n]); return x === best.a || x === best.b; }), pr = new Date(dia(best.a) * 86400000 + 86400000), nx = new Date(dia(best.b) * 86400000 - 86400000);
+      var iso = function (t) { return t.toISOString().slice(0, 10); };
+      A.push({ titulo: 'Dias sem registro', frase: 'Nenhum registro de ' + br(iso(pr)) + ' a ' + br(iso(nx)) + ' (' + best.d + ' dias).', porque: '14 dias ou mais sem registro', ix: ix });
+    }); por('A8', A); A = [];
+    // A9 possíveis repetidos
+    if (o.pares > 0) A.push({ titulo: 'Possíveis repetidos', frase: fI(o.pares) + ' pares de registros parecidos; confira se são o mesmo.', porque: 'texto muito parecido entre registros', ix: o.parIx || [] });
+    por('A9', A);
+    return out;
+  }
   function faixaIdade(d) { return d == null || d < 0 ? -1 : d <= 7 ? 0 : d <= 15 ? 1 : d <= 30 ? 2 : 3; }
   // R-165 / D-66: múltiplo de 24 e >= 48 vira dias
   function fmtPrazo(h) { return h >= 48 && h % 24 === 0 ? (h / 24) + ' dias' : h + ' h'; }
@@ -793,9 +891,9 @@ var Core = (function () {
 
   return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
-    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, FAIXAS_IDADE: FAIXAS_IDADE, idadeDias: idadeDias, faixaIdade: faixaIdade, fmtPrazo: fmtPrazo, estat: estat, fraseDist: fraseDist, extremos: extremos, concentracao: concentracao, compara: compara, periodoAnterior: periodoAnterior, somaDias: somaDias, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
+    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, FAIXAS_IDADE: FAIXAS_IDADE, idadeDias: idadeDias, achadosDe: achadosDe, faixaIdade: faixaIdade, fmtPrazo: fmtPrazo, estat: estat, fraseDist: fraseDist, extremos: extremos, concentracao: concentracao, compara: compara, periodoAnterior: periodoAnterior, somaDias: somaDias, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "0e65fa49be";
+const VERSAO = "4fde49b15c";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -2282,7 +2380,7 @@ function periodoPts(datas) {
 function relBase(c) {
   const cd = campoData(c); if (!cd) return null;
   const per = F.per; let base; F.per = 'tudo'; try { base = filtrar(c); } finally { F.per = per; }
-  let ult = ''; if (per === 'tudo') base.forEach(r => { const m = (r.v[cd] || '').slice(0, 7); if (m > ult) ult = m; });
+  let ult = ''; if (per === 'tudo') { const hj = hojeISO(); base.forEach(r => { const d = (r.v[cd] || '').slice(0, 10), m = d.slice(0, 7); if (m > ult && d <= hj) ult = m; }); }   // data no futuro não conta como "último mês" (D-65, 9c.3)
   const pp = Core.periodoAnterior(per, F.mes, F.de, F.ate, ult); if (!pp) return null;
   const faixa = x => base.filter(r => { const d = (r.v[cd] || '').slice(0, 10); return d && d >= x.ini && d <= x.fim; });
   return { rotA: pp.atual.rot, rotP: pp.ant.rot, A: faixa(pp.atual), P: faixa(pp.ant) };
@@ -2360,7 +2458,7 @@ function relDefs(c, L) {
   } });
   defs.push({ id: 'achados', tit: 'O que o Raio X encontrou', frase: 'O que foge do comum e merece atenção.', desenha: () => {
     if (!achados.length) return el('p', { text: 'O Raio X não encontrou nada fora do comum nestes registros.' });
-    return el('div', null, achados.slice(0, 5).map(a => el('div', { class: 'achado' }, el('b', { text: a.titulo }), el('p', { text: a.frase }), el('p', { class: 'muted', text: 'Por que apareceu: ' + a.porque }), el('button', { type: 'button', text: 'Ver os registros', onclick: () => abre(a.titulo, a.lista || []) }))));
+    return el('ul', { class: 'achados' }, achadosTela(achados).map(a => el('li', { class: 'achado' }, el('b', { text: a.titulo }), el('p', { text: a.frase }), el('p', { class: 'muted', text: 'Por que apareceu: ' + a.porque }), el('button', { type: 'button', text: 'Ver os registros', onclick: () => abre(a.titulo, a.lista || []) }))));
   } });
   if (abData.length) {
     defs.push({ id: 'pend', tit: 'Pendências por idade', frase: 'Há quanto tempo os registros em aberto esperam.', desenha: () => {
@@ -2417,8 +2515,20 @@ function relDefs(c, L) {
   } });
   return defs;
 }
-// "O que o Raio X encontrou": as regras entram na etapa E2 (9c.7); aqui a lista fica vazia e a tela já mostra a frase de vazio
-function relAchados(c, L) { return []; }
+// "O que o Raio X encontrou" (9c.7): contas em Core.achadosDe; aqui só montam-se os dados da tela. Devolve TODOS os achados, na ordem de prioridade
+function relAchados(c, L) {
+  const ds = camposDe(c, 'data'), sit = (camposDe(c, 'situacao')[0] || {}).n, cd = campoData(c), tx = camposDe(c, 'texto')[0];
+  const h0 = new Date(), hojeMs = new Date(h0.getFullYear(), h0.getMonth(), h0.getDate()).getTime();
+  let pares = [], base = L.slice(0, 5000);
+  if (tx && L.length > 1) pares = Core.repetidos(base, r => r.v[tx.n] || '', Core.lerSinonimos(cfg.sinonimos)).slice(0, 100);
+  const parIx = []; { const vistos = new Set(); pares.forEach(p => [p[0], p[1]].forEach(i => { if (!vistos.has(i)) { vistos.add(i); parIx.push(i); } })); }
+  const par = ds.length >= 2 ? parTempo(ds) : null;
+  const res = Core.achadosDe({ regs: L, campos: conjs[c].campos || [], cd, sit, aberto: r => emAberto(r, sit), hoje: hojeISO(), hojeMs, par, pares: pares.length, parIx, fmtN, fmtP });
+  return res.map(a => { const ix = a.ix.map(i => i, 0), base2 = a.regra === 'A9' ? base : L; return { regra: a.regra, titulo: a.titulo, frase: a.frase, porque: a.porque, codigos: ix.map(i => base2[i].codigo), lista: ix.map(i => base2[i]) }; });
+}
+window.__achados = nome => { const c = achaConj(nome); if (!c || !conjs[c]) return []; return JSON.parse(JSON.stringify(relAchados(c, filtrar(c)).map(a => ({ regra: a.regra, titulo: a.titulo, frase: a.frase, porque: a.porque, codigos: a.codigos })))); };
+// na tela: no máximo 2 por regra e 5 no total, na ordem de prioridade (D-72)
+function achadosTela(todos) { const n = {}; return todos.filter(a => (n[a.regra] = (n[a.regra] || 0) + 1) <= 2).slice(0, 5); }
 
 function renderRel() {
   const c = F.conjunto, corpo = $('#relCorpo'); corpo.textContent = ''; if (!c || !conjs[c]) return;

@@ -1484,7 +1484,7 @@ function periodoPts(datas) {
 function relBase(c) {
   const cd = campoData(c); if (!cd) return null;
   const per = F.per; let base; F.per = 'tudo'; try { base = filtrar(c); } finally { F.per = per; }
-  let ult = ''; if (per === 'tudo') base.forEach(r => { const m = (r.v[cd] || '').slice(0, 7); if (m > ult) ult = m; });
+  let ult = ''; if (per === 'tudo') { const hj = hojeISO(); base.forEach(r => { const d = (r.v[cd] || '').slice(0, 10), m = d.slice(0, 7); if (m > ult && d <= hj) ult = m; }); }   // data no futuro não conta como "último mês" (D-65, 9c.3)
   const pp = Core.periodoAnterior(per, F.mes, F.de, F.ate, ult); if (!pp) return null;
   const faixa = x => base.filter(r => { const d = (r.v[cd] || '').slice(0, 10); return d && d >= x.ini && d <= x.fim; });
   return { rotA: pp.atual.rot, rotP: pp.ant.rot, A: faixa(pp.atual), P: faixa(pp.ant) };
@@ -1562,7 +1562,7 @@ function relDefs(c, L) {
   } });
   defs.push({ id: 'achados', tit: 'O que o Raio X encontrou', frase: 'O que foge do comum e merece atenção.', desenha: () => {
     if (!achados.length) return el('p', { text: 'O Raio X não encontrou nada fora do comum nestes registros.' });
-    return el('div', null, achados.slice(0, 5).map(a => el('div', { class: 'achado' }, el('b', { text: a.titulo }), el('p', { text: a.frase }), el('p', { class: 'muted', text: 'Por que apareceu: ' + a.porque }), el('button', { type: 'button', text: 'Ver os registros', onclick: () => abre(a.titulo, a.lista || []) }))));
+    return el('ul', { class: 'achados' }, achadosTela(achados).map(a => el('li', { class: 'achado' }, el('b', { text: a.titulo }), el('p', { text: a.frase }), el('p', { class: 'muted', text: 'Por que apareceu: ' + a.porque }), el('button', { type: 'button', text: 'Ver os registros', onclick: () => abre(a.titulo, a.lista || []) }))));
   } });
   if (abData.length) {
     defs.push({ id: 'pend', tit: 'Pendências por idade', frase: 'Há quanto tempo os registros em aberto esperam.', desenha: () => {
@@ -1619,8 +1619,20 @@ function relDefs(c, L) {
   } });
   return defs;
 }
-// "O que o Raio X encontrou": as regras entram na etapa E2 (9c.7); aqui a lista fica vazia e a tela já mostra a frase de vazio
-function relAchados(c, L) { return []; }
+// "O que o Raio X encontrou" (9c.7): contas em Core.achadosDe; aqui só montam-se os dados da tela. Devolve TODOS os achados, na ordem de prioridade
+function relAchados(c, L) {
+  const ds = camposDe(c, 'data'), sit = (camposDe(c, 'situacao')[0] || {}).n, cd = campoData(c), tx = camposDe(c, 'texto')[0];
+  const h0 = new Date(), hojeMs = new Date(h0.getFullYear(), h0.getMonth(), h0.getDate()).getTime();
+  let pares = [], base = L.slice(0, 5000);
+  if (tx && L.length > 1) pares = Core.repetidos(base, r => r.v[tx.n] || '', Core.lerSinonimos(cfg.sinonimos)).slice(0, 100);
+  const parIx = []; { const vistos = new Set(); pares.forEach(p => [p[0], p[1]].forEach(i => { if (!vistos.has(i)) { vistos.add(i); parIx.push(i); } })); }
+  const par = ds.length >= 2 ? parTempo(ds) : null;
+  const res = Core.achadosDe({ regs: L, campos: conjs[c].campos || [], cd, sit, aberto: r => emAberto(r, sit), hoje: hojeISO(), hojeMs, par, pares: pares.length, parIx, fmtN, fmtP });
+  return res.map(a => { const ix = a.ix.map(i => i, 0), base2 = a.regra === 'A9' ? base : L; return { regra: a.regra, titulo: a.titulo, frase: a.frase, porque: a.porque, codigos: ix.map(i => base2[i].codigo), lista: ix.map(i => base2[i]) }; });
+}
+window.__achados = nome => { const c = achaConj(nome); if (!c || !conjs[c]) return []; return JSON.parse(JSON.stringify(relAchados(c, filtrar(c)).map(a => ({ regra: a.regra, titulo: a.titulo, frase: a.frase, porque: a.porque, codigos: a.codigos })))); };
+// na tela: no máximo 2 por regra e 5 no total, na ordem de prioridade (D-72)
+function achadosTela(todos) { const n = {}; return todos.filter(a => (n[a.regra] = (n[a.regra] || 0) + 1) <= 2).slice(0, 5); }
 
 function renderRel() {
   const c = F.conjunto, corpo = $('#relCorpo'); corpo.textContent = ''; if (!c || !conjs[c]) return;

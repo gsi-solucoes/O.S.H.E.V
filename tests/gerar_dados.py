@@ -219,3 +219,72 @@ try:
         _im.convert("RGB").save(D / "contrato_foto.jpg", "JPEG", quality=85)
 except ImportError:
     pass
+
+
+# ---------- etapa E2 (F-84): achados.csv e sem_achados.csv (especificacao 9c.7, CA-230 a CA-236) ----------
+# Semente propria: nao altera os outros arquivos. Cabecalho: Código;Abertura;Conclusão;Grupo;Responsável;Valor;Situação
+def _grava_achados():
+    r = random.Random(20261127)
+    dt = datetime.date
+    G = ["Grupo Teste 1", "Grupo Teste 2", "Grupo Teste 3", "Grupo Teste 4"]
+    OUTROS = [G[0], G[2], G[3]]
+    plano = [
+        (dt(2026, 6, 1), dt(2026, 6, 30), 10, 6, 48, 2),
+        (dt(2026, 7, 25), dt(2026, 7, 31), 4, 3, 6, 0),
+        (dt(2026, 8, 1), dt(2026, 8, 31), 8, 5, 42, 2),
+        (dt(2026, 9, 1), dt(2026, 9, 30), 20, 13, 40, 3),
+        (dt(2026, 10, 1), dt(2026, 10, 31), 30, 19, 30, 1),
+    ]
+    regs, rr = [], 0
+    for ini, fim, na, na2, nc, nc2 in plano:
+        dias = [ini + datetime.timedelta(days=k) for k in range((fim - ini).days + 1)]
+        lote = [("Aberto", True)] * na2 + [("Aberto", False)] * (na - na2) + \
+               [("Concluido", True)] * nc2 + [("Concluido", False)] * (nc - nc2)
+        r.shuffle(lote)
+        for pos in (0, len(dias) - 1):                                # 1o e ultimo dia do mes com registro Concluido
+            if lote[pos][0] == "Aberto":
+                j = next(k for k, t in enumerate(lote) if t[0] == "Concluido" and k not in (0, len(dias) - 1))
+                lote[pos], lote[j] = lote[j], lote[pos]
+        for i, (sit, g2) in enumerate(lote):
+            if g2:
+                g = G[1]
+            else:
+                g = OUTROS[rr % 3]
+                rr += 1
+            regs.append({"ab": dias[i % len(dias)], "sit": sit, "g": g, "cl": None})
+    for a in (dt(2027, 1, 12), dt(2027, 3, 20)):                      # P1
+        regs.append({"ab": a, "sit": "Aberto", "g": G[1], "cl": None})
+    r.shuffle(regs)
+    for i, x in enumerate(regs):
+        x["cod"] = f"A{i + 1:05d}"
+        x["val"] = f"{r.randint(100, 200)},{r.choice(['00', '50'])}"
+        x["resp"] = f"Pessoa Teste {r.randint(1, 6)}"
+        if x["sit"] == "Concluido":
+            d = r.randint(0, 3)
+            if x["ab"] < dt(2026, 7, 1):
+                d = min(d, (dt(2026, 6, 30) - x["ab"]).days)         # nada dentro do buraco de julho
+            elif x["ab"].month == 7:
+                d = 0
+            x["cl"] = x["ab"] + datetime.timedelta(days=d)
+    conc = lambda m: [x for x in regs if x["sit"] == "Concluido" and (x["ab"].year, x["ab"].month) == (2026, m)]
+    p3 = conc(9)[:2] + conc(10)[:2]                                   # P3: 4 valores muito altos
+    for k, x in enumerate(p3):
+        x["val"] = f"{1000 + 100 * k},00"
+    p2 = conc(9)[2:3] + conc(10)[2:4]                                 # P2: conclusao antes da abertura
+    for x in p2:
+        x["cl"] = x["ab"] - datetime.timedelta(days=5)
+    for x in r.sample(regs, 72):                                      # P4: 30% sem responsavel
+        x["resp"] = ""
+    f = lambda d: d.strftime("%d/%m/%Y") if d else ""
+    grava("achados.csv", ["Código", "Abertura", "Conclusão", "Grupo", "Responsável", "Valor", "Situação"],
+          [[x["cod"], f(x["ab"]), f(x["cl"]), x["g"], x["resp"], x["val"], x["sit"]] for x in regs])
+    # sem_achados: 60 dias seguidos, tudo concluido no dia seguinte
+    linhas = []
+    for i in range(60):
+        a = dt(2026, 9, 1) + datetime.timedelta(days=i)
+        linhas.append([f"S{i + 1:05d}", f(a), f(a + datetime.timedelta(days=1)), f"Grupo Teste {i % 3 + 1}",
+                       f"Pessoa Teste {i % 4 + 1}", f"{100 + i % 11},00", "Concluido"])
+    grava("sem_achados.csv", ["Código", "Abertura", "Conclusão", "Grupo", "Responsável", "Valor", "Situação"], linhas)
+
+
+_grava_achados()
