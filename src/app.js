@@ -910,7 +910,7 @@ function pizzaSvg(it, abrir) {
   it.forEach((x, ix) => {
     const f = Math.max(0, x[1]) / tot; if (!f) return; const a2 = ang + f * 2 * Math.PI, cor = COR_PZ[ix % 8];
     const p = f >= 0.9999 ? sv('circle', { cx: 0, cy: 0, r: 1, fill: cor }) : sv('path', { d: 'M0 0 L' + Math.cos(ang) + ' ' + Math.sin(ang) + ' A1 1 0 ' + (f > 0.5 ? 1 : 0) + ' 1 ' + Math.cos(a2) + ' ' + Math.sin(a2) + ' Z', fill: cor });
-    p.append(sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.onclick = () => abrir(x[0], x[2]); p.style.cursor = 'pointer'; svg.append(p); ang = a2;
+    p.append(sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.setAttribute('aria-label', x[0] + ': ' + rotI(x)); p.setAttribute('role', 'button'); p.setAttribute('tabindex', '0'); p.onclick = () => abrir(x[0], x[2]); p.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(x[0], x[2]); } }; p.style.cursor = 'pointer'; svg.append(p); ang = a2;
   });
   return el('div', { class: 'pizza' }, svg, el('div', { class: 'bars' }, it.map((x, ix) => el('button', { class: 'bar', type: 'button', onclick: () => abrir(x[0], x[2]) }, el('span', { text: x[0] }), el('i', { style: 'width:14px;background:' + COR_PZ[ix % 8] }), el('b', { text: rotI(x) })))));
 }
@@ -1500,7 +1500,7 @@ function relDefs(c, L) {
   const abertos = sit ? L.filter(r => emAberto(r, sit)) : [];
   const abData = cd && sit ? abertos.filter(r => r.v[cd]).map(r => ({ r, d: Core.idadeDias(r.v[cd], hoje0) })).filter(x => x.d != null) : [];
   const atras = abData.filter(x => { const m = msAny(x.r.v[cd]); return m != null && agora - m > cfg.prazoH * 3600000; }).map(x => x.r);
-  const gOrd = gs.filter(k => new Set(L.map(r => r.v[k.n]).filter(Boolean)).size >= 2).slice(0, 3), nOk = ns.filter(k => numeros(L, k.n).length >= 1).slice(0, 3), n1 = ns[0];
+  const gOrd = gs.filter(k => { const z = new Set(L.map(r => r.v[k.n]).filter(Boolean)).size; return z >= 2 && z < L.length; }).slice(0, 3), nOk = ns.filter(k => numeros(L, k.n).length >= 1).slice(0, 3), n1 = ns[0];
   const achados = relAchados(c, L);
   let _base; const base = () => _base === undefined ? (_base = relBase(c)) : _base;
   const concDe = g => {
@@ -1576,7 +1576,7 @@ function relDefs(c, L) {
   }
   if (cd) {
     const p = ds.length >= 2 ? parTempo(ds) : null, saida = p ? (p[1] !== cd ? p[1] : p[0]) : null, duas = !!saida && saida !== cd;
-    defs.push({ id: 'entrou', tit: duas ? 'Entrou e saiu por mês' : 'Entrou por mês (' + cd + ')', frase: 'Quantos entraram' + (duas ? ' (e saíram)' : '') + ' em cada mês.', forma: true,
+    defs.push({ id: 'entrou', tit: duas ? 'Entrou e saiu por mês' : 'Entrou por mês (' + cd + ')', frase: 'Quantos entraram (e saíram) em cada mês.', forma: true,
       formas: duas ? ['barras', 'linha', 'tabela'] : ['barras', 'linha', 'pizza', 'tabela'], desenha: ctx => {
         const mE = agrupa(L, r => (r.v[cd] || '').slice(0, 7)), mS = duas ? agrupa(L, r => (r.v[saida] || '').slice(0, 7)) : new Map(), meses = [...new Set([...mE.keys(), ...mS.keys()])].sort();
         const lin = meses.map(m => ({ m, e: mE.has(m) ? mE.get(m) : [], s: mS.has(m) ? mS.get(m) : [] }));
@@ -1637,7 +1637,7 @@ function renderRel() {
   const vis = ordem.filter(d => ed || !relCfg(c, d.id).oculto), tit = d => relCfg(c, d.id).titulo || d.tit, ids = new Map(vis.map((d, i) => [d.id, 'rel-p' + (i + 1)]));
   const naLista = ordem.filter(d => !relCfg(c, d.id).oculto);
   const idx = el('section', { class: 'relParte relIdx', 'aria-label': 'O que tem neste relatório' }, el('h3', { text: 'O que tem neste relatório' }),
-    el('ul', null, naLista.map(d => el('li', null, el('a', { href: '#' + (ids.get(d.id) || 'rel-como'), text: tit(d) }), ' ', el('span', { class: 'muted', text: d.frase })))));
+    el('ul', null, naLista.map(d => el('li', null, el('a', { href: '#' + (ids.get(d.id) || 'rel-como'), text: tit(d) }), ' ', el('span', { class: 'muted', text: d.frase }))), el('li', null, el('a', { href: '#rel-como', text: 'Como ler este relatório' }), ' ', el('span', { class: 'muted', text: 'Como cada parte foi calculada.' }))));
   idx.prepend(botaoInfo('O que tem neste relatório', { oque: 'A lista das partes deste relatório, com um atalho para cada uma.', como: 'Toque no nome da parte para ir até ela.', ex: '' })); corpo.append(idx);
   vis.forEach((d, i) => {
     const cf = relCfg(c, d.id), pos = ordem.indexOf(d), forma = d.forma ? (d.formas.indexOf(cf.forma) >= 0 ? cf.forma : 'barras') : '';

@@ -4,7 +4,7 @@ Oraculos em Python sobre tests/dados/. CA-40 e CA-44 ficam adiados (etapa 6)."""
 import re, statistics, collections, datetime, zipfile
 import pytest
 from openpyxl import load_workbook
-from test_etapa1 import le_csv, enviar, mapear_se_preciso, abrir_painel
+from test_etapa1 import le_csv, enviar, mapear_se_preciso, abrir_painel, abre_exportar
 from test_etapa2 import (dlg, abrir_janela_r51, marcar, confirmar, fechar_seu_painel, pos, JANELA, br)
 from test_etapa3 import pedir, responder
 
@@ -44,9 +44,9 @@ def escolhe_formato(page, formato):
 def gerar(page, tmp_path, formato=None):
     """Clica em Gerar Excel (Formato opcional) e devolve o workbook (ja verificado: sem formula/macro)."""
     abrir_painel(page)
-    escolhe_formato(page, formato)
+    abre_exportar(page, formato)
     with page.expect_download() as d:
-        page.get_by_role("button", name="Gerar Excel").click()
+        page.get_by_role("button", name="Exportar", exact=True).click()
     destino = tmp_path / d.value.suggested_filename
     d.value.save_as(str(destino))
     return verifica_sem_formula_nem_macro(destino)
@@ -55,10 +55,10 @@ def gerar(page, tmp_path, formato=None):
 def gerar_varios(page, tmp_path, formato):
     """Formato com varios arquivos: junta todos os downloads disparados pelo clique."""
     abrir_painel(page)
-    escolhe_formato(page, formato)
+    abre_exportar(page, formato)
     baixados = []
     page.on("download", lambda d: baixados.append(d))
-    page.get_by_role("button", name="Gerar Excel").click()
+    page.get_by_role("button", name="Exportar", exact=True).click()
     page.wait_for_timeout(3000)
     wbs = []
     for i, d in enumerate(baixados):
@@ -445,8 +445,9 @@ def test_CA47_sem_formula_e_sem_macro(page, tmp_path):
     confirmar(page)
     fechar_seu_painel(page)
     abrir_painel(page)
+    abre_exportar(page)
     with page.expect_download() as d:
-        page.get_by_role("button", name="Gerar Excel").click()
+        page.get_by_role("button", name="Exportar", exact=True).click()
     destino = tmp_path / d.value.suggested_filename
     d.value.save_as(str(destino))
     assert destino.suffix == ".xlsx"

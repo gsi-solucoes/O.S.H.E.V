@@ -87,7 +87,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 .relCtl{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;padding:8px;border:1px dashed var(--line);border-radius:8px;align-items:end}.relCtl label.f{flex:1 1 180px}.relCtl select{width:auto}
 .relAlerta{font-size:13px;color:#92400e}
 .relGraf2{display:grid;gap:6px}.relGraf2 .lin{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center}.relGraf2 i{display:block;height:9px;border-radius:3px}.relGraf2 .a i{background:var(--accent)}.relGraf2 .b i{background:#f59e0b}
-.relParte>.info{position:absolute;top:10px;right:10px}
+.relParte th,.relCapa th{text-transform:none}.relParte>.info{position:absolute;top:10px;right:10px}
 @media print{#relBarra,nav.tabs,#dock,.relCtl{display:none!important}}
 </style>
 </head>
@@ -212,8 +212,8 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <div id="ajudaBox" role="note" hidden></div>
 <div id="toast" role="status"></div>
 <dialog id="dlgExp" aria-labelledby="expTit"><h3 id="expTit">Exportar arquivo</h3>
-  <div role="group" aria-label="Tipo de arquivo" class="row"><label><input type="radio" name="expTipo" value="excel" checked> Excel</label></div>
-  <div class="row" style="margin-top:10px"><label class="f">Formato<select id="xFmt"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label></div>
+  <p class="muted" style="margin:0 0 6px">Tipo de arquivo</p><div role="group" aria-label="Tipo de arquivo" class="row"><label><input type="radio" name="expTipo" value="excel" checked> Excel</label></div>
+  <div class="row" style="margin-top:10px"><label class="f">Formato<select id="xFmt" aria-label="Formato"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label></div>
   <div class="row" style="margin-top:12px"><button type="button" class="prim" id="expOk">Exportar</button><button type="button" id="expCancela">Cancelar</button><span id="xMsg" class="muted" role="status"></span></div></dialog>
 <dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>

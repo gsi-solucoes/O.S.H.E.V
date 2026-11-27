@@ -142,7 +142,7 @@ def test_f78_info_nos_botoes_do_painel_e_blocos(page):
     for ident in ("#btnAcomp", "#filtros", "#kpis", "#gerarXlsx"):
         assert page.locator(ident).evaluate("e => (e.closest('label')||e).nextElementSibling?.classList.contains('info') || e.querySelector('.info') !== null || (e.tagName==='SUMMARY')") or True
     assert page.locator("[data-ajuda='O que acompanhar']").count() == 1
-    assert page.locator("[data-ajuda='Gerar Excel']").count() == 1
+    assert page.locator("[data-ajuda='Gerar relatório']").count() == 1
     assert page.locator("[data-ajuda='Filtros']").count() == 1
     # o nome do campo não ganha o ⓘ
     assert page.locator(".filters label .info").count() == 0

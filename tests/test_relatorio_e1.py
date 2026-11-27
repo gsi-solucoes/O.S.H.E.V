@@ -702,7 +702,7 @@ def test_CA220_como_ler_e_registros(pg):
         achou = [l for l in linhas if l.startswith(t + " — ")]
         assert achou, (t, linhas[:3])
         assert re.search(r"Período: .+\. .*sem filtros\.?$", achou[0]) or "Período:" in achou[0], achou[0]
-        assert "Filtros" in achou[0] or "sem filtros" in achou[0], achou[0]
+        assert "Filtros" in achou[0] or "sem filtros" in achou[0].lower(), achou[0]
     s = secao(pg, "Registros")
     assert "Mostrando 100 de 500 registros. No Excel vão todos." in s["plano"]
     t = s["tabelas"][0]["linhas"]

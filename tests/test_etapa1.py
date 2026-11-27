@@ -64,10 +64,19 @@ def abrir_painel(page):
     page.wait_for_timeout(300)
 
 
+def abre_exportar(page, formato=None):
+    """Gerar relatório -> Exportar arquivo (janela aberta, Formato opcional); falta clicar Exportar."""
+    page.get_by_role("button", name="Gerar relatório", exact=True).click()
+    page.get_by_role("button", name="Exportar arquivo", exact=True).click()
+    if formato:
+        page.get_by_role("combobox", name="Formato").select_option(label=formato)
+
+
 def gerar_excel(page):
     abrir_painel(page)
+    abre_exportar(page)
     with page.expect_download() as d:
-        page.get_by_role("button", name="Gerar Excel").click()
+        page.get_by_role("button", name="Exportar", exact=True).click()
     return d.value
 
 

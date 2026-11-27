@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-a6u9oQ/7HoJid6R0d2182SqKP7aXZ7KHbtrpnOmfUg4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ecG58h8+Lo/eJktslWVR3MJvvuqwTkbiOfCY/FR3hEc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -87,7 +87,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 .relCtl{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;padding:8px;border:1px dashed var(--line);border-radius:8px;align-items:end}.relCtl label.f{flex:1 1 180px}.relCtl select{width:auto}
 .relAlerta{font-size:13px;color:#92400e}
 .relGraf2{display:grid;gap:6px}.relGraf2 .lin{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center}.relGraf2 i{display:block;height:9px;border-radius:3px}.relGraf2 .a i{background:var(--accent)}.relGraf2 .b i{background:#f59e0b}
-.relParte>.info{position:absolute;top:10px;right:10px}
+.relParte th,.relCapa th{text-transform:none}.relParte>.info{position:absolute;top:10px;right:10px}
 @media print{#relBarra,nav.tabs,#dock,.relCtl{display:none!important}}
 </style>
 </head>
@@ -212,8 +212,8 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <div id="ajudaBox" role="note" hidden></div>
 <div id="toast" role="status"></div>
 <dialog id="dlgExp" aria-labelledby="expTit"><h3 id="expTit">Exportar arquivo</h3>
-  <div role="group" aria-label="Tipo de arquivo" class="row"><label><input type="radio" name="expTipo" value="excel" checked> Excel</label></div>
-  <div class="row" style="margin-top:10px"><label class="f">Formato<select id="xFmt"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label></div>
+  <p class="muted" style="margin:0 0 6px">Tipo de arquivo</p><div role="group" aria-label="Tipo de arquivo" class="row"><label><input type="radio" name="expTipo" value="excel" checked> Excel</label></div>
+  <div class="row" style="margin-top:10px"><label class="f">Formato<select id="xFmt" aria-label="Formato"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label></div>
   <div class="row" style="margin-top:12px"><button type="button" class="prim" id="expOk">Exportar</button><button type="button" id="expCancela">Cancelar</button><span id="xMsg" class="muted" role="status"></span></div></dialog>
 <dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
@@ -795,7 +795,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, FAIXAS_IDADE: FAIXAS_IDADE, idadeDias: idadeDias, faixaIdade: faixaIdade, fmtPrazo: fmtPrazo, estat: estat, fraseDist: fraseDist, extremos: extremos, concentracao: concentracao, compara: compara, periodoAnterior: periodoAnterior, somaDias: somaDias, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "aa41a543df";
+const VERSAO = "75e4bcf1de";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -1708,7 +1708,7 @@ function pizzaSvg(it, abrir) {
   it.forEach((x, ix) => {
     const f = Math.max(0, x[1]) / tot; if (!f) return; const a2 = ang + f * 2 * Math.PI, cor = COR_PZ[ix % 8];
     const p = f >= 0.9999 ? sv('circle', { cx: 0, cy: 0, r: 1, fill: cor }) : sv('path', { d: 'M0 0 L' + Math.cos(ang) + ' ' + Math.sin(ang) + ' A1 1 0 ' + (f > 0.5 ? 1 : 0) + ' 1 ' + Math.cos(a2) + ' ' + Math.sin(a2) + ' Z', fill: cor });
-    p.append(sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.onclick = () => abrir(x[0], x[2]); p.style.cursor = 'pointer'; svg.append(p); ang = a2;
+    p.append(sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.setAttribute('aria-label', x[0] + ': ' + rotI(x)); p.setAttribute('role', 'button'); p.setAttribute('tabindex', '0'); p.onclick = () => abrir(x[0], x[2]); p.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(x[0], x[2]); } }; p.style.cursor = 'pointer'; svg.append(p); ang = a2;
   });
   return el('div', { class: 'pizza' }, svg, el('div', { class: 'bars' }, it.map((x, ix) => el('button', { class: 'bar', type: 'button', onclick: () => abrir(x[0], x[2]) }, el('span', { text: x[0] }), el('i', { style: 'width:14px;background:' + COR_PZ[ix % 8] }), el('b', { text: rotI(x) })))));
 }
@@ -2298,7 +2298,7 @@ function relDefs(c, L) {
   const abertos = sit ? L.filter(r => emAberto(r, sit)) : [];
   const abData = cd && sit ? abertos.filter(r => r.v[cd]).map(r => ({ r, d: Core.idadeDias(r.v[cd], hoje0) })).filter(x => x.d != null) : [];
   const atras = abData.filter(x => { const m = msAny(x.r.v[cd]); return m != null && agora - m > cfg.prazoH * 3600000; }).map(x => x.r);
-  const gOrd = gs.filter(k => new Set(L.map(r => r.v[k.n]).filter(Boolean)).size >= 2).slice(0, 3), nOk = ns.filter(k => numeros(L, k.n).length >= 1).slice(0, 3), n1 = ns[0];
+  const gOrd = gs.filter(k => { const z = new Set(L.map(r => r.v[k.n]).filter(Boolean)).size; return z >= 2 && z < L.length; }).slice(0, 3), nOk = ns.filter(k => numeros(L, k.n).length >= 1).slice(0, 3), n1 = ns[0];
   const achados = relAchados(c, L);
   let _base; const base = () => _base === undefined ? (_base = relBase(c)) : _base;
   const concDe = g => {
@@ -2374,7 +2374,7 @@ function relDefs(c, L) {
   }
   if (cd) {
     const p = ds.length >= 2 ? parTempo(ds) : null, saida = p ? (p[1] !== cd ? p[1] : p[0]) : null, duas = !!saida && saida !== cd;
-    defs.push({ id: 'entrou', tit: duas ? 'Entrou e saiu por mês' : 'Entrou por mês (' + cd + ')', frase: 'Quantos entraram' + (duas ? ' (e saíram)' : '') + ' em cada mês.', forma: true,
+    defs.push({ id: 'entrou', tit: duas ? 'Entrou e saiu por mês' : 'Entrou por mês (' + cd + ')', frase: 'Quantos entraram (e saíram) em cada mês.', forma: true,
       formas: duas ? ['barras', 'linha', 'tabela'] : ['barras', 'linha', 'pizza', 'tabela'], desenha: ctx => {
         const mE = agrupa(L, r => (r.v[cd] || '').slice(0, 7)), mS = duas ? agrupa(L, r => (r.v[saida] || '').slice(0, 7)) : new Map(), meses = [...new Set([...mE.keys(), ...mS.keys()])].sort();
         const lin = meses.map(m => ({ m, e: mE.has(m) ? mE.get(m) : [], s: mS.has(m) ? mS.get(m) : [] }));
@@ -2435,7 +2435,7 @@ function renderRel() {
   const vis = ordem.filter(d => ed || !relCfg(c, d.id).oculto), tit = d => relCfg(c, d.id).titulo || d.tit, ids = new Map(vis.map((d, i) => [d.id, 'rel-p' + (i + 1)]));
   const naLista = ordem.filter(d => !relCfg(c, d.id).oculto);
   const idx = el('section', { class: 'relParte relIdx', 'aria-label': 'O que tem neste relatório' }, el('h3', { text: 'O que tem neste relatório' }),
-    el('ul', null, naLista.map(d => el('li', null, el('a', { href: '#' + (ids.get(d.id) || 'rel-como'), text: tit(d) }), ' ', el('span', { class: 'muted', text: d.frase })))));
+    el('ul', null, naLista.map(d => el('li', null, el('a', { href: '#' + (ids.get(d.id) || 'rel-como'), text: tit(d) }), ' ', el('span', { class: 'muted', text: d.frase }))), el('li', null, el('a', { href: '#rel-como', text: 'Como ler este relatório' }), ' ', el('span', { class: 'muted', text: 'Como cada parte foi calculada.' }))));
   idx.prepend(botaoInfo('O que tem neste relatório', { oque: 'A lista das partes deste relatório, com um atalho para cada uma.', como: 'Toque no nome da parte para ir até ela.', ex: '' })); corpo.append(idx);
   vis.forEach((d, i) => {
     const cf = relCfg(c, d.id), pos = ordem.indexOf(d), forma = d.forma ? (d.formas.indexOf(cf.forma) >= 0 ? cf.forma : 'barras') : '';
