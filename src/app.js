@@ -1519,7 +1519,7 @@ function relDefs(c, L) {
     f.push('O relatório tem ' + fmtI(N) + ' registros' + (pts ? ' de ' + fmtD(pts[0]) + ' a ' + fmtD(pts[1]) : '') + '.');
     if (cd && sit && N) {
       if (!abertos.length) f.push('Nenhum registro está em aberto.');
-      else f.push(fmtI(abertos.length) + ' estão em aberto (' + fmtP(100 * abertos.length / N) + ' do total)' + (abData.length ? '; ' + fmtI(atras.length) + ' estão atrasados e o mais antigo espera há ' + Math.max(...abData.map(x => x.d)) + ' dias' : '') + '.');
+      else f.push(fmtI(abertos.length) + ' estão em aberto (' + fmtP(100 * abertos.length / N) + ' do total)' + (abData.length ? '; ' + fmtI(atras.length) + ' estão atrasados e o mais antigo espera há ' + abData.reduce((m, x) => x.d > m ? x.d : m, -Infinity) + ' dias' : '') + '.');
     }
     const B = base();
     if (B) { const cp = Core.compara(B.A.length, B.P.length); if (cp.tipo !== 'sem') f.push('Em ' + B.rotA + ' entraram ' + fmtI(B.A.length) + ' registros, ' + (cp.tipo === 'eq' ? 'o mesmo número que' : pTxt(cp.p) + '% a ' + (cp.tipo === 'up' ? 'mais' : 'menos') + ' que') + ' em ' + B.rotP + '.'); }
@@ -1628,7 +1628,7 @@ function relAchados(c, L) {
   const parIx = []; { const vistos = new Set(); pares.forEach(p => [p[0], p[1]].forEach(i => { if (!vistos.has(i)) { vistos.add(i); parIx.push(i); } })); }
   const par = ds.length >= 2 ? parTempo(ds) : null;
   const res = Core.achadosDe({ regs: L, campos: conjs[c].campos || [], cd, sit, aberto: r => emAberto(r, sit), hoje: hojeISO(), hojeMs, par, pares: pares.length, parIx, fmtN, fmtP });
-  return res.map(a => { const ix = a.ix.map(i => i, 0), base2 = a.regra === 'A9' ? base : L; return { regra: a.regra, titulo: a.titulo, frase: a.frase, porque: a.porque, codigos: ix.map(i => base2[i].codigo), lista: ix.map(i => base2[i]) }; });
+  return res.map(a => { const ix = a.ix, base2 = a.regra === 'A9' ? base : L; return { regra: a.regra, titulo: a.titulo, frase: a.frase, porque: a.porque, get codigos() { return ix.map(i => base2[i].codigo); }, get lista() { return ix.map(i => base2[i]); } }; });
 }
 window.__achados = nome => { const c = achaConj(nome); if (!c || !conjs[c]) return []; return JSON.parse(JSON.stringify(relAchados(c, filtrar(c)).map(a => ({ regra: a.regra, titulo: a.titulo, frase: a.frase, porque: a.porque, codigos: a.codigos })))); };
 // na tela: no máximo 2 por regra e 5 no total, na ordem de prioridade (D-72)

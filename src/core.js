@@ -540,7 +540,7 @@ var Core = (function () {
     // A3 parados há muito tempo
     if (cd && sit) {
       var id3 = {}, ix3 = idx(function (r, i) { if (!aberto(r) || !ok(r.v[cd])) return false; var d = idadeDias(r.v[cd], o.hojeMs); id3[i] = d; return d != null && d > 30; });
-      if (ix3.length) A.push({ titulo: 'Parados há muito tempo', frase: fI(ix3.length) + ' registros em aberto há mais de 30 dias; o mais antigo há ' + Math.max.apply(null, ix3.map(function (i) { return id3[i]; })) + ' dias.', porque: 'em aberto há mais de 30 dias', ix: ix3 });
+      if (ix3.length) A.push({ titulo: 'Parados há muito tempo', frase: fI(ix3.length) + ' registros em aberto há mais de 30 dias; o mais antigo há ' + maxDe(ix3.map(function (i) { return id3[i]; })) + ' dias.', porque: 'em aberto há mais de 30 dias', ix: ix3 });
     } por('A3', A); A = [];
     // A4 fora da curva
     nums.forEach(function (k) {
@@ -564,9 +564,12 @@ var Core = (function () {
       var r1 = idx(function (r) { return ok(r.v[cd]) && r.v[cd].slice(0, 7) === m1; }), r2 = idx(function (r) { return ok(r.v[cd]) && r.v[cd].slice(0, 7) === m2; });
       if (r1.length >= 20 && r2.length >= 20) {
         cats.sort(function (x, y) { return (y.n === sit) - (x.n === sit); }).forEach(function (k) {
-          var vals = {}; r1.concat(r2).forEach(function (i) { var x = L[i].v[k.n]; if (x) vals[x] = 1; });
-          Object.keys(vals).sort().forEach(function (val) {
-            var i1 = r1.filter(function (i) { return L[i].v[k.n] === val; }), i2 = r2.filter(function (i) { return L[i].v[k.n] === val; });
+          var c1 = new Map(), c2 = new Map();
+          r1.forEach(function (i) { var x = L[i].v[k.n]; if (x) { if (!c1.has(x)) c1.set(x, []); c1.get(x).push(i); } });
+          r2.forEach(function (i) { var x = L[i].v[k.n]; if (x) { if (!c2.has(x)) c2.set(x, []); c2.get(x).push(i); } });
+          var vals = Array.from(new Set(Array.from(c1.keys()).concat(Array.from(c2.keys())))).sort();
+          vals.forEach(function (val) {
+            var i1 = c1.get(val) || [], i2 = c2.get(val) || [];
             var p1 = 100 * i1.length / r1.length, p2 = 100 * i2.length / r2.length;
             if (Math.abs(p2 - p1) >= 15) A.push({ titulo: 'Mudança brusca em ' + k.n, frase: val + ' foi de ' + fP(p1) + ' em ' + mmaa(m1) + ' para ' + fP(p2) + ' em ' + mmaa(m2) + '.', porque: 'mudou 15 pontos ou mais de um mês para o outro', ix: i1.concat(i2) });
           });
@@ -575,13 +578,14 @@ var Core = (function () {
     } por('A6', A); A = [];
     // A7 concentração escondida
     if (sit) {
-      var sv = {}; L.forEach(function (r) { if (r.v[sit]) sv[r.v[sit]] = 1; });
-      Object.keys(sv).sort().forEach(function (val) {
-        var base = idx(function (r) { return r.v[sit] === val; }); if (base.length < 10) return;
-        grupos.forEach(function (g) {
-          var gv = {}; L.forEach(function (r) { if (r.v[g.n]) gv[r.v[g.n]] = 1; });
-          Object.keys(gv).sort().forEach(function (gval) {
-            var ix = base.filter(function (i) { return L[i].v[g.n] === gval; }), pa = 100 * ix.length / base.length, pt = 100 * L.filter(function (r) { return r.v[g.n] === gval; }).length / L.length;
+      var porSit = new Map(); L.forEach(function (r, i) { var x = r.v[sit]; if (x) { if (!porSit.has(x)) porSit.set(x, []); porSit.get(x).push(i); } });
+      var tot = grupos.map(function (g) { var m = new Map(); L.forEach(function (r) { var x = r.v[g.n]; if (x) m.set(x, (m.get(x) || 0) + 1); }); return m; });
+      Array.from(porSit.keys()).sort().forEach(function (val) {
+        var base = porSit.get(val); if (base.length < 10) return;
+        grupos.forEach(function (g, gi) {
+          var m = new Map(); base.forEach(function (i) { var x = L[i].v[g.n]; if (x) { if (!m.has(x)) m.set(x, []); m.get(x).push(i); } });
+          Array.from(m.keys()).sort().forEach(function (gval) {
+            var ix = m.get(gval), pa = 100 * ix.length / base.length, pt = 100 * tot[gi].get(gval) / L.length;
             if (pa >= 50 && pa >= 2 * pt) A.push({ titulo: 'Concentração em ' + val, frase: g.n + ' ' + gval + ' responde por ' + fP(pa) + ' dos registros ' + val + ', mas só por ' + fP(pt) + ' do total.', porque: 'metade ou mais de uma situação num só grupo', ix: ix });
           });
         });
@@ -612,10 +616,12 @@ var Core = (function () {
   function faixaIdade(d) { return d == null || d < 0 ? -1 : d <= 7 ? 0 : d <= 15 ? 1 : d <= 30 ? 2 : 3; }
   // R-165 / D-66: múltiplo de 24 e >= 48 vira dias
   function fmtPrazo(h) { return h >= 48 && h % 24 === 0 ? (h / 24) + ' dias' : h + ' h'; }
+  function maxDe(v) { var m = -Infinity; for (var i = 0; i < v.length; i++) if (v[i] > m) m = v[i]; return m; }
+  function minDe(v) { var m = Infinity; for (var i = 0; i < v.length; i++) if (v[i] < m) m = v[i]; return m; }
   function estat(v) {
     if (!v.length) return null;
     var s = v.reduce(function (a, b) { return a + b; }, 0);
-    return { n: v.length, soma: s, media: s / v.length, mediana: mediana(v), min: Math.min.apply(null, v), max: Math.max.apply(null, v) };
+    return { n: v.length, soma: s, media: s / v.length, mediana: mediana(v), min: minDe(v), max: maxDe(v) };
   }
   // R-167: frases da distribuição (D-70: nada com mediana <= 0)
   function fraseDist(e, fmt) {
