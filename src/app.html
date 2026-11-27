@@ -80,6 +80,15 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 .layCtl{display:flex;flex-wrap:wrap;gap:6px;margin:-8px 0 16px}.layCtl select{width:auto;min-width:110px}
 .pizza{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.pizza .bars{flex:1 1 160px}.linha svg{max-height:140px}
 .vazio{padding:24px;text-align:center;color:var(--muted)}
+.relCapa{background:var(--band);color:#fff;border-radius:12px;padding:clamp(16px,3vw,28px);margin-bottom:16px}.relCapa p{margin:4px 0;color:#c9d3ee}.relCapa h2{color:#fff;font-size:clamp(24px,5vw,34px);margin:6px 0 10px}.relCapa .pq{font-size:14px;opacity:.85}.relCapa img{height:40px;background:#fff;border-radius:6px;padding:2px;margin-top:8px}.relCapa label.f{color:#c9d3ee}
+.relParte{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;position:relative}.relParte>h3{font-size:18px;padding-right:34px}.relParte[data-escondido=true]{opacity:.45}.relParte .obs{font-style:italic;color:var(--muted)}.relParte h4{margin:12px 0 6px}
+.relIdx a{color:var(--accent)}.relIdx li{margin:4px 0;overflow-wrap:anywhere}
+.relNums{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px}.relNums .kpi{border-top:4px solid var(--accent)}.relNums .kpi small{display:block;font-size:13px;color:var(--muted);margin-top:4px}.relNums .kpi b.ruim{color:#b91c1c}.relNums .kpi b.good{color:var(--good)}
+.relCtl{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;padding:8px;border:1px dashed var(--line);border-radius:8px;align-items:end}.relCtl label.f{flex:1 1 180px}.relCtl select{width:auto}
+.relAlerta{font-size:13px;color:#92400e}
+.relGraf2{display:grid;gap:6px}.relGraf2 .lin{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center}.relGraf2 i{display:block;height:9px;border-radius:3px}.relGraf2 .a i{background:var(--accent)}.relGraf2 .b i{background:#f59e0b}
+.relParte>.info{position:absolute;top:10px;right:10px}
+@media print{#relBarra,nav.tabs,#dock,.relCtl{display:none!important}}
 </style>
 </head>
 <body>
@@ -128,12 +137,9 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
     <div id="layAviso" class="card aviso" role="note" hidden><p><b>Arraste</b> um bloco para mudar de lugar (ou para outra aba). <b>Toque</b> nele para ver as opções: esconder, duplicar, tamanho, forma. Quando terminar, toque em <b>Concluir edição</b>.</p><div class="row"><span class="demo" aria-hidden="true">⠿</span><button type="button" id="layAvisoX">Entendi, não mostrar de novo</button></div></div>
     <div id="blocosEsc" class="grid2" hidden></div>
     <div id="meusInd" hidden><h2>Meus indicadores</h2><div id="meusGrade" class="grid2"></div></div>
-    <div class="card" style="margin:16px 0"><h3>Gerar Excel</h3>
-      <div class="row">
-        <label class="f">Formato<select id="xFmt"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label>
-        <button class="prim" id="gerarXlsx">Gerar Excel</button><span id="xMsg" class="muted" role="status"></span>
-      </div>
-      <p class="muted">O Excel segue o período e os filtros escolhidos acima.</p>
+    <div class="card" id="cardRel" style="margin:16px 0"><h3>Relatório</h3>
+      <p class="muted">Monta um relatório pronto para ler, ajustar e exportar.</p>
+      <div class="row"><button class="prim" id="gerarXlsx" type="button">Gerar relatório</button></div>
     </div>
     <h2>Registros</h2>
     <div class="tw" id="tabReg"></div>
@@ -191,6 +197,10 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
     <div class="passosBas"></div>
   </div>
 </section>
+<section id="relatorio" class="band" aria-label="Relatório" hidden>
+  <div class="row acBtns" id="relBarra"><button type="button" id="relVoltar">Voltar ao painel</button><button type="button" id="relEditar">Editar relatório</button><button type="button" id="relPadrao" hidden>Voltar ao padrão</button><button type="button" class="prim" id="relExportar">Exportar arquivo</button></div>
+  <div id="relCorpo"></div>
+</section>
 </main>
 
 <footer>
@@ -201,6 +211,10 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <div id="dock"></div>
 <div id="ajudaBox" role="note" hidden></div>
 <div id="toast" role="status"></div>
+<dialog id="dlgExp" aria-labelledby="expTit"><h3 id="expTit">Exportar arquivo</h3>
+  <div role="group" aria-label="Tipo de arquivo" class="row"><label><input type="radio" name="expTipo" value="excel" checked> Excel</label></div>
+  <div class="row" style="margin-top:10px"><label class="f">Formato<select id="xFmt"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label></div>
+  <div class="row" style="margin-top:12px"><button type="button" class="prim" id="expOk">Exportar</button><button type="button" id="expCancela">Cancelar</button><span id="xMsg" class="muted" role="status"></span></div></dialog>
 <dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
 <dialog id="dlgAba" aria-labelledby="abaTit"><h3 id="abaTit">Dê um nome à aba</h3><label class="f">Nome da aba<input type="text" id="abaNome" maxlength="30" autocomplete="off"></label><p id="abaErro" class="muted" role="alert" hidden></p><div class="row" style="margin-top:12px"><button type="button" class="prim" id="abaSalvar">Salvar</button><button type="button" id="abaCancela">Cancelar</button></div></dialog>

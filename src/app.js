@@ -52,7 +52,8 @@ function validarBackup(b) {
     if (b.meus != null) { mu = meusLimpo(b.meus); if (!mu) return null; }
     if (b.contas != null) { co = contasLimpo(b.contas); if (!co) return null; }
     let la = nulo(); if (b.layout != null) { la = layoutsLimpo(b.layout); if (!la) return null; }
-    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac, sin: sn, meus: mu, contas: co, layout: la };
+    let re = nulo(); if (b.relatorio != null) { re = relatoriosLimpo(b.relatorio); if (!re) return null; }
+    return { conjs: cj, fmts: fm, registros: rg, cfg: b.cfg ? cfgLimpa(b.cfg, {}) : null, acomp: ac, sin: sn, meus: mu, contas: co, layout: la, relatorio: re };
   } catch (e) { return null; }
 }
 let cfg = cfgLimpa(store.get('gos_cfg', {}), { cliente: '', area: '', logo: '', meta: 90, prazoH: 24, sinonimos: '' });
@@ -567,7 +568,7 @@ function agrupa(lista, fn) { const m = new Map(); lista.forEach(r => { const k =
 function render() {
   const cs = Object.keys(conjs).filter(c => doConj(c).length);
   $('#semDados').hidden = cs.length > 0; $('#comDados').hidden = !cs.length;
-  if (!cs.length) return;
+  if (!cs.length) { if (relAberto) abas('painel'); return; }
   if (!conjs[F.conjunto]) F.conjunto = cs[0];
   const c = F.conjunto, camposC = conjs[c].campos;
   fillSel($('#fConj'), cs.map(x => [x, x]), c); $('#lConj').hidden = cs.length < 2;
@@ -578,7 +579,7 @@ function render() {
   const vals = F.cat ? [...new Set(base.map(r => r.v[F.cat]).filter(Boolean))].sort() : [];
   fillSel($('#fVal'), [['', '(todos)']].concat(vals.map(x => [x, x])), F.val); F.val = $('#fVal').value;
   $('#fPer').value = F.per; $('#lMes').hidden = F.per !== 'mes'; $('#lDe').hidden = $('#lAte').hidden = F.per !== 'de';
-  const L = filtrar(c), todos = doConj(c);
+  const L = filtrar(c), todos = doConj(c); $('#gerarXlsx').disabled = !L.length;
   const cd = campoData(c), datas = cd ? L.map(r => r.v[cd]).filter(Boolean).sort() : [];
   $('#kTotal b').textContent = L.length; $('#kTotal span').textContent = 'Total de registros' + (L.length !== todos.length ? ' (de ' + todos.length + ' guardados)' : '');
   $('#kAnt b').textContent = datas.length ? fmtData(datas[0]) : '—'; $('#kNov b').textContent = datas.length ? fmtData(datas[datas.length - 1]) : '—';
@@ -610,6 +611,7 @@ function render() {
   $('#tabReg').textContent = ''; $('#tabReg').append(tabela(campos, vis.slice(0, mostrar)));
   $('#maisReg').hidden = vis.length <= mostrar; $('#infoReg').textContent = 'Mostrando ' + Math.min(mostrar, vis.length) + ' de ' + vis.length;
   $('#maisReg').onclick = () => { mostrar += 100; render(); };
+  if (relAberto) renderRel();
 }
 function parTempo(ds) { if (!ds.some(x => x.n === F.tA)) F.tA = ds[0].n; if (!ds.some(x => x.n === F.tB) || F.tB === F.tA) F.tB = (ds.find(x => x.n !== F.tA) || ds[1]).n; return [F.tA, F.tB]; }
 const paresTempo = (L, A, B) => { const itens = []; L.forEach(r => { const a = Core.msISO(r.v[A]), b = Core.msISO(r.v[B]); if (a != null && b != null && b >= a) itens.push([r, b - a]); }); return itens; };
@@ -1287,13 +1289,7 @@ function nomeAba(wb, n) {   // M-1 (etapa 4): o ExcelJS recusa nome repetido sem
   while (usado(x)) x = Array.from(b).slice(0, 26).join('') + ' ' + i++; return x; }
 const agoraTxt = () => { const d = new Date(); return z2(d.getDate()) + '/' + z2(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + z2(d.getHours()) + ':' + z2(d.getMinutes()); };
 // R-87: cada ponta vem do filtro quando ele a define; senão, da menor/maior data dos registros filtrados
-function periodoCapa(datas) {
-  let ini = '', fim = '';
-  if (F.per === 'mes' && /^\d{4}-\d{2}$/.test(F.mes || '')) { ini = F.mes + '-01'; fim = F.mes + '-' + z2(new Date(+F.mes.slice(0, 4), +F.mes.slice(5, 7), 0).getDate()); }
-  else if (F.per === 'de') { ini = F.de || ''; fim = F.ate || ''; }
-  const ds = datas.map(x => x.slice(0, 10)).sort(); if (!ini && ds.length) ini = ds[0]; if (!fim && ds.length) fim = ds[ds.length - 1];
-  return ini && fim ? 'Registros de ' + fmtD(ini) + ' a ' + fmtD(fim) : 'sem datas';
-}
+function periodoCapa(datas) { const pts = periodoPts(datas); return pts ? 'Registros de ' + fmtD(pts[0]) + ' a ' + fmtD(pts[1]) : 'sem datas'; }
 function capa(wb, nomeRel, grupos) {
   const ws = wb.addWorksheet('Capa', { views: [{ showGridLines: false }] }); ws.columns = [{ width: 26 }, { width: 44 }, { width: 22 }];
   const tot = grupos.reduce((s, g) => s + g.lista.length, 0), datas = [];
@@ -1437,6 +1433,253 @@ async function gerarExcel() {
   } catch (e) { msg.textContent = 'Não consegui gerar o Excel: ' + e.message; }
 }
 
+/* ---------- tela Relatório (seção 9c, etapa E1): monta sozinha o que importa; a pessoa só ajusta ---------- */
+const REL_LIM = { titulo: 80, resumo: 1000, obs: 500, partes: 50 };
+// guarda por relatório (R-158, 9c.6): formato errado = null (o backup rejeita o arquivo inteiro); textos cortados nos limites
+function relatoriosLimpo(o) {
+  if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+  const ks = Object.keys(o); if (ks.length > 200) return null; const r = nulo();
+  for (const c of ks) {
+    const x = o[c];
+    if (!x || typeof x !== 'object' || Array.isArray(x) || typeof x.titulo !== 'string' || !Array.isArray(x.partes) || x.partes.length > REL_LIM.partes || (x.resumo != null && typeof x.resumo !== 'string')) return null;
+    const ids = new Set(), partes = [];
+    for (const p of x.partes) {
+      if (!p || typeof p !== 'object' || typeof p.id !== 'string' || !p.id || p.id.length > 200 || ids.has(p.id) || typeof p.titulo !== 'string' || typeof p.obs !== 'string' || typeof p.oculto !== 'boolean' || (p.forma != null && typeof p.forma !== 'string')) return null;
+      ids.add(p.id); const q = { id: p.id, titulo: p.titulo.slice(0, REL_LIM.titulo), obs: p.obs.slice(0, REL_LIM.obs), oculto: p.oculto, forma: (p.forma || '').slice(0, 20) };
+      if (typeof p.n === 'number' && isFinite(p.n)) q.n = p.n; partes.push(q);
+    }
+    const g = { titulo: x.titulo.slice(0, REL_LIM.titulo), resumo: x.resumo == null ? null : x.resumo.slice(0, REL_LIM.resumo), partes };
+    if (typeof x.resumoN === 'number' && isFinite(x.resumoN)) g.resumoN = x.resumoN;
+    r[c] = g;
+  }
+  return r;
+}
+let relG = relatoriosLimpo(store.get('raiox_relatorio', {})) || nulo();   // relatório -> { titulo, resumo, partes: [{ id, titulo, obs, oculto, forma }] } (+ resumoN e n: nº de registros na hora da edição, para o aviso R-163)
+const salvaRel = () => store.set('raiox_relatorio', relG);
+let relAberto = false, relEd = false;
+const relVazio = () => ({ titulo: '', obs: '', oculto: false, forma: '' });
+const relCfg = (c, id) => { const g = relG[c]; return (g && g.partes.find(p => p.id === id)) || relVazio(); };
+// ordem: a guardada; parte nova entra no fim, antes de "Registros"; parte que deixou de existir é ignorada
+function relOrdem(c, defs) {
+  const g = relG[c]; if (!g) return defs;
+  const m = new Map(defs.map(d => [d.id, d])), out = [];
+  g.partes.forEach(p => { const d = m.get(p.id); if (d && out.indexOf(d) < 0) out.push(d); });
+  const novos = defs.filter(d => out.indexOf(d) < 0); let ix = out.findIndex(d => d.id === 'reg'); if (ix < 0) ix = out.length; out.splice(ix, 0, ...novos); return out;
+}
+function relMat(c, defs) {   // garante o registro guardado do relatório, com todas as partes atuais na ordem da tela
+  let g = relG[c]; if (!g) g = relG[c] = { titulo: '', resumo: null, partes: [] };
+  const ord = relOrdem(c, defs).map(d => g.partes.find(p => p.id === d.id) || Object.assign({ id: d.id }, relVazio()));
+  g.partes = ord.concat(g.partes.filter(p => !defs.some(d => d.id === p.id))).slice(0, REL_LIM.partes); return g;
+}
+const msAny = s => { const a = Core.msISO(s); if (a != null) return a; const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s || ''); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : null; };
+const pTxt = p => p.toFixed(1).replace('.', ',');
+function periodoPts(datas) {
+  let ini = '', fim = '';
+  if (F.per === 'mes' && /^\d{4}-\d{2}$/.test(F.mes || '')) { ini = F.mes + '-01'; fim = F.mes + '-' + z2(new Date(+F.mes.slice(0, 4), +F.mes.slice(5, 7), 0).getDate()); }
+  else if (F.per === 'de') { ini = F.de || ''; fim = F.ate || ''; }
+  const ds = datas.map(x => x.slice(0, 10)).sort(); if (!ini && ds.length) ini = ds[0]; if (!fim && ds.length) fim = ds[ds.length - 1];
+  return ini && fim ? [ini, fim] : null;
+}
+// período atual e anterior (R-169): listas já com os filtros de categoria e busca, sem o filtro de período
+function relBase(c) {
+  const cd = campoData(c); if (!cd) return null;
+  const per = F.per; let base; F.per = 'tudo'; try { base = filtrar(c); } finally { F.per = per; }
+  let ult = ''; if (per === 'tudo') base.forEach(r => { const m = (r.v[cd] || '').slice(0, 7); if (m > ult) ult = m; });
+  const pp = Core.periodoAnterior(per, F.mes, F.de, F.ate, ult); if (!pp) return null;
+  const faixa = x => base.filter(r => { const d = (r.v[cd] || '').slice(0, 10); return d && d >= x.ini && d <= x.fim; });
+  return { rotA: pp.atual.rot, rotP: pp.ant.rot, A: faixa(pp.atual), P: faixa(pp.ant) };
+}
+function textoComp(cp, rot) { return cp.tipo === 'up' ? '↑ ' + pTxt(cp.p) + '% em relação a ' + rot : cp.tipo === 'down' ? '↓ ' + pTxt(cp.p) + '% em relação a ' + rot : cp.tipo === 'eq' ? '= igual a ' + rot : 'sem base para comparar'; }
+const tabelaTxt = (cols, linhas) => el('div', { class: 'tw' }, el('table', null, el('thead', null, el('tr', null, cols.map(x => el('th', { text: x })))), el('tbody', null, linhas.map(l => el('tr', null, l.map(x => el('td', null, x && x.nodeType ? x : String(x))))))));
+const tiraH3 = card => { const h = card.querySelector('h3'); if (h) h.remove(); return card; };
+
+// todas as partes que o relatório tem hoje (ordem padrão da 9c.3); cada uma: { id, tit, frase, desenha(ctx) }
+function relDefs(c, L) {
+  const ds = camposDe(c, 'data'), ss = camposDe(c, 'situacao'), ns = camposDe(c, 'numero'), gs = (conjs[c].campos || []).filter(k => k.t === 'categoria'), cd = campoData(c), sit = ss[0] && ss[0].n;
+  const h0 = new Date(), hoje0 = new Date(h0.getFullYear(), h0.getMonth(), h0.getDate()).getTime(), agora = Date.now(), abre = (t, l) => abrirJanela(t, l, c);
+  const abertos = sit ? L.filter(r => emAberto(r, sit)) : [];
+  const abData = cd && sit ? abertos.filter(r => r.v[cd]).map(r => ({ r, d: Core.idadeDias(r.v[cd], hoje0) })).filter(x => x.d != null) : [];
+  const atras = abData.filter(x => { const m = msAny(x.r.v[cd]); return m != null && agora - m > cfg.prazoH * 3600000; }).map(x => x.r);
+  const gOrd = gs.filter(k => new Set(L.map(r => r.v[k.n]).filter(Boolean)).size >= 2).slice(0, 3), nOk = ns.filter(k => numeros(L, k.n).length >= 1).slice(0, 3), n1 = ns[0];
+  const achados = relAchados(c, L);
+  let _base; const base = () => _base === undefined ? (_base = relBase(c)) : _base;
+  const concDe = g => {
+    const m = agrupa(L, r => r.v[g.n]), medida = n1 ? 'Soma de ' + n1.n : 'Registros';
+    const val = l => n1 ? numeros(l, n1.n).reduce((a, x) => a + x, 0) : l.length;
+    const cc = Core.concentracao([...m].map(([k, l]) => [k, val(l)])); if (!cc) return null;
+    const top = new Set(cc.linhas.map(x => x.nome)), listas = new Map([...m].filter(([k]) => top.has(k)));
+    const resto = [...m].filter(([k]) => !top.has(k)).flatMap(x => x[1]);
+    const fv = n1 ? fmtN : fmtI, itens = cc.linhas.map(x => [x.nome, x.valor, x.nome === 'Outros' && !listas.has('Outros') ? resto : listas.get(x.nome) || [], fv(x.valor)]);
+    return { cc, medida, itens, fv, abrir: (n, l) => abre(g.n + ': ' + n, l), frases: ['Os ' + cc.nTop + ' primeiros de ' + g.n + ' fazem ' + fmtP(cc.pctTop) + ' do total.'].concat(cc.n >= 4 ? ['Para chegar a 80% do total são ' + cc.k80 + ' de ' + cc.n + '.'] : []) };
+  };
+  const distDe = k => { const v = numeros(L, k.n), e = Core.estat(v); return e && { e, v }; };
+  const defs = [];
+  const frasesResumo = () => {
+    const f = [], N = L.length, pts = cd ? periodoPts(L.map(r => r.v[cd]).filter(Boolean)) : null;
+    f.push('O relatório tem ' + fmtI(N) + ' registros' + (pts ? ' de ' + fmtD(pts[0]) + ' a ' + fmtD(pts[1]) : '') + '.');
+    if (cd && sit && N) {
+      if (!abertos.length) f.push('Nenhum registro está em aberto.');
+      else f.push(fmtI(abertos.length) + ' estão em aberto (' + fmtP(100 * abertos.length / N) + ' do total)' + (abData.length ? '; ' + fmtI(atras.length) + ' estão atrasados e o mais antigo espera há ' + Math.max(...abData.map(x => x.d)) + ' dias' : '') + '.');
+    }
+    const B = base();
+    if (B) { const cp = Core.compara(B.A.length, B.P.length); if (cp.tipo !== 'sem') f.push('Em ' + B.rotA + ' entraram ' + fmtI(B.A.length) + ' registros, ' + (cp.tipo === 'eq' ? 'o mesmo número que' : pTxt(cp.p) + '% a ' + (cp.tipo === 'up' ? 'mais' : 'menos') + ' que') + ' em ' + B.rotP + '.'); }
+    if (achados.length) f.push('Atenção: ' + achados[0].frase);
+    if (gOrd.length) { const x = concDe(gOrd[0]); if (x) f.push(x.frases[0]); }
+    if (nOk.length) { const x = distDe(nOk[0]); if (x) f.push('Metade dos registros ficou abaixo de ' + fmtN(x.e.mediana) + ' em ' + nOk[0].n + '; a média é ' + fmtN(x.e.media) + '.'); }
+    return f.slice(0, 5);
+  };
+  const avisoEd = (txt, n) => txt && n !== doConj(c).length ? el('p', { class: 'relAlerta', text: 'Texto editado por você: confira se os números ainda valem.' }) : null;
+  defs.push({ id: 'resumo', tit: 'Resumo executivo', frase: 'As frases principais, para ler em 1 minuto.', desenha: ctx => {
+    const g = relG[c], proprio = !!(g && g.resumo != null && g.resumo.trim()), linhas = proprio ? g.resumo.split('\n').map(x => x.trim()).filter(Boolean) : frasesResumo(), out = [];
+    if (ctx.ed) {
+      const ta = el('textarea', { maxlength: REL_LIM.resumo, spellcheck: 'false' }); ta.value = proprio ? g.resumo : linhas.join('\n');
+      ta.oninput = () => ctx.mut(G => { G.resumo = ta.value.slice(0, REL_LIM.resumo); G.resumoN = doConj(c).length; }, false);
+      out.push(el('label', { class: 'f' }, 'Texto do resumo executivo', ta));
+    }
+    out.push(el('ol', null, linhas.map(x => el('li', { text: x })))); if (proprio) { const a = avisoEd(true, g.resumoN); if (a) out.push(a); }
+    return out;
+  } });
+  defs.push({ id: 'numeros', tit: 'Números principais', frase: 'Os números do período e a comparação com o período anterior.', desenha: () => {
+    const B = base(), cards = [], N = L.length;
+    const kpi = (rot, val, o) => { o = o || {}; const b = el('b', { text: val }); if (o.fora) { b.setAttribute('data-fora-meta', 'true'); b.className = 'ruim'; } else if (o.bom) b.className = 'good';
+      return el('button', { class: 'kpi', type: 'button', onclick: () => abre(o.titulo || rot, o.lista || L) }, el('span', { text: rot }), b, ...(o.sub || []).filter(Boolean).map(t => el('small', { text: t }))); };
+    const comp = fn => !B ? 'sem base para comparar' : textoComp(Core.compara(fn(B.A), fn(B.P)), B.rotA === B.rotP ? B.rotP : B.rotP);
+    const metaOpts = pct => { const m = Core.meta(pct, cfg.meta); return { fora: !!m.txt && !m.ok, bom: m.ok, txt: m.txt }; };
+    cards.push(kpi('Total de registros', fmtI(N), { titulo: 'Todos os registros', sub: [comp(x => x.length)] }));
+    if (sit && N) {
+      cards.push(kpi('Em aberto', fmtI(abertos.length), { lista: abertos, sub: [fmtP(100 * abertos.length / N) + ' do total', comp(x => x.filter(r => emAberto(r, sit)).length)] }));
+      const conc = L.filter(r => !emAberto(r, sit)), pc = 100 * conc.length / N, mo = metaOpts(pc);
+      cards.push(kpi('Concluídos', fmtP(pc), { lista: conc, fora: mo.fora, bom: mo.bom, sub: [mo.txt] }));
+    }
+    if (cd && sit) cards.push(kpi('Atrasados', fmtI(atras.length), { lista: atras, titulo: 'Atrasados', sub: [fmtI(atras.length) + ' atrasados (mais de ' + Core.fmtPrazo(cfg.prazoH) + ' em aberto)'] }));
+    if (ds.length >= 2) { parTempo(ds); const it = paresTempo(L, F.tA, F.tB), pct = Core.pctDentro(it.map(x => x[1]), cfg.prazoH * 3600000); if (pct != null) { const mo = metaOpts(pct); cards.push(kpi('Dentro de ' + Core.fmtPrazo(cfg.prazoH), fmtP(pct), { lista: it.map(x => x[0]), fora: mo.fora, bom: mo.bom, sub: [mo.txt] })); } }
+    nOk.forEach(k => {
+      const v = numeros(L, k.n), com = L.filter(r => Core.numero(r.v[k.n]) != null), soma = fx => numeros(fx, k.n).length ? numeros(fx, k.n).reduce((a, x) => a + x, 0) : null, med = fx => Core.mediana(numeros(fx, k.n));
+      cards.push(kpi('Soma de ' + k.n, fmtN(v.reduce((a, x) => a + x, 0)), { lista: com, titulo: k.n, sub: [comp(soma)] }));
+      cards.push(kpi('Mediana de ' + k.n, fmtN(Core.mediana(v)), { lista: com, titulo: k.n, sub: [comp(med)] }));
+    });
+    return el('div', { class: 'relNums' }, cards);
+  } });
+  defs.push({ id: 'achados', tit: 'O que o Raio X encontrou', frase: 'O que foge do comum e merece atenção.', desenha: () => {
+    if (!achados.length) return el('p', { text: 'O Raio X não encontrou nada fora do comum nestes registros.' });
+    return el('div', null, achados.slice(0, 5).map(a => el('div', { class: 'achado' }, el('b', { text: a.titulo }), el('p', { text: a.frase }), el('p', { class: 'muted', text: 'Por que apareceu: ' + a.porque }), el('button', { type: 'button', text: 'Ver os registros', onclick: () => abre(a.titulo, a.lista || []) }))));
+  } });
+  if (abData.length) {
+    defs.push({ id: 'pend', tit: 'Pendências por idade', frase: 'Há quanto tempo os registros em aberto esperam.', desenha: () => {
+      const fx = Core.FAIXAS_IDADE.map(n => [n, 0, []]); abData.forEach(x => { const f = Core.faixaIdade(x.d); if (f >= 0) { fx[f][1]++; fx[f][2].push(x.r); } });
+      return [barras(fx, (k, l) => abre(k, l)), el('p', { class: 'muted', text: 'Idade contada até ' + fmtD(hojeISO()) + '.' })];
+    } });
+    defs.push({ id: 'antigos', tit: 'Os 10 mais antigos em aberto', frase: 'Há quanto tempo os registros em aberto esperam.', desenha: () => {
+      const cod = camposDe(c, 'codigo')[0], top = abData.filter(x => x.d >= 0).sort((a, b) => a.r.v[cd] < b.r.v[cd] ? -1 : a.r.v[cd] > b.r.v[cd] ? 1 : (a.r.codigo < b.r.codigo ? -1 : 1)).slice(0, 10);
+      return tabelaTxt(['Código', cd, 'Dias em aberto', sit], top.map(x => [el('button', { type: 'button', text: x.r.codigo, 'aria-label': 'Registro ' + x.r.codigo, onclick: () => abre(x.r.codigo, [x.r]) }), fmtData(x.r.v[cd]), String(x.d), x.r.v[sit] || '']));
+    } });
+  }
+  if (cd) {
+    const p = ds.length >= 2 ? parTempo(ds) : null, saida = p ? (p[1] !== cd ? p[1] : p[0]) : null, duas = !!saida && saida !== cd;
+    defs.push({ id: 'entrou', tit: duas ? 'Entrou e saiu por mês' : 'Entrou por mês (' + cd + ')', frase: 'Quantos entraram' + (duas ? ' (e saíram)' : '') + ' em cada mês.', forma: true,
+      formas: duas ? ['barras', 'linha', 'tabela'] : ['barras', 'linha', 'pizza', 'tabela'], desenha: ctx => {
+        const mE = agrupa(L, r => (r.v[cd] || '').slice(0, 7)), mS = duas ? agrupa(L, r => (r.v[saida] || '').slice(0, 7)) : new Map(), meses = [...new Set([...mE.keys(), ...mS.keys()])].sort();
+        const lin = meses.map(m => ({ m, e: mE.has(m) ? mE.get(m) : [], s: mS.has(m) ? mS.get(m) : [] }));
+        const tab = tabelaTxt(duas ? ['Mês', 'Entrou', 'Saiu', 'Saldo'] : ['Mês', 'Entrou'], lin.map(x => duas ? [fmtM(x.m), fmtI(x.e.length), fmtI(x.s.length), fmtI(x.e.length - x.s.length)] : [fmtM(x.m), fmtI(x.e.length)]));
+        const forma = ctx.forma;
+        if (!duas) { const b = { id: 'mes\u0001' + cd, nome: '', graf: () => ({ itens: lin.map(x => [fmtM(x.m), x.e.length, x.e]), abrir: (m, l) => abre('Mês ' + m, l) }), desenha: () => cartao({ regs: L, nome: '' }, barras(lin.map(x => [fmtM(x.m), x.e.length, x.e]), (m, l) => abre('Mês ' + m, l))) };
+          return [forma === 'tabela' ? null : tiraH3(desenhaItem(b, { forma }, L, c)), tab]; }
+        if (forma === 'tabela') return tab;
+        const mx = Math.max(1, ...lin.map(x => Math.max(x.e.length, x.s.length)));
+        if (forma === 'linha') {
+          const W = 300, H = 100, P = 8, n = lin.length, X = i => n === 1 ? W / 2 : P + i * (W - 2 * P) / (n - 1), Y = v => H - P - (H - 2 * P) * v / mx, svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': 'Linha: Entrou e saiu por mês' });
+          [['e', '#2563eb'], ['s', '#f59e0b']].forEach(([k, cor]) => { svg.append(sv('polyline', { points: lin.map((x, i) => X(i) + ',' + Y(x[k].length)).join(' '), fill: 'none', stroke: cor, 'stroke-width': 2 })); lin.forEach((x, i) => { const pt = sv('circle', { cx: X(i), cy: Y(x[k].length), r: 4, fill: cor }, sv('title', {}, document.createTextNode(fmtM(x.m) + ' ' + (k === 'e' ? 'Entrou' : 'Saiu') + ': ' + x[k].length))); pt.style.cursor = 'pointer'; pt.onclick = () => abre('Mês ' + fmtM(x.m) + (k === 'e' ? ' (Entrou)' : ' (Saiu)'), x[k]); svg.append(pt); }); });
+          return [el('div', { class: 'linha' }, svg, el('p', { class: 'muted', text: 'Azul: Entrou · Laranja: Saiu' })), tab];
+        }
+        return [el('div', { class: 'relGraf2' }, lin.map(x => el('div', { class: 'lin' }, el('span', { text: fmtM(x.m) }), el('div', null,
+          el('button', { class: 'a bar', type: 'button', 'aria-label': fmtM(x.m) + ' Entrou: ' + x.e.length, onclick: () => abre('Mês ' + fmtM(x.m) + ' (Entrou)', x.e) }, el('i', { style: 'width:' + Math.max(2, 100 * x.e.length / mx) + '%' }), el('b', { text: x.e.length })),
+          el('button', { class: 'b bar', type: 'button', 'aria-label': fmtM(x.m) + ' Saiu: ' + x.s.length, onclick: () => abre('Mês ' + fmtM(x.m) + ' (Saiu)', x.s) }, el('i', { style: 'width:' + Math.max(2, 100 * x.s.length / mx) + '%' }), el('b', { text: x.s.length })))))), tab];
+      } });
+  }
+  nOk.forEach(k => defs.push({ id: 'dist:' + k.n, tit: k.n + ': como os valores se distribuem', frase: 'Média, mediana, menores e maiores de ' + k.n + '.', desenha: () => {
+    const { e } = distDe(k), com = L.filter(r => Core.numero(r.v[k.n]) != null), g1 = gs[0], it = com.map(r => ({ codigo: r.codigo, valor: Core.numero(r.v[k.n]), grupo: g1 ? r.v[g1.n] || '' : '' }));
+    const quad = (rot, v) => el('button', { class: 'kpi', type: 'button', onclick: () => abre(k.n, com) }, el('span', { text: rot }), el('b', { text: fmtN(v) }));
+    const tab = (tit, maiores) => [el('h4', { text: tit }), tabelaTxt(['Código'].concat(g1 ? [g1.n] : [], [k.n]), Core.extremos(it, 5, maiores).map(x => [x.codigo].concat(g1 ? [x.grupo] : [], [fmtN(x.valor)])))];
+    return [el('div', { class: 'relNums' }, quad('Média', e.media), quad('Mediana', e.mediana), quad('Mínimo', e.min), quad('Máximo', e.max)), el('p', { text: Core.fraseDist(e, fmtN).join(' ') }), ...tab('5 maiores', true), ...tab('5 menores', false)];
+  } }));
+  gOrd.forEach(g => { const x0 = concDe(g); if (!x0) return;
+    defs.push({ id: 'conc:' + g.n, tit: g.n + ': quem concentra', frase: 'Quem responde pela maior parte do total.', forma: true, formas: ['barras', 'pizza', 'tabela'], desenha: ctx => {
+      const x = concDe(g), b = { id: 'cat\u0001' + g.n, nome: '', graf: () => ({ itens: x.itens, abrir: x.abrir }), desenha: () => cartao({ regs: L, nome: '' }, barras(x.itens, x.abrir)) };
+      return [ctx.forma === 'tabela' ? null : tiraH3(desenhaItem(b, { forma: ctx.forma }, L, c)), tabelaTxt([g.n, x.medida, '% do total', '% acumulado'], x.cc.linhas.map(l => [l.nome, x.fv(l.valor), fmtP(l.pct), fmtP(l.acum)])), el('p', { text: x.frases.join(' ') })];
+    } }); });
+  if (ds.length >= 2) defs.push({ id: 'tempo', tit: 'Tempo entre duas datas', frase: 'Quanto tempo passa entre ' + parTempo(ds)[0] + ' e ' + parTempo(ds)[1] + '.', desenha: () => tiraH3(cartaoTempo(L, c, ds, 'Tempo entre duas datas')) });
+  if (blocosEscolhidos(c).length) defs.push({ id: 'painel', tit: 'Do seu painel', frase: 'Os indicadores que você escolheu no painel.', desenha: () => {
+    const out = [], esc = blocosEscolhidos(c);
+    if (layouts[c]) { const lay = layGet(c), bs = blocosLay(c, lay); lay.abas.forEach(a => bs.filter(x => x.i.aba === a.id && !x.i.oculto).forEach(x => out.push(desenhaItem(x.b, x.i, L, c)))); } else esc.forEach(b => out.push(b.desenha(L, c)));
+    blocosMeus(c).forEach(b => out.push(b.desenha(L, c))); return el('div', { class: 'grid2' }, out);
+  } });
+  defs.push({ id: 'reg', tit: 'Registros', frase: 'A lista dos registros considerados.', desenha: () => {
+    const vis = L.slice().sort((a, b) => cd ? (b.v[cd] || '').localeCompare(a.v[cd] || '') : a.codigo.localeCompare(b.codigo, 'pt', { numeric: true }));
+    return [el('div', { class: 'tw' }, tabela(conjs[c].campos, vis.slice(0, 100))), el('p', { class: 'muted', text: L.length > 100 ? 'Mostrando 100 de ' + fmtI(L.length) + ' registros. No Excel vão todos.' : 'Mostrando os ' + fmtI(L.length) + ' registros.' })];
+  } });
+  return defs;
+}
+// "O que o Raio X encontrou": as regras entram na etapa E2 (9c.7); aqui a lista fica vazia e a tela já mostra a frase de vazio
+function relAchados(c, L) { return []; }
+
+function renderRel() {
+  const c = F.conjunto, corpo = $('#relCorpo'); corpo.textContent = ''; if (!c || !conjs[c]) return;
+  const L = filtrar(c), defs = relDefs(c, L), ordem = relOrdem(c, defs), g0 = relG[c] || null, ed = relEd;
+  const mut = (fn, rerender) => { const G = relMat(c, defs); fn(G); salvaRel(); if (rerender !== false) renderRel(); };
+  $('#relEditar').textContent = ed ? 'Concluir edição' : 'Editar relatório'; $('#relPadrao').hidden = !ed;
+  // capa (R-142)
+  const cd = campoData(c), datas = cd ? L.map(r => r.v[cd]).filter(Boolean).sort() : [], tituloOrig = 'Relatório ' + c, tituloRel = (g0 && g0.titulo) || tituloOrig;
+  const capa = el('section', { class: 'relCapa', 'aria-label': 'Capa' }, ORG() ? el('p', { class: 'pq', text: ORG() }) : null, el('h2', { text: tituloRel }),
+    el('p', { text: periodoCapa(datas) }), el('p', { text: 'Filtros: ' + filtrosResumo() }), el('p', { text: 'Gerado em: ' + agoraTxt() }), el('p', { text: 'Fonte: ' + c + ' (' + fmtI(L.length) + ' registros)' }),
+    cfg.logo ? el('img', { src: cfg.logo, alt: 'Logo' }) : null);
+  if (ed) { const inp = el('input', { type: 'text', maxlength: REL_LIM.titulo }); inp.value = g0 ? g0.titulo : ''; inp.placeholder = tituloOrig; inp.oninput = () => mut(G => { G.titulo = inp.value.slice(0, REL_LIM.titulo); }, false); capa.append(el('label', { class: 'f' }, 'Título do relatório', inp)); }
+  corpo.append(capa);
+  const vis = ordem.filter(d => ed || !relCfg(c, d.id).oculto), tit = d => relCfg(c, d.id).titulo || d.tit, ids = new Map(vis.map((d, i) => [d.id, 'rel-p' + (i + 1)]));
+  const naLista = ordem.filter(d => !relCfg(c, d.id).oculto);
+  const idx = el('section', { class: 'relParte relIdx', 'aria-label': 'O que tem neste relatório' }, el('h3', { text: 'O que tem neste relatório' }),
+    el('ul', null, naLista.map(d => el('li', null, el('a', { href: '#' + (ids.get(d.id) || 'rel-como'), text: tit(d) }), ' ', el('span', { class: 'muted', text: d.frase })))));
+  idx.prepend(botaoInfo('O que tem neste relatório', { oque: 'A lista das partes deste relatório, com um atalho para cada uma.', como: 'Toque no nome da parte para ir até ela.', ex: '' })); corpo.append(idx);
+  vis.forEach((d, i) => {
+    const cf = relCfg(c, d.id), pos = ordem.indexOf(d), forma = d.forma ? (d.formas.indexOf(cf.forma) >= 0 ? cf.forma : 'barras') : '';
+    const sec = el('section', { class: 'relParte', id: ids.get(d.id) }); if (cf.oculto) sec.setAttribute('data-escondido', 'true');
+    sec.append(el('h3', { text: tit(d) }), botaoInfo('Relatório: ' + d.tit, { oque: d.frase.replace(/\.$/, '') + '.', como: 'Toque num número, barra ou linha para ver os registros por trás dele.', ex: '' }));
+    if (cf.obs) { sec.append(el('p', { class: 'obs', text: 'Observação: ' + cf.obs })); const a = avisoRel(cf.obs, cf.n); if (a) sec.append(a); }
+    if (ed) {
+      const ti = el('input', { type: 'text', maxlength: REL_LIM.titulo }), ob = el('textarea', { maxlength: REL_LIM.obs }); ti.value = cf.titulo; ti.placeholder = d.tit; ob.value = cf.obs;
+      const bt = (t, fn, dis) => el('button', Object.assign({ type: 'button', text: t, onclick: fn }, dis ? { disabled: '' } : {}));
+      const troca = dir => mut(G => { const a = G.partes.findIndex(p => p.id === d.id); let j = a + dir; while (j >= 0 && j < G.partes.length && !defs.some(x => x.id === G.partes[j].id)) j += dir; if (j >= 0 && j < G.partes.length) { const t = G.partes[a]; G.partes[a] = G.partes[j]; G.partes[j] = t; } });
+      const sel = d.forma ? el('select', { 'aria-label': 'Forma' }, d.formas.map(f => el('option', { value: f, text: FORMA_NOME[f] }))) : null; if (sel) { sel.value = forma; sel.onchange = () => mut(G => { relPartDe(G, d.id).forma = sel.value === 'barras' ? '' : sel.value; }); }
+      ti.oninput = () => mut(G => { relPartDe(G, d.id).titulo = ti.value.slice(0, REL_LIM.titulo); }, false);
+      ob.oninput = () => mut(G => { const p = relPartDe(G, d.id); p.obs = ob.value.slice(0, REL_LIM.obs); p.n = doConj(c).length; }, false);
+      sec.append(el('div', { class: 'relCtl', role: 'group', 'aria-label': 'Controles de ' + d.tit }, bt('Subir', () => troca(-1), pos === 0), bt('Descer', () => troca(1), pos === ordem.length - 1),
+        bt(cf.oculto ? 'Mostrar' : 'Esconder', () => mut(G => { const p = relPartDe(G, d.id); p.oculto = !p.oculto; })),
+        el('label', { class: 'f' }, 'Título', ti), el('label', { class: 'f' }, 'Observação', ob), sel ? el('label', { class: 'f' }, 'Forma', sel) : null));
+    }
+    const nos = d.desenha({ ed, forma, mut }); [].concat(nos).forEach(n => { if (n) sec.append(n); });
+    corpo.append(sec);
+  });
+  // "Como ler este relatório" (R-156): sempre a última, uma linha por parte visível
+  const fl = filtrosResumo(), per = datas.length ? 'de ' + fmtD(datas[0]) + ' a ' + fmtD(datas[datas.length - 1]) : 'sem datas';
+  corpo.append(el('section', { class: 'relParte', id: 'rel-como', 'aria-label': 'Como ler este relatório' }, el('h3', { text: 'Como ler este relatório' }),
+    botaoInfo('Como ler este relatório', { oque: 'Diz, parte por parte, de onde vem cada número deste relatório.', como: 'Leia a lista.', ex: '' }),
+    el('ul', null, naLista.map(d => el('li', { text: tit(d) + ' — ' + d.frase.replace(/\.$/, '') + '. Período: ' + per + '. ' + cap(fl === 'sem filtros' ? 'Sem filtros' : 'Filtros: ' + fl) + '.' })))));
+}
+const relPartDe = (G, id) => G.partes.find(p => p.id === id);
+const avisoRel = (txt, n) => txt && n !== doConj(F.conjunto).length ? el('p', { class: 'relAlerta', text: 'Texto editado por você: confira se os números ainda valem.' }) : null;
+function abrirRel() {
+  if (!F.conjunto || !conjs[F.conjunto]) return;
+  abas('painel'); relAberto = true; relEd = false; $('#painel').hidden = true; $('#relatorio').hidden = false; renderRel(); window.scrollTo(0, 0);
+}
+function iniciaRel() {
+  $('#gerarXlsx').onclick = abrirRel;
+  $('#relVoltar').onclick = () => abas('painel');
+  $('#relEditar').onclick = () => { relEd = !relEd; renderRel(); };
+  $('#relPadrao').onclick = async () => { const r = await perguntar('Voltar ao padrão do relatório?', 'O título, o resumo, as observações, a ordem e as partes escondidas voltam ao padrão.', [{ t: 'Voltar ao padrão', v: true, prim: true }, { t: 'Cancelar', v: null }]); if (!r) return; delete relG[F.conjunto]; salvaRel(); renderRel(); };
+  $('#relExportar').onclick = () => { $('#xMsg').textContent = ''; $('#dlgExp').showModal(); };
+  $('#expCancela').onclick = () => $('#dlgExp').close();
+  $('#expOk').onclick = () => { gerarExcel(); };
+}
+
 /* ---------- Config ---------- */
 const PASSOS = ['Baixe o arquivo RaioX_Relatorio.bas (botão “Baixar versão Excel para o PC”).', 'Abra o Excel (2016 ou mais novo), crie uma pasta de trabalho nova e salve como “Pasta de Trabalho Habilitada para Macro (.xlsm)”.', 'Aperte Alt+F11, vá em Arquivo → Importar arquivo e escolha o RaioX_Relatorio.bas.', 'Volte ao Excel, aperte Alt+F8, escolha a macro Instalar e clique em Executar (se o Excel avisar sobre macros, escolha “Habilitar conteúdo”).'];
 function topo() {
@@ -1472,7 +1715,7 @@ function iniciaConfig() {
   document.querySelectorAll('[data-baixar-bas]').forEach(a => a.addEventListener('click', () => document.querySelectorAll('.passosBas details').forEach(d => { d.open = true; })));
   $('#contaFormula').oninput = conferirConta; $('#contaFormula').onchange = conferirConta; $('#contaSalvar').onclick = salvarConta;
   $('#sinAdd').onclick = () => { const ap = $('#sinAp').value.trim(), sg = $('#sinSig').value; if (!ap || ap.length > 100 || !sg) { toast('Escreva o apelido e escolha o que ele significa.'); return; } const n = sinMap(); if (!(ap in n) && Object.keys(n).length >= 200) { toast('Limite de 200 sinônimos atingido. Remova algum antes.'); return; } n[ap] = sg; store.set('raiox_sin', n); $('#sinAp').value = ''; renderSin(); };
-  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, contas, layout: layouts, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
+  $('#bkBaixar').onclick = () => baixar(new Blob([JSON.stringify({ app: 'raiox', formato: 1, criado: new Date().toISOString(), cfg, fmts, conjs, acomp, sin: sinMap(), meus, contas, layout: layouts, relatorio: relG, registros: regs })], { type: 'application/json' }), 'historico_RaioX_' + hojeISO() + '.json');
   $('#bkArq').onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (f.size > LIM.backup) { toast('Backup grande demais (' + mb(f.size) + '; o limite é ' + mb(LIM.backup) + '). Nada foi alterado.'); return; }
@@ -1480,8 +1723,8 @@ function iniciaConfig() {
     if (!b) { toast('Esse arquivo não é um backup do Raio X (ou está com a estrutura errada). Nada foi alterado.'); return; }
     const r = await perguntar('Restaurar backup', 'O backup tem ' + b.registros.length + ' registros. Somar aos dados atuais ou substituir tudo?', [{ t: 'Somar', v: 'somar', prim: true }, { t: 'Substituir', v: 'subst' }, { t: 'Cancelar', v: null }]);
     if (!r) return;
-    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); contas = nulo(); layouts = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
-    Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp(); Object.keys(b.layout).forEach(k => { if (!layouts[k]) layouts[k] = b.layout[k]; }); salvaLay();
+    if (r === 'subst') { await IDB.clear(); regs = []; mapa = new Map(); conjs = nulo(); fmts = nulo(); acomp = nulo(); meus = nulo(); contas = nulo(); layouts = nulo(); relG = nulo(); store.set('raiox_sin', {}); if (b.cfg) { cfg = cfgLimpa(b.cfg, cfg); salvaCfg(); } }
+    Object.keys(b.conjs).forEach(k => { conjs[k] = b.conjs[k]; }); Object.keys(b.fmts).forEach(k => { fmts[k] = b.fmts[k]; }); Object.keys(b.acomp).forEach(k => { acomp[k] = b.acomp[k]; }); salvaAcomp(); Object.keys(b.layout).forEach(k => { if (!layouts[k]) layouts[k] = b.layout[k]; }); salvaLay(); Object.keys(b.relatorio).forEach(k => { if (!relG[k]) relG[k] = b.relatorio[k]; }); salvaRel();
     { let cheioM = false; Object.keys(b.meus).forEach(k => { const at = meus[k] || [], ch = at.map(x => JSON.stringify(x)); const l = at.slice(); b.meus[k].forEach(x => { const j = JSON.stringify(x); if (ch.indexOf(j) >= 0) return; if (l.length >= 50) { cheioM = true; return; } l.push(x); ch.push(j); }); meus[k] = l; }); if (cheioM) setTimeout(() => toast('Limite de 50 indicadores: alguns do backup ficaram de fora.'), 0); } salvaMeus(); { let cheioC = false; Object.keys(b.contas).forEach(k => { const at = (contas[k] || []).slice(), ks = new Set(at.map(x => Core.norm(x.nome))); b.contas[k].forEach(x => { const nk = Core.norm(x.nome); if (ks.has(nk)) return; if (at.length < 50) { at.push(x); ks.add(nk); } else cheioC = true; }); contas[k] = at; }); salvaContas(); if (cheioC) setTimeout(() => toast('Limite de 50 contas: algumas do backup ficaram de fora.'), 0); } { const sn = sinMap(); let cheio = false; Object.keys(b.sin).forEach(k => { if (k in sn || Object.keys(sn).length < 200) sn[k] = b.sin[k]; else cheio = true; }); store.set('raiox_sin', sn); if (cheio) setTimeout(() => toast('Limite de 200 sinônimos: alguns do backup ficaram de fora.'), 0); }
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
@@ -1489,7 +1732,7 @@ function iniciaConfig() {
   $('#apagarRecarregar').onclick = () => $('#apagarTudo').click();
   $('#apagarTudo').onclick = async () => {
     const r = await perguntar('Apagar todos os dados', 'Isso apaga os ' + regs.length + ' registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]);
-    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); contas = nulo(); salvaContas(); layouts = nulo(); salvaLay(); modoEd = false; F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
+    if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); contas = nulo(); salvaContas(); layouts = nulo(); salvaLay(); relG = nulo(); salvaRel(); modoEd = false; F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
   };
 }
 function iniciaCfgCampos() { $('#cfgCliente').value = cfg.cliente; $('#cfgArea').value = cfg.area; $('#cfgMeta').value = cfg.meta == null ? '' : cfg.meta; $('#cfgPrazo').value = cfg.prazoH; $('#cfgSin').value = cfg.sinonimos; }
@@ -1509,7 +1752,10 @@ const AJUDAS = [
   ['#fQ', 'Buscar texto', 'Procura uma palavra em qualquer coluna e mostra só os registros que a têm.', 'Escreva a palavra.', 'Zeta.'],
   ['#kpis', 'Total, Mais antigo e Mais novo', 'Resumo do relatório: quantos registros há e as datas do primeiro e do último.', 'Toque num deles para ver os registros: todos, os do dia mais antigo ou os do dia mais novo.', 'Mais antigo: 03/01/2026.'],
   ['#maisReg', 'Mostrar mais', 'Mostra mais 100 registros na lista.', 'Toque no botão.', ''],
-  ['#gerarXlsx', 'Gerar Excel', 'Cria um arquivo de Excel com o que está na tela, pronto para imprimir ou mandar.', '1. Escolha o formato. 2. Toque em Gerar Excel. 3. Abra o arquivo baixado.', 'RaioX_vendas_26-11-2026.xlsx'],
+  ['#gerarXlsx', 'Gerar relatório', 'Monta um relatório pronto para ler, ajustar e exportar, com os mesmos filtros e período do painel.', '1. Ajuste os filtros. 2. Toque em Gerar relatório. 3. Leia, edite se quiser e toque em Exportar arquivo.', 'Capa, resumo, números principais e as partes do seu relatório.'],
+  ['#relVoltar', 'Voltar ao painel', 'Sai do relatório e volta ao painel, do jeito que você deixou.', 'Toque no botão.', ''],
+  ['#relEditar', 'Editar relatório', 'Liga a edição: você muda títulos e textos, escreve observações, esconde partes, muda a ordem e a forma do gráfico. Os números não mudam.', '1. Toque em Editar relatório. 2. Faça os ajustes. 3. Toque em Concluir edição; fica guardado neste aparelho.', 'Esconder uma parte que você não quer mostrar.'],
+  ['#relExportar', 'Exportar arquivo', 'Gera o arquivo do relatório para guardar ou mandar.', '1. Toque em Exportar arquivo. 2. Escolha o formato. 3. Toque em Exportar.', 'RaioX_vendas_27-11-2026.xlsx'],
   ['#cfgLogo', 'Escolher logo', 'Põe a imagem da sua empresa no topo, na impressão e no Excel.', 'Toque em Escolher logo e ache a imagem no aparelho.', ''],
   ['#bkBaixar', 'Baixar backup', 'Salva num arquivo tudo o que o programa guardou neste aparelho.', 'Toque em Baixar backup e guarde o arquivo num lugar seguro.', 'historico_RaioX_26-11-2026.json'],
   ['#apagarTudo', 'Apagar todos os dados', 'Limpa os relatórios guardados neste aparelho. Não tem volta sem um backup.', 'Faça um backup antes; depois toque e confirme.', ''],
@@ -1531,7 +1777,7 @@ function iniciaAjudas() {
   document.querySelectorAll('#config .card > h3').forEach(h => { const d = AJUDAS_CFG[h.textContent.trim()]; if (d && !(h.nextElementSibling && h.nextElementSibling.classList.contains('info'))) h.after(botaoInfo(h.textContent.trim(), { oque: d[0], como: d[1], ex: d[2] })); });
 }
 iniciaAjudas();
-function abas(qual) { $('#painel').hidden = qual !== 'painel'; $('#config').hidden = qual !== 'config'; $('#tPainel').classList.toggle('on', qual === 'painel'); $('#tConfig').classList.toggle('on', qual === 'config'); window.scrollTo(0, 0); }
+function abas(qual) { relAberto = false; relEd = false; $('#relatorio').hidden = true; $('#painel').hidden = qual !== 'painel'; $('#config').hidden = qual !== 'config'; $('#tPainel').classList.toggle('on', qual === 'painel'); $('#tConfig').classList.toggle('on', qual === 'config'); window.scrollTo(0, 0); }
 $('#tPainel').onclick = () => abas('painel'); $('#tConfig').onclick = () => abas('config');
 $('#arquivo').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) carregar(fs); };
 $('#fConj').onchange = e => { $('#pedCard').hidden = true; F.conjunto = e.target.value; F.cat = F.val = F.cd = ''; mostrar = 50; render(); renderContas(); };
@@ -1539,7 +1785,7 @@ $('#fPer').onchange = e => { F.per = e.target.value; render(); };
 $('#fMes').oninput = e => { F.mes = e.target.value; render(); }; $('#fDe').oninput = e => { F.de = e.target.value; render(); }; $('#fAte').oninput = e => { F.ate = e.target.value; render(); };
 $('#fCD').onchange = e => { F.cd = e.target.value; render(); }; $('#fCat').onchange = e => { F.cat = e.target.value; F.val = ''; render(); }; $('#fVal').onchange = e => { F.val = e.target.value; render(); };
 $('#fQ').oninput = e => { F.q = e.target.value; mostrar = 50; render(); };
-$('#gerarXlsx').onclick = gerarExcel;
+iniciaRel();
 iniciaLay(); $('#btnAcomp').onclick = () => { if (F.conjunto) janelaAcomp(F.conjunto); };
 $('#fPed').onsubmit = e => { e.preventDefault(); const f = $('#pedTxt').value.trim(); if (f && F.conjunto) abrirPedido(f, F.conjunto); };
 $('#btnEntender').onclick = () => abrirPainel(F.conjunto);

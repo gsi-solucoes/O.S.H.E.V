@@ -503,8 +503,69 @@ var Core = (function () {
     return { rows: r.rows, baixas: corrigeOcr(r.rows, baixas) };
   }
 
+  // ---- tela Relatório (9c): contas puras, sem tela ----
+  var FAIXAS_IDADE = ['0 a 7 dias', '8 a 15 dias', '16 a 30 dias', 'Mais de 30 dias'];
+  // idade em dias inteiros (para baixo) = hoje - data do registro; hojeMs = hoje às 00:00 local (R-164)
+  function idadeDias(iso, hojeMs) {
+    var ms = msISO(iso), m;
+    if (ms == null) { m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); if (!m) return null; ms = new Date(+m[1], +m[2] - 1, +m[3]).getTime(); }
+    return Math.floor((hojeMs - ms) / 86400000);
+  }
+  function faixaIdade(d) { return d == null || d < 0 ? -1 : d <= 7 ? 0 : d <= 15 ? 1 : d <= 30 ? 2 : 3; }
+  // R-165 / D-66: múltiplo de 24 e >= 48 vira dias
+  function fmtPrazo(h) { return h >= 48 && h % 24 === 0 ? (h / 24) + ' dias' : h + ' h'; }
+  function estat(v) {
+    if (!v.length) return null;
+    var s = v.reduce(function (a, b) { return a + b; }, 0);
+    return { n: v.length, soma: s, media: s / v.length, mediana: mediana(v), min: Math.min.apply(null, v), max: Math.max.apply(null, v) };
+  }
+  // R-167: frases da distribuição (D-70: nada com mediana <= 0)
+  function fraseDist(e, fmt) {
+    var f = ['Metade dos registros ficou abaixo de ' + fmt(e.mediana) + '.'];
+    if (e.mediana > 0 && e.media > 1.2 * e.mediana) f.push('A média está acima da mediana porque alguns valores são bem altos.');
+    else if (e.mediana > 0 && e.media < 0.8 * e.mediana) f.push('A média está abaixo da mediana porque alguns valores são bem baixos.');
+    return f;
+  }
+  // itens = [{codigo, valor, grupo}]; maiores/menores com empate pelo código (R-167)
+  function extremos(itens, n, maiores) {
+    return itens.slice().sort(function (a, b) { return (maiores ? b.valor - a.valor : a.valor - b.valor) || (a.codigo < b.codigo ? -1 : a.codigo > b.codigo ? 1 : 0); }).slice(0, n);
+  }
+  // R-168: grupos = [[nome, valor]]; devolve linhas (até 10 + Outros), frases e k para 80%
+  function concentracao(grupos) {
+    var g = grupos.filter(function (x) { return x[1] > 0; }).sort(function (a, b) { return b[1] - a[1] || (String(a[0]) < String(b[0]) ? -1 : String(a[0]) > String(b[0]) ? 1 : 0); });
+    var tot = g.reduce(function (a, x) { return a + x[1]; }, 0); if (!tot) return null;
+    var ac = 0, k80 = 0, acs = g.map(function (x, i) { ac += x[1]; if (!k80 && 100 * ac / tot >= 80 - 1e-9) k80 = i + 1; return ac; });
+    var linhas = g.slice(0, 10).map(function (x, i) { return { nome: x[0], valor: x[1], pct: 100 * x[1] / tot, acum: 100 * acs[i] / tot }; });
+    if (g.length > 10) { var r = g.slice(10).reduce(function (a, x) { return a + x[1]; }, 0); linhas.push({ nome: 'Outros', valor: r, pct: 100 * r / tot, acum: 100 }); }
+    linhas[linhas.length - 1].acum = 100;
+    var nTop = Math.min(3, g.length), topo = acs[nTop - 1];
+    return { linhas: linhas, total: tot, n: g.length, nTop: nTop, pctTop: 100 * topo / tot, k80: k80 };
+  }
+  // R-157 / R-169: sentido e percentual (sem sinal, 1 casa) ou sem base
+  function compara(atual, anterior) {
+    if (anterior == null || anterior === 0 || atual == null) return { tipo: 'sem' };
+    if (atual === anterior) return { tipo: 'eq' };
+    return { tipo: atual > anterior ? 'up' : 'down', p: Math.round(Math.abs((atual - anterior) / anterior * 1000)) / 10 };
+  }
+  function p2s(n) { return (n < 10 ? '0' : '') + n; }
+  function mesMenos1(k) { var a = +k.slice(0, 4), m = +k.slice(5, 7) - 1; if (m < 1) { m = 12; a--; } return a + '-' + p2s(m); }
+  function fimMes(k) { return k + '-' + p2s(new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7), 0)).getUTCDate()); }
+  function somaDias(iso, n) { var d = new Date(Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10)) + n * 86400000); return d.getUTCFullYear() + '-' + p2s(d.getUTCMonth() + 1) + '-' + p2s(d.getUTCDate()); }
+  function brData(iso) { return iso.slice(8, 10) + '/' + iso.slice(5, 7) + '/' + iso.slice(0, 4); }
+  // R-169: períodos atual e anterior ({ini, fim, rot}); null = sem base. ultimoMes = 'aaaa-mm' do último mês com registros (usado com Tudo)
+  function periodoAnterior(per, mes, de, ate, ultimoMes) {
+    var rm = function (k) { return k.slice(5) + '/' + k.slice(0, 4); }, mm = function (k) { return { ini: k + '-01', fim: fimMes(k), rot: rm(k) }; };
+    if (per === 'mes') return /^\d{4}-\d{2}$/.test(mes || '') ? { atual: mm(mes), ant: mm(mesMenos1(mes)) } : null;
+    if (per === 'de') {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(de || '') || !/^\d{4}-\d{2}-\d{2}$/.test(ate || '') || ate < de) return null;
+      var n = Math.round((Date.UTC(+ate.slice(0, 4), +ate.slice(5, 7) - 1, +ate.slice(8, 10)) - Date.UTC(+de.slice(0, 4), +de.slice(5, 7) - 1, +de.slice(8, 10))) / 86400000) + 1, ai = somaDias(de, -n), af = somaDias(de, -1);
+      return { atual: { ini: de, fim: ate, rot: brData(de) + ' a ' + brData(ate) }, ant: { ini: ai, fim: af, rot: brData(ai) + ' a ' + brData(af) } };
+    }
+    return /^\d{4}-\d{2}$/.test(ultimoMes || '') ? { atual: mm(ultimoMes), ant: mm(mesMenos1(ultimoMes)) } : null;
+  }
+
   return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
-    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
+    compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, FAIXAS_IDADE: FAIXAS_IDADE, idadeDias: idadeDias, faixaIdade: faixaIdade, fmtPrazo: fmtPrazo, estat: estat, fraseDist: fraseDist, extremos: extremos, concentracao: concentracao, compara: compara, periodoAnterior: periodoAnterior, somaDias: somaDias, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
 if (typeof module !== 'undefined') module.exports = Core;
