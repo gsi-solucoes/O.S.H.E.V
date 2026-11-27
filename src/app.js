@@ -666,10 +666,18 @@ function botaoInfo(nome, d) {
 document.addEventListener('click', e => { if (!e.target.closest('.info') && !e.target.closest('#ajudaBox')) fechaAjuda(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') fechaAjuda(); });
 const cap = t => t ? t.charAt(0).toUpperCase() + t.slice(1) : '';
+// texto do bloco em palavras do dia a dia (para quem não sabe Excel)
+function simples(t) {
+  t = String(t || '').trim().replace(/\.$/, '');
+  if (/^quantos registros há$/i.test(t)) return 'Quantas linhas o arquivo tem';
+  t = t.replace(/a soma, a média e a mediana de ([^,;]+)/i, 'o total somado de $1, o valor médio e o valor do meio (metade das linhas fica abaixo dele)')
+       .replace(/\bmediana\b/gi, 'valor do meio').replace(/\bpercentual\b/gi, 'parte em %').replace(/\bcampo\b/gi, 'coluna');
+  return cap(t);
+}
 function infoBloco(card, b) {
   if (!card || card.querySelector('.info') || !b || !b.oque) return card;
   let ex = null; try { ex = b.ex && F.conjunto ? b.ex(doConj(F.conjunto)) : null; } catch (e) { ex = null; }
-  card.append(botaoInfo(b.nome, { oque: cap(b.oque) + '.', como: 'Toque no título do bloco para ver os registros que entram nele; toque num número ou barra para ver só aquele pedaço.', ex: ex ? 'com os seus dados, hoje: ' + ex : '' })); return card;
+  card.append(botaoInfo(b.nome, { oque: simples(b.oque) + '.', como: 'Toque no título do bloco para ver os registros que entram nele; toque num número ou barra para ver só aquele pedaço.', ex: ex ? 'com os seus dados, hoje: ' + ex : '' })); return card;
 }
 const kpiBtn = (pre, val, suf, abrir) => el('button', { class: 'kpi', type: 'button', onclick: abrir }, pre, el('b', { text: val }), suf);
 const cartao = (b, ...kids) => {
@@ -749,7 +757,8 @@ function resumoBlocos(c, blocos, L) {
   return blocos.map(b => {
     const Lb = b.aplica ? b.aplica(L) : L, cd = b.dataCampo || campoData(c), datas = cd ? Lb.map(r => r.v[cd]).filter(Boolean).sort() : [];
     const per = datas.length ? 'de ' + fmtD(datas[0]) + ' a ' + fmtD(datas[datas.length - 1]) : 'sem datas';
-    return { nome: b.nome, texto: b.nome + ' — ' + b.oque + '. Conta: ' + b.conta + '. Campos: ' + b.campos + '. Período: ' + per + '. Filtros: ' + (b.filtrosProprios ? (fl === 'sem filtros' ? '' : fl + '; ') + b.filtrosProprios : fl) + '.' };
+    const ehConta = /^conta/.test(String(b.id || '')) || !!b.ped, filtrosTxt = b.filtrosProprios ? (fl === 'sem filtros' ? '' : fl + '; ') + b.filtrosProprios : fl;
+    return { nome: b.nome, texto: b.nome + ' — ' + simples(b.oque) + '.' + (ehConta ? ' Conta: ' + b.conta + '.' : '') + ' Período: ' + per + '. ' + cap(filtrosTxt === 'sem filtros' ? 'Sem filtros' : 'Filtros: ' + filtrosTxt) + '.' };
   });
 }
 function abrirPainel(c) {
@@ -1227,7 +1236,7 @@ function abrirJanela(titulo, lista, c) {
   const w = Math.min(720, window.innerWidth * 0.96); j.style.left = Math.max(4, Math.min(20 + (nJan % 8) * 28, window.innerWidth - w - 4)) + 'px'; j.style.top = (70 + (nJan % 8) * 28) + 'px'; nJan++;
   const tit = el('b', { text: titulo + ' (' + lista.length + ')' });
   const dock = el('button', { type: 'button', text: titulo, onclick: () => { j.style.display = ''; dock.remove(); } });
-  const hd = el('header', null, tit,
+  const hd = el('header', null, tit, botaoInfo('Janela de registros', { oque: 'Lista os registros por trás do número em que você tocou.', como: '_ guarda a janela no rodapé; □ ocupa a tela toda (toque de novo para voltar); × fecha. Arraste o título para mudar de lugar.', ex: 'Tocar em “Sul” abre só os registros do Sul.' }),
     el('button', { type: 'button', 'aria-label': 'Minimizar', text: '_', onclick: () => { j.style.display = 'none'; $('#dock').append(dock); } }),
     el('button', { type: 'button', 'aria-label': 'Maximizar', text: '□', onclick: e => { const m = j.classList.toggle('max'); e.currentTarget.setAttribute('aria-label', m ? 'Restaurar' : 'Maximizar'); e.currentTarget.textContent = m ? '❐' : '□'; } }),
     el('button', { type: 'button', 'aria-label': 'Fechar', text: '×', onclick: () => { j.remove(); dock.remove(); } }));
@@ -1248,7 +1257,8 @@ function abrirJanela(titulo, lista, c) {
   const barra = el('div', { class: 'barra' },
     el('button', { type: 'button', text: 'Limpar seleção', onclick: () => { Object.keys(sel).forEach(k => delete sel[k]); desenha(); } }),
     el('button', { type: 'button', text: 'Imprimir', onclick: () => imprimir(titulo, corpo._f, campos, corpo._txt) }),
-    el('button', { type: 'button', text: 'Copiar', onclick: () => copiar(corpo._f, campos) }));
+    el('button', { type: 'button', text: 'Copiar', onclick: () => copiar(corpo._f, campos) }),
+    botaoInfo('Botões da janela', { oque: 'Limpar seleção desfaz os filtros de cima; Imprimir manda a lista para a impressora; Copiar leva a lista para colar numa planilha.', como: 'Toque no botão que quiser.', ex: '' }));
   j.append(hd, corpo, barra); document.body.append(j); desenha();
   j.addEventListener('pointerdown', () => { j.style.zIndex = 20 + (++abrirJanela.z || (abrirJanela.z = 1)); });
   hd.addEventListener('pointerdown', e => {

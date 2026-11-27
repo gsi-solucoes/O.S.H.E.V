@@ -311,7 +311,7 @@ def test_CA28_pedido_entra_no_resumo_e_retirado_sai(page, tmp_path):
     page.get_by_role("button", name="Entender este painel", exact=True).click()
     flat = texto_seu_painel(page)
     assert "soma do campo Valor, separada por Região" in flat, flat
-    assert "Por Cliente" in flat and flat.count("Conta:") == 3, flat
+    assert "Por Cliente" in flat and flat.count("Período:") == 3, flat
     fechar_seu_painel(page)
     # Excel: mesma linha na planilha "Como ler este relatório"
     wb = abrir_xlsx(gerar_excel(page), tmp_path)
@@ -326,7 +326,7 @@ def test_CA28_pedido_entra_no_resumo_e_retirado_sai(page, tmp_path):
     marcar(page, ["Total de registros"])
     confirmar(page)
     flat2 = texto_seu_painel(page)
-    assert "Por Cliente —" not in flat2 and "contagem de registros por Cliente" not in flat2, flat2
+    assert "Por Cliente —" not in flat2 and "Quantos registros há em cada Cliente" not in flat2, flat2
     assert "soma do campo Valor, separada por Região" in flat2, flat2
 
 
@@ -338,7 +338,7 @@ def test_CA28_nao_entendido_nao_entra_no_resumo(page):
     pedir(page, "bom dia")
     page.get_by_text("não entendi: bom dia").first.wait_for(state="visible")
     page.get_by_role("button", name="Entender este painel", exact=True).click()
-    assert texto_seu_painel(page).count("Conta:") == 1
+    assert texto_seu_painel(page).count("Período:") == 1
 
 
 # ---------- F-70: depois de "Não" não aparece "null" solto ----------

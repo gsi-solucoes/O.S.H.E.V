@@ -67,7 +67,7 @@ def fechar_seu_painel(page):
 
 
 def item(flat, nome):
-    m = re.search(re.escape(nome) + r" — .*?Filtros:\s*[^.]*\.", flat)
+    m = re.search(re.escape(nome) + r" — .*?(?:Sem filtros|Filtros:\s*[^.]*)\.", flat)
     assert m, f"item '{nome}' ausente no texto: {flat!r}"
     return m.group(0)
 
@@ -306,16 +306,16 @@ def test_CA26_seu_painel_com_tres_itens(page):
     marcar(page, ["Total de registros", "Por Cliente", "Valor por Região"])
     confirmar(page)
     flat = texto_seu_painel(page)
-    assert flat.count("Conta:") == 3, flat
+    assert flat.count("Período:") == 3, flat
     ini, fim = periodo_vendas(VENDAS)
     it = item(flat, "Valor por Região")
-    assert "soma do campo Valor, separada por Região" in it, it
+    assert "Quanto Valor soma em cada Região" in it, it
     assert f"Período: de {ini} a {fim}" in it, it
-    assert "Filtros: sem filtros" in it, it
-    assert "contagem de todos os registros" in item(flat, "Total de registros")
-    assert "contagem de registros por Cliente" in item(flat, "Por Cliente")
+    assert "Sem filtros" in it, it
+    assert "Quantas linhas o arquivo tem" in item(flat, "Total de registros")
+    assert "Quantos registros há em cada Cliente" in item(flat, "Por Cliente")
     for nome in ["Total de registros", "Por Cliente"]:
-        assert "Filtros: sem filtros" in item(flat, nome)
+        assert "Sem filtros" in item(flat, nome)
     # R-63 reabre o mesmo texto
     fechar_seu_painel(page)
     page.get_by_role("button", name="Entender este painel", exact=True).click()
@@ -344,7 +344,7 @@ def test_CA27_filtros_aparecem_no_resumo(page):
         it = item(flat, nome)
         assert "só região Sul" in it, it
         assert "outubro/2026" in it, it
-        assert "sem filtros" not in it, it
+        assert "Sem filtros" not in it, it
         assert f"Período: de {ini} a {fim}" in it, it
 
 
@@ -372,7 +372,7 @@ def test_CA29_excel_segunda_planilha_igual_ao_texto_da_tela(page, tmp_path):
     flat = texto_seu_painel(page)
     for l in linhas:
         assert re.sub(r"\s+", " ", l) in flat, f"linha do Excel sem igual na tela: {l!r}"
-    assert flat.count("Conta:") == len(linhas)
+    assert flat.count("Período:") == len(linhas)
 
 
 def test_CA29_sem_escolha_confirmada_nao_cria_planilha(page, tmp_path):

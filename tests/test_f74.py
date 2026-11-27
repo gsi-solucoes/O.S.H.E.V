@@ -281,3 +281,21 @@ def test_f80_editar_formato_pela_config(page):
 
 def test_f80_botao_apagar_tudo_e_carregar_de_novo_visivel(page):
     assert page.get_by_role("button", name="Apagar tudo e carregar de novo", exact=True).is_visible()
+
+
+# ---------- F-82 ----------
+def test_f82_seu_painel_em_linguagem_simples(page):
+    from test_etapa2 import marcar, confirmar, texto_seu_painel
+    abrir_janela_r51(page, "vendas.csv")
+    marcar(page, ["Total de registros", "Valor (soma, média e mediana)"])
+    confirmar(page)
+    t = texto_seu_painel(page)
+    assert "Quantas linhas o arquivo tem. Período: de " in t and "Sem filtros." in t
+    assert "Campos:" not in t and "o valor do meio (metade das linhas fica abaixo dele)" in t
+
+
+def test_f82_info_na_janela_de_registros(page):
+    j = abre_total(page)
+    assert j.locator(".info").count() >= 2
+    j.locator("header .info").click()
+    assert "Lista os registros" in page.locator("#ajudaBox").inner_text()
