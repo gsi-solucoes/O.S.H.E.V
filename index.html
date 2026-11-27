@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-ecG58h8+Lo/eJktslWVR3MJvvuqwTkbiOfCY/FR3hEc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-qHY+4vaVwC0QKr1U49eDrmk8VZoPWimkFxbC88IbZAs='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>Raio X do Relatório</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0f2a4a">
@@ -198,7 +198,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
   </div>
 </section>
 <section id="relatorio" class="band" aria-label="Relatório" hidden>
-  <div class="row acBtns" id="relBarra"><button type="button" id="relVoltar">Voltar ao painel</button><button type="button" id="relEditar">Editar relatório</button><button type="button" id="relPadrao" hidden>Voltar ao padrão</button><button type="button" class="prim" id="relExportar">Exportar arquivo</button></div>
+  <div class="row acBtns" id="relBarra"><button type="button" id="relVoltar">Voltar ao painel</button><button type="button" id="relEditar">Editar relatório</button><button type="button" id="relPadrao" hidden>Voltar ao padrão</button><button type="button" class="prim" id="relExportar">Exportar arquivo</button><span id="xMsg" class="muted" role="status"></span></div>
   <div id="relCorpo"></div>
 </section>
 </main>
@@ -214,7 +214,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <dialog id="dlgExp" aria-labelledby="expTit"><h3 id="expTit">Exportar arquivo</h3>
   <p class="muted" style="margin:0 0 6px">Tipo de arquivo</p><div role="group" aria-label="Tipo de arquivo" class="row"><label><input type="radio" name="expTipo" value="excel" checked> Excel</label></div>
   <div class="row" style="margin-top:10px"><label class="f">Formato<select id="xFmt" aria-label="Formato"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label></div>
-  <div class="row" style="margin-top:12px"><button type="button" class="prim" id="expOk">Exportar</button><button type="button" id="expCancela">Cancelar</button><span id="xMsg" class="muted" role="status"></span></div></dialog>
+  <div class="row" style="margin-top:12px"><button type="button" class="prim" id="expOk">Exportar</button><button type="button" id="expCancela">Cancelar</button></div></dialog>
 <dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
 <dialog id="dlgAba" aria-labelledby="abaTit"><h3 id="abaTit">Dê um nome à aba</h3><label class="f">Nome da aba<input type="text" id="abaNome" maxlength="30" autocomplete="off"></label><p id="abaErro" class="muted" role="alert" hidden></p><div class="row" style="margin-top:12px"><button type="button" class="prim" id="abaSalvar">Salvar</button><button type="button" id="abaCancela">Cancelar</button></div></dialog>
@@ -795,7 +795,7 @@ var Core = (function () {
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, FAIXAS_IDADE: FAIXAS_IDADE, idadeDias: idadeDias, faixaIdade: faixaIdade, fmtPrazo: fmtPrazo, estat: estat, fraseDist: fraseDist, extremos: extremos, concentracao: concentracao, compara: compara, periodoAnterior: periodoAnterior, somaDias: somaDias, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();
-const VERSAO = "75e4bcf1de";
+const VERSAO = "0e65fa49be";
 'use strict';
 /* ===== Raio X do Relatório · app (etapa 1: shell genérico) ===== */
 const $ = s => document.querySelector(s);
@@ -1377,7 +1377,7 @@ function render() {
   const vals = F.cat ? [...new Set(base.map(r => r.v[F.cat]).filter(Boolean))].sort() : [];
   fillSel($('#fVal'), [['', '(todos)']].concat(vals.map(x => [x, x])), F.val); F.val = $('#fVal').value;
   $('#fPer').value = F.per; $('#lMes').hidden = F.per !== 'mes'; $('#lDe').hidden = $('#lAte').hidden = F.per !== 'de';
-  const L = filtrar(c), todos = doConj(c); $('#gerarXlsx').disabled = !L.length;
+  const L = filtrar(c), todos = doConj(c); $('#gerarXlsx').disabled = !todos.length;
   const cd = campoData(c), datas = cd ? L.map(r => r.v[cd]).filter(Boolean).sort() : [];
   $('#kTotal b').textContent = L.length; $('#kTotal span').textContent = 'Total de registros' + (L.length !== todos.length ? ' (de ' + todos.length + ' guardados)' : '');
   $('#kAnt b').textContent = datas.length ? fmtData(datas[0]) : '—'; $('#kNov b').textContent = datas.length ? fmtData(datas[datas.length - 1]) : '—';
@@ -2475,7 +2475,7 @@ function iniciaRel() {
   $('#relPadrao').onclick = async () => { const r = await perguntar('Voltar ao padrão do relatório?', 'O título, o resumo, as observações, a ordem e as partes escondidas voltam ao padrão.', [{ t: 'Voltar ao padrão', v: true, prim: true }, { t: 'Cancelar', v: null }]); if (!r) return; delete relG[F.conjunto]; salvaRel(); renderRel(); };
   $('#relExportar').onclick = () => { $('#xMsg').textContent = ''; $('#dlgExp').showModal(); };
   $('#expCancela').onclick = () => $('#dlgExp').close();
-  $('#expOk').onclick = () => { gerarExcel(); };
+  $('#expOk').onclick = () => { $('#dlgExp').close(); gerarExcel(); };
 }
 
 /* ---------- Config ---------- */

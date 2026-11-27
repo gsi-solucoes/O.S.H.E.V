@@ -47,6 +47,7 @@ def gerar(page, tmp_path, formato=None):
     abre_exportar(page, formato)
     with page.expect_download() as d:
         page.get_by_role("button", name="Exportar", exact=True).click()
+    page.get_by_role("button", name="Voltar ao painel", exact=True).click()
     destino = tmp_path / d.value.suggested_filename
     d.value.save_as(str(destino))
     return verifica_sem_formula_nem_macro(destino)
@@ -60,6 +61,7 @@ def gerar_varios(page, tmp_path, formato):
     page.on("download", lambda d: baixados.append(d))
     page.get_by_role("button", name="Exportar", exact=True).click()
     page.wait_for_timeout(3000)
+    page.get_by_role("button", name="Voltar ao painel", exact=True).click()
     wbs = []
     for i, d in enumerate(baixados):
         destino = tmp_path / f"{i}_{d.suggested_filename}"
@@ -448,6 +450,7 @@ def test_CA47_sem_formula_e_sem_macro(page, tmp_path):
     abre_exportar(page)
     with page.expect_download() as d:
         page.get_by_role("button", name="Exportar", exact=True).click()
+    page.get_by_role("button", name="Voltar ao painel", exact=True).click()
     destino = tmp_path / d.value.suggested_filename
     d.value.save_as(str(destino))
     assert destino.suffix == ".xlsx"

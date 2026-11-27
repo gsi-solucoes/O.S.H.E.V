@@ -198,7 +198,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
   </div>
 </section>
 <section id="relatorio" class="band" aria-label="Relatório" hidden>
-  <div class="row acBtns" id="relBarra"><button type="button" id="relVoltar">Voltar ao painel</button><button type="button" id="relEditar">Editar relatório</button><button type="button" id="relPadrao" hidden>Voltar ao padrão</button><button type="button" class="prim" id="relExportar">Exportar arquivo</button></div>
+  <div class="row acBtns" id="relBarra"><button type="button" id="relVoltar">Voltar ao painel</button><button type="button" id="relEditar">Editar relatório</button><button type="button" id="relPadrao" hidden>Voltar ao padrão</button><button type="button" class="prim" id="relExportar">Exportar arquivo</button><span id="xMsg" class="muted" role="status"></span></div>
   <div id="relCorpo"></div>
 </section>
 </main>
@@ -214,7 +214,7 @@ ul.acomp label{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;paddi
 <dialog id="dlgExp" aria-labelledby="expTit"><h3 id="expTit">Exportar arquivo</h3>
   <p class="muted" style="margin:0 0 6px">Tipo de arquivo</p><div role="group" aria-label="Tipo de arquivo" class="row"><label><input type="radio" name="expTipo" value="excel" checked> Excel</label></div>
   <div class="row" style="margin-top:10px"><label class="f">Formato<select id="xFmt" aria-label="Formato"><option value="uma">Uma planilha por relatório</option><option value="tudo">Tudo numa planilha</option><option value="sep">Arquivos separados</option></select></label></div>
-  <div class="row" style="margin-top:12px"><button type="button" class="prim" id="expOk">Exportar</button><button type="button" id="expCancela">Cancelar</button><span id="xMsg" class="muted" role="status"></span></div></dialog>
+  <div class="row" style="margin-top:12px"><button type="button" class="prim" id="expOk">Exportar</button><button type="button" id="expCancela">Cancelar</button></div></dialog>
 <dialog id="dlgCol"><form method="dialog" id="fCol"></form></dialog>
 <dialog id="dlgAcomp" aria-labelledby="acompTit"><h3 id="acompTit">O que você quer acompanhar?</h3><p class="muted">Marque o que quer ver no painel. Cada item mostra um exemplo calculado com os seus dados.</p><ul id="acompLista" class="acomp"></ul><p id="acompErro" class="muted" role="alert"></p><div class="row"><button type="button" class="prim" id="acompOk">Confirmar</button><button type="button" id="acompCancela">Cancelar</button></div></dialog>
 <dialog id="dlgAba" aria-labelledby="abaTit"><h3 id="abaTit">Dê um nome à aba</h3><label class="f">Nome da aba<input type="text" id="abaNome" maxlength="30" autocomplete="off"></label><p id="abaErro" class="muted" role="alert" hidden></p><div class="row" style="margin-top:12px"><button type="button" class="prim" id="abaSalvar">Salvar</button><button type="button" id="abaCancela">Cancelar</button></div></dialog>

@@ -107,6 +107,8 @@ Ordem de uso: abrir e configurar (P-a, P-b), carregar e dizer o que é cada colu
 | Toca em **Exportar arquivo** → **Excel** → escolhe o **Formato** → **Exportar** | Baixa o `.xlsx` com o relatório (mesmo caminho de antes; o visual novo vem na F-86 e o PDF na F-87) |
 | Toca em **Voltar ao painel** | Volta ao Painel |
 
+⚖️ **Decisões da construção (provisórias):** a janela **Exportar arquivo** fecha ao tocar em **Exportar** e a mensagem ("Gerando…", "Excel gerado.") aparece na barra do Relatório (a especificação R-159 punha na janela); **Gerar relatório** só fica desligado quando não há nenhum registro guardado (com o filtro zerando tudo, o relatório abre vazio). Muda se o Galindo preferir outra coisa (F-88).
+
 **Regras e limites:** a edição fica guardada neste aparelho e entra no backup. Só valores no Excel: nenhuma fórmula, macro ou gráfico nativo (D-12). A idade conta até **hoje**, pelo relógio do aparelho ⚖️ D-65; "atrasado" usa o prazo da Config ⚖️ D-66. **Ainda não existe nesta etapa:** "O que o Raio X encontrou" (F-84), gráficos novos (F-85), Excel com visual novo (F-86) e PDF (F-87). Decisões ⚖️ D-64 a D-84 estão no quadro do fim e aguardam o Galindo (F-88), sem travar nada.
 
 ### P-x. Fazer backup e restaurar

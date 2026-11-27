@@ -579,7 +579,7 @@ function render() {
   const vals = F.cat ? [...new Set(base.map(r => r.v[F.cat]).filter(Boolean))].sort() : [];
   fillSel($('#fVal'), [['', '(todos)']].concat(vals.map(x => [x, x])), F.val); F.val = $('#fVal').value;
   $('#fPer').value = F.per; $('#lMes').hidden = F.per !== 'mes'; $('#lDe').hidden = $('#lAte').hidden = F.per !== 'de';
-  const L = filtrar(c), todos = doConj(c); $('#gerarXlsx').disabled = !L.length;
+  const L = filtrar(c), todos = doConj(c); $('#gerarXlsx').disabled = !todos.length;
   const cd = campoData(c), datas = cd ? L.map(r => r.v[cd]).filter(Boolean).sort() : [];
   $('#kTotal b').textContent = L.length; $('#kTotal span').textContent = 'Total de registros' + (L.length !== todos.length ? ' (de ' + todos.length + ' guardados)' : '');
   $('#kAnt b').textContent = datas.length ? fmtData(datas[0]) : '—'; $('#kNov b').textContent = datas.length ? fmtData(datas[datas.length - 1]) : '—';
@@ -1677,7 +1677,7 @@ function iniciaRel() {
   $('#relPadrao').onclick = async () => { const r = await perguntar('Voltar ao padrão do relatório?', 'O título, o resumo, as observações, a ordem e as partes escondidas voltam ao padrão.', [{ t: 'Voltar ao padrão', v: true, prim: true }, { t: 'Cancelar', v: null }]); if (!r) return; delete relG[F.conjunto]; salvaRel(); renderRel(); };
   $('#relExportar').onclick = () => { $('#xMsg').textContent = ''; $('#dlgExp').showModal(); };
   $('#expCancela').onclick = () => $('#dlgExp').close();
-  $('#expOk').onclick = () => { gerarExcel(); };
+  $('#expOk').onclick = () => { $('#dlgExp').close(); gerarExcel(); };
 }
 
 /* ---------- Config ---------- */

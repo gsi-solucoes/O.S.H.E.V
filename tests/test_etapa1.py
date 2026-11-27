@@ -77,6 +77,7 @@ def gerar_excel(page):
     abre_exportar(page)
     with page.expect_download() as d:
         page.get_by_role("button", name="Exportar", exact=True).click()
+    page.get_by_role("button", name="Voltar ao painel", exact=True).click()
     return d.value
 
 
