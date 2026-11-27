@@ -582,6 +582,14 @@ O código atual é um protótipo feito para um caso específico. **Nada do conte
   **Nome do arquivo (decisão v1.1, dúvida 2 do Testador):** `RaioX_<relatório>_<data>.xlsx`, com `<data>` = **AAAA-MM-DD**, a data do aparelho no momento em que o arquivo é gerado (ex.: `RaioX_VENDAS_2026-11-25.xlsx`). `<relatório>` = nome do conjunto em maiúsculas, sem acentos, com `_` no lugar de espaços; `TUDO` quando há mais de um conjunto num só arquivo; em `Arquivos separados`, um arquivo por conjunto. O backup segue o mesmo formato de data: `historico_RaioX_AAAA-MM-DD.json`. Teste: o nome casa com `^RaioX_[A-Z0-9_]+_\d{4}-\d{2}-\d{2}\.xlsx$` e a data é a de hoje.
 - CA-99: filtros começam fechados (`Filtros`, R-28); período e filtros (R-29 a R-34) valem para o painel, as janelas e o Excel.
 
+## 9a. Tela "Esta coluna é o quê?" em prévia (F-80, Galindo 26/11/2026; substitui o desenho da etapa 1 nos CA-24 e R-65)
+- Depois de carregar um formato novo, tabela com todas as colunas lado a lado e as 5 primeiras linhas reais. No topo de cada coluna, em ordem: **Aparece?** (Sim por padrão; Não = antigo Ignorar), **Nome** (título do arquivo; sem título "Campo 1", "Campo 2"…), **Tipo**: Número, Data, Grupo (antigo Categoria) ou Texto.
+- Duas perguntas únicas embaixo: "Qual coluna identifica cada linha?" (antigo Código; obrigatória, e a coluna precisa aparecer) e "Qual coluna mostra o andamento?" (antigo Situação; opcional).
+- Linhas totalmente em branco saem sozinhas, com aviso "N linhas em branco deixadas de fora".
+- Cabeçalho errado: botão "O cabeçalho está em outra linha" (tocar na linha dos títulos da prévia) e "O arquivo não tem cabeçalho" (Campo 1, 2, 3…); a escolha é lembrada com o formato.
+- Config → Formatos lembrados → Editar reabre a tela (nomes fixos; muda Aparece? e Tipo). Botão visível "Apagar tudo e carregar de novo" perto de "Carregar dados".
+- Internamente os tipos continuam os mesmos (codigo, situacao, ignorar, categoria…); só a tela mudou.
+
 ## 9b. Versão Excel para baixar (macro)
 
 - Mesma estrutura do app, sem conteúdo de nenhum caso: importar CSV/XLSX (ou .zip), perguntar o que é cada coluna (uma vez por formato), escolher indicadores do catálogo da etapa 2, painel com segmentação por período e categoria, botão "Gerar relatório" com capa.

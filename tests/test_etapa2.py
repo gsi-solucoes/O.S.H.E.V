@@ -237,32 +237,30 @@ def test_CA23_recarregar_mantem_blocos_e_marcas(page):
 
 # ---------- CA-24 ----------
 def tipos_da_tela(page):
-    """Le {nome do campo: texto da opcao escolhida} da tela 'Esta coluna é o quê?'."""
+    """Le {nome da coluna: (select do Tipo, texto escolhido)} da tela 'Esta coluna é o quê?' (prévia, F-80)."""
     res = {}
-    for sel in page.locator("select:visible").all():
-        rotulo = sel.evaluate("e=>(e.closest('tr,li,div,label')||e.parentElement).innerText.split(/[\\n\\t]/)[0]").strip()
-        res[rotulo] = (sel, sel.evaluate("e=>e.options[e.selectedIndex].text").strip())
+    for i, inp in enumerate(page.locator("input[aria-label^='Nome da coluna']:visible").all(), start=1):
+        sel = page.get_by_label(f"Tipo da coluna {i}", exact=True)
+        res[inp.input_value()] = (sel, sel.evaluate("e=>e.options[e.selectedIndex].text").strip())
     return res
 
 
-def test_CA24_categoria_sugerida_e_trocar_para_situacao(page):
+def test_CA24_grupo_sugerido_e_trocar_para_situacao(page):
     enviar(page, "vendas.csv")
     assert page.get_by_text("Esta coluna é o quê?").first.is_visible()
     tipos = tipos_da_tela(page)
-    # <= 30 distintos e >= 50% de repeticao -> categoria
+    # <= 30 distintos e >= 50% de repeticao -> Grupo (antes Categoria)
     for campo in ["Cliente", "Região", "Vendedor"]:
-        assert tipos[campo][1] == "Categoria", (campo, tipos[campo][1])
-    # muitos distintos / sem repeticao -> nao e categoria
-    assert tipos["Código"][1] != "Categoria"
-    assert tipos["Valor"][1] != "Categoria"
-    # a lista de tipos tem 'Situação' (R-65) e a pessoa troca Região para Situação
-    sel = tipos["Região"][0]
-    assert "Situação" in sel.locator("option").all_inner_texts()
-    sel.select_option(label="Situação")
+        assert tipos[campo][1] == "Grupo", (campo, tipos[campo][1])
+    assert tipos["Valor"][1] == "Número" and tipos["Data"][1] == "Data"
+    # o andamento (Situação) e uma pergunta a parte, sugerida pelo nome da coluna
+    assert page.get_by_label("Qual coluna mostra o andamento?").evaluate("e=>e.options[e.selectedIndex].text") == "Situação"
+    assert page.get_by_label("Qual coluna identifica cada linha?").evaluate("e=>e.options[e.selectedIndex].text") == "Código"
+    # a pessoa troca o andamento para Região
+    page.get_by_label("Qual coluna mostra o andamento?").select_option(label="Região")
     page.get_by_role("button", name="Confirmar", exact=True).first.click()
     dlg(page, JANELA).wait_for(state="visible")
-    assert existe(page, "% por Região"), "Região trocada para Situação deve gerar '% por Região'"
-    assert existe(page, "% por Situação")
+    assert existe(page, "% por Região"), "Região como andamento deve gerar '% por Região'"
 
 
 # ---------- CA-25 ----------

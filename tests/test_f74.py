@@ -211,3 +211,74 @@ def test_f79_editar_layout_faixa_alca_e_so_o_selecionado_mostra_controles(page):
     assert page.locator(".layItem.sel").count() == 1
     page.get_by_role("button", name="Entendi, não mostrar de novo").click()
     assert not page.locator("#layAviso").is_visible()
+
+
+# ---------- F-80: tela "Esta coluna é o quê?" em prévia ----------
+def test_f80_previa_com_linhas_reais_aparece_nome_tipo_e_duas_perguntas(page):
+    enviar(page, "vendas.csv")
+    page.get_by_text("Esta coluna é o quê?").first.wait_for(state="visible")
+    d = page.locator("#dlgCol")
+    t = d.inner_text()
+    for n in ["Aparece?", "Nome", "Tipo", "Qual coluna identifica cada linha?", "Qual coluna mostra o andamento?"]:
+        assert n.lower() in t.lower(), n
+    assert VENDAS[0]["Cliente"] in t and VENDAS[0]["Código"] in t          # primeiras linhas reais
+    assert d.locator("tr.amostra").count() == 5
+    ops = d.get_by_label("Tipo da coluna 6").locator("option").all_inner_texts()
+    assert ops == ["Número", "Data", "Grupo", "Texto"]
+    assert "Ignorar" not in t and "Categoria" not in t
+
+
+def test_f80_aparece_nao_vira_ignorar_e_codigo_precisa_aparecer(page):
+    enviar(page, "vendas.csv")
+    page.get_by_text("Esta coluna é o quê?").first.wait_for(state="visible")
+    d = page.locator("#dlgCol")
+    d.get_by_label("Aparece? da coluna 5", exact=True).select_option(label="Não")   # Vendedor
+    d.get_by_label("Aparece? da coluna 1", exact=True).select_option(label="Não")   # Código
+    d.get_by_role("button", name="Confirmar", exact=True).click()
+    assert "precisa aparecer" in d.inner_text()
+    d.get_by_label("Aparece? da coluna 1", exact=True).select_option(label="Sim")
+    d.get_by_role("button", name="Confirmar", exact=True).click()
+    page.wait_for_timeout(800)
+    bk = page.evaluate("localStorage.getItem('raiox_fmt')")
+    assert '"n":"Vendedor","t":"ignorar"' in bk
+
+
+def test_f80_linhas_em_branco_saem_com_aviso(page, tmp_path):
+    p = tmp_path / "br.csv"
+    p.write_text("Código;Região;Valor\nA1;Sul;10,00\n;;\nA2;Norte;20,00\n;;\n", encoding="utf-8")
+    enviar(page, p)
+    page.get_by_text("Esta coluna é o quê?").first.wait_for(state="visible")
+    assert "2 linhas em branco serão deixadas de fora" in page.locator("#dlgCol").inner_text()
+    page.get_by_role("button", name="Confirmar", exact=True).click()
+    page.wait_for_timeout(500)
+    assert "2 linhas em branco deixadas de fora" in page.evaluate("document.body.innerText")
+
+
+def test_f80_cabecalho_em_outra_linha_e_sem_cabecalho(page, tmp_path):
+    p = tmp_path / "ruim.csv"
+    p.write_text("Relatório de teste;;\nEmitido em 26/11;;\nCódigo;Região;Valor\nA1;Sul;10,00\nA2;Norte;20,00\nA3;Sul;5,00\n", encoding="utf-8")
+    enviar(page, p)
+    page.get_by_text("Esta coluna é o quê?").first.wait_for(state="visible")
+    d = page.locator("#dlgCol")
+    d.get_by_role("button", name="O cabeçalho está em outra linha").click()
+    d.locator("#colLinhas tr").nth(2).click()
+    assert d.get_by_label("Nome da coluna 2", exact=True).input_value() == "Região"
+    d.get_by_role("button", name="O arquivo não tem cabeçalho").click()
+    assert d.get_by_label("Nome da coluna 1", exact=True).input_value() == "Campo 1"
+
+
+def test_f80_editar_formato_pela_config(page):
+    carregar_vendas(page)
+    abre_config(page)
+    page.get_by_role("button", name="Editar", exact=True).first.click()
+    d = page.locator("#dlgCol")
+    d.wait_for(state="visible")
+    assert d.get_by_label("Nome da coluna 1", exact=True).is_visible()
+    d.get_by_label("Aparece? da coluna 5", exact=True).select_option(label="Não")
+    d.get_by_role("button", name="Confirmar", exact=True).click()
+    page.wait_for_timeout(500)
+    assert '"n":"Vendedor","t":"ignorar"' in page.evaluate("localStorage.getItem('raiox_fmt')")
+
+
+def test_f80_botao_apagar_tudo_e_carregar_de_novo_visivel(page):
+    assert page.get_by_role("button", name="Apagar tudo e carregar de novo", exact=True).is_visible()

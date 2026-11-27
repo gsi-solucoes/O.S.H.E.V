@@ -19,18 +19,10 @@ def enviar(page, *arquivos):
 
 
 def mapear_se_preciso(page):
-    """Se aparecer 'Esta coluna é o quê?', responde pelo nome do campo e confirma."""
+    """Se aparecer 'Esta coluna é o quê?' (tela em prévia, F-80): aceita o que o programa sugeriu e confirma."""
     if not page.get_by_text("Esta coluna é o quê?").first.is_visible():
         return False
-    for sel in page.locator("select:visible").all():
-        rotulo = sel.evaluate("e=>(e.closest('tr,li,div,label')||e.parentElement).innerText.split('\\n')[0]")
-        opts = sel.locator("option").all_inner_texts()
-        alvo = next((o for o in opts if o.strip().lower().rstrip('s') == rotulo.strip().lower().rstrip('s')), None)
-        if alvo is None and re.search(r"c[óo]digo", rotulo, re.I):
-            alvo = next((o for o in opts if re.search(r"c[óo]digo", o, re.I)), None)
-        if alvo:
-            sel.select_option(label=alvo)
-    page.get_by_role("button", name=re.compile(r"confirmar|salvar|continuar|ok", re.I)).first.click()
+    page.get_by_role("button", name="Confirmar", exact=True).first.click()
     page.wait_for_timeout(800)
     return True
 

@@ -36,7 +36,7 @@ function validarBackup(b) {
     if (!b || typeof b !== 'object' || b.app !== 'raiox' || !Array.isArray(b.registros)) return null;
     const cj = nulo(), fm = nulo(), rg = [];
     if (b.conjs != null) { if (typeof b.conjs !== 'object' || Array.isArray(b.conjs)) return null; for (const k of Object.keys(b.conjs)) { const x = b.conjs[k]; if (!k.trim() || !x || !camposOk(x.campos)) return null; cj[k] = { campos: x.campos.map(y => ({ n: y.n, t: y.t })) }; } }
-    if (b.fmts != null) { if (typeof b.fmts !== 'object' || Array.isArray(b.fmts)) return null; for (const k of Object.keys(b.fmts)) { const x = b.fmts[k]; if (!x || typeof x.conjunto !== 'string' || !x.conjunto.trim() || !camposOk(x.cols)) return null; fm[k] = { conjunto: x.conjunto, cols: x.cols.map(y => ({ n: y.n, t: y.t })) }; } }
+    if (b.fmts != null) { if (typeof b.fmts !== 'object' || Array.isArray(b.fmts)) return null; for (const k of Object.keys(b.fmts)) { const x = b.fmts[k]; if (!x || typeof x.conjunto !== 'string' || !x.conjunto.trim() || !camposOk(x.cols)) return null; fm[k] = { conjunto: x.conjunto, cols: x.cols.map(y => ({ n: y.n, t: y.t })) }; if (Number.isInteger(x.hi) && x.hi >= -1 && x.hi < 200) fm[k].hi = x.hi; } }
     for (const x of b.registros) {
       if (!x || typeof x !== 'object' || typeof x.conjunto !== 'string' || !x.conjunto.trim() || !cj[x.conjunto]) return null;
       if (!(typeof x.codigo === 'string' || typeof x.codigo === 'number') || String(x.codigo).trim() === '') return null;
@@ -129,31 +129,62 @@ function perguntar(tit, txt, botoes) {
     d.oncancel = () => ok(null); d.showModal();
   });
 }
-function perguntarColunas(arquivo, hdr, corpo, nome) {
+// tela "Esta coluna é o quê?" em prévia (F-80): colunas lado a lado, primeiras linhas reais; Aparece? / Nome / Tipo no topo de cada coluna; duas perguntas embaixo.
+// rows = linhas do arquivo (com ou sem cabeçalho); hi = linha de títulos escolhida (-1 = o arquivo não tem títulos). Devolve { conjunto, cols, hi } ou null.
+const TIPOS4 = [['numero', 'Número'], ['data', 'Data'], ['categoria', 'Grupo'], ['texto', 'Texto']];
+function perguntarColunas(arquivo, rows, hi0, nome, edicao) {
   return new Promise(ok => {
-    const d = $('#dlgCol'), f = $('#fCol'); f.textContent = '';
-    const pal = Core.palpites(hdr, corpo), erro = el('p', { class: 'muted', role: 'alert' });
+    const d = $('#dlgCol'), f = $('#fCol'); let hi = hi0, escolhendo = false, ini = null;
     const nomeRel = el('input', { type: 'text', id: 'colRel', value: nome || arquivo.replace(/\.[^.]+$/, '') });
-    const linhas = hdr.map((h, j) => {
-      const ex = corpo.map(r => Core.t(r[j])).find(Boolean) || '';
-      const nome = el('input', { type: 'text', value: Core.t(h) || ('Campo ' + (j + 1)), 'aria-label': 'Nome do campo ' + (j + 1) });
-      const tp = el('select', { 'aria-label': 'Tipo da coluna ' + (j + 1) }, TIPOS.map(([v, t]) => el('option', { value: v, text: t })));
-      tp.value = pal[j];
-      return { nome, tp, tr: el('tr', null, el('td', { text: Core.t(h) }), el('td', { text: ex.slice(0, 40) }), el('td', null, nome), el('td', null, tp)) };
-    });
-    f.append(el('h3', { text: 'Esta coluna é o quê?' }), botaoInfo('Esta coluna é o quê?', { oque: 'Antes de guardar, o programa precisa saber o que cada coluna do seu arquivo significa.', como: '1. Olhe cada linha: à esquerda está a coluna como veio no arquivo, com um exemplo. 2. Se o nome ou o tipo sugerido estiver errado, troque. 3. Marque uma coluna como Código (o número que identifica cada linha, como o número do pedido). 4. Toque em Confirmar.', ex: 'Coluna “Região” com exemplo “Sul”: tipo Categoria (um valor que se repete e serve para agrupar).' }), el('p', { class: 'muted', text: 'Arquivo: ' + arquivo + '. Confira o que o programa entendeu de cada coluna. À esquerda, a coluna como veio no arquivo e um exemplo. À direita, o nome e o tipo que ele sugeriu: troque o que estiver errado. Marque uma coluna como Código (o que identifica cada registro) e toque em Confirmar. Você só faz isso uma vez por formato.' }),
-      el('label', { class: 'f' }, 'Nome do relatório', nomeRel),
-      el('div', { class: 'tw', style: 'max-height:50vh;overflow:auto;margin:10px 0' }, el('table', null, el('thead', null, el('tr', null, ['Coluna', 'Exemplo', 'Nome do campo', 'Tipo de dado'].map(x => el('th', { text: x })))), el('tbody', null, linhas.map(l => l.tr)))), erro,
-      el('p', { class: 'muted', id: 'legTipos', text: 'Tipo de dado: Código = identifica cada registro (só um); Data = dia, com ou sem hora; Categoria = valores que se repetem, para agrupar (ex.: região, vendedor); Situação = andamento (aberto, entregue, cancelado); Número = para somar ou fazer média; Texto = texto livre; Ignorar = não guarda.' }),
-      el('div', { class: 'row' },
-        el('button', { class: 'prim', type: 'button', id: 'colOk', text: 'Confirmar', onclick: () => {
-          const tipos = linhas.map(l => l.tp.value), nc = tipos.filter(x => x === 'codigo').length;
-          if (nc !== 1) { erro.textContent = 'Escolha exatamente uma coluna como Código.'; return; }
-          const usados = {}, cols = linhas.map((l, j) => { let n = Core.t(l.nome.value) || ('Campo ' + (j + 1)); const b = n; let i = 2; while (usados[n.toLowerCase()]) n = b + ' ' + i++; usados[n.toLowerCase()] = 1; return { n, t: tipos[j] }; });
-          d.close(); ok({ conjunto: Core.t(nomeRel.value) || 'Relatório', cols });
-        } }),
-        el('button', { type: 'button', text: 'Cancelar', onclick: () => { d.close(); ok(null); } })));
-    d.oncancel = () => ok(null); d.showModal();
+    const monta = () => {
+      f.textContent = '';
+      const nc = Math.max(1, ...rows.slice(0, 60).map(r => r.length)), hdr = Array.from({ length: nc }, (_, j) => hi >= 0 ? Core.t((rows[hi] || [])[j]) : '');
+      const corpo = rows.slice(hi + 1).filter(r => r.some(x => Core.t(x))), branco = rows.slice(hi + 1).length - corpo.length, amostra = corpo.slice(0, 5);
+      const pal = edicao ? edicao.pal : Core.palpites(hdr.map((h, j) => h || 'Campo ' + (j + 1)), corpo);
+      const erro = el('p', { class: 'muted', role: 'alert' });
+      const col = hdr.map((h, j) => {
+        const nomeIn = el('input', { type: 'text', value: edicao ? edicao.nomes[j] : (h || 'Campo ' + (j + 1)), 'aria-label': 'Nome da coluna ' + (j + 1) }); if (edicao) nomeIn.readOnly = true;
+        const ap = el('select', { 'aria-label': 'Aparece? da coluna ' + (j + 1) }, [['sim', 'Sim'], ['nao', 'Não']].map(([v, t]) => el('option', { value: v, text: t }))); ap.value = pal[j] === 'ignorar' ? 'nao' : 'sim';
+        const tp = el('select', { 'aria-label': 'Tipo da coluna ' + (j + 1) }, TIPOS4.map(([v, t]) => el('option', { value: v, text: t })));
+        tp.value = pal[j] === 'codigo' || pal[j] === 'situacao' || pal[j] === 'ignorar' ? (edicao ? edicao.base[j] : 'texto') : pal[j];
+        return { nome: nomeIn, ap, tp };
+      });
+      const iCod = Math.max(0, pal.indexOf('codigo')), iSit = pal.indexOf('situacao');
+      const nomesAtuais = () => col.map((c, j) => Core.t(c.nome.value) || 'Campo ' + (j + 1));
+      const opcoes = () => nomesAtuais().map((n, j) => el('option', { value: String(j), text: n }));
+      const selCod = el('select', { id: 'colId', 'aria-label': 'Qual coluna identifica cada linha?' }, opcoes()); selCod.value = String(iCod);
+      const selSit = el('select', { id: 'colSit', 'aria-label': 'Qual coluna mostra o andamento?' }, [el('option', { value: '-1', text: '(nenhuma)' })].concat(opcoes())); selSit.value = String(iSit);
+      col.forEach(c => { c.nome.addEventListener('change', () => { const v1 = selCod.value, v2 = selSit.value; selCod.replaceChildren(...opcoes()); selSit.replaceChildren(el('option', { value: '-1', text: '(nenhuma)' }), ...opcoes()); selCod.value = v1; selSit.value = v2; }); });
+      const th = (t, extra) => el('th', { scope: 'row', class: 'rot' }, t, extra || null);
+      const linha = (rot, fn, extra) => el('tr', null, th(rot, extra), col.map(c => el('td', null, fn(c))));
+      const tbl = el('table', { id: 'colTab' }, el('tbody', null,
+        linha('Aparece?', c => c.ap), linha('Nome', c => c.nome), linha('Tipo', c => c.tp, botaoInfo('Tipo', { oque: 'O que há dentro da coluna.', como: 'Número = você quer somar ou tirar a média (valores, quantidades). Data = um dia, com ou sem hora. Grupo = valores que se repetem e separam os registros (região, cliente, setor). Texto = escrita livre (observações, nomes únicos).', ex: 'Coluna “Região” com Sul, Norte, Sul…: Grupo.' })),
+        amostra.map(r => el('tr', { class: 'amostra' }, el('th', { scope: 'row', class: 'rot muted', text: '' }), col.map((c, j) => el('td', { text: Core.t(r[j]).slice(0, 40) }))))));
+      const topo = el('div', { class: 'tw', style: 'max-height:46vh;overflow:auto;margin:10px 0' }, tbl);
+      f.append(el('h3', { text: 'Esta coluna é o quê?' }), botaoInfo('Esta coluna é o quê?', { oque: 'Antes de guardar, o programa precisa saber o que há em cada coluna do seu arquivo.', como: '1. Olhe a tabela: são as primeiras linhas do seu arquivo. 2. Em cada coluna, diga se ela Aparece, confira o Nome e o Tipo. 3. Responda as duas perguntas embaixo. 4. Toque em Confirmar.', ex: 'A coluna com o número do pedido é a que identifica cada linha.' }),
+        el('p', { class: 'muted', text: 'Arquivo: ' + arquivo + '. Confira o que o programa entendeu. Cada coluna do arquivo está de um lado; no alto dela diga se aparece, o nome e o tipo. Você só faz isso uma vez por formato.' }));
+      if (!edicao) f.append(el('label', { class: 'f' }, 'Nome do relatório', nomeRel));
+      if (branco > 0) f.append(el('p', { class: 'muted', id: 'colBranco', text: branco + (branco === 1 ? ' linha em branco será deixada de fora.' : ' linhas em branco serão deixadas de fora.') }));
+      f.append(topo);
+      if (!edicao) {
+        const tit = el('div', { class: 'row' }, el('button', { type: 'button', id: 'colCab', text: 'O cabeçalho está em outra linha', onclick: () => { escolhendo = !escolhendo; monta(); } }),
+          el('button', { type: 'button', id: 'colSemCab', text: 'O arquivo não tem cabeçalho', onclick: () => { hi = -1; escolhendo = false; monta(); } }));
+        f.append(tit);
+        if (escolhendo) f.append(el('p', { class: 'muted', text: 'Toque na linha que tem os títulos das colunas.' }), el('div', { class: 'tw', style: 'max-height:30vh;overflow:auto' }, el('table', { id: 'colLinhas' }, el('tbody', null, rows.slice(0, 15).map((r, i) => el('tr', { class: i === hi ? 'sel' : '', tabindex: 0, onclick: () => { hi = i; escolhendo = false; monta(); } }, el('td', { text: 'linha ' + (i + 1) }), Array.from({ length: nc }, (_, j) => el('td', { text: Core.t(r[j]).slice(0, 30) }))))))));
+      }
+      f.append(el('div', { class: 'grid2' }, el('label', { class: 'f' }, 'Qual coluna identifica cada linha? (obrigatório; o número do pedido, por exemplo)', selCod), el('label', { class: 'f' }, 'Qual coluna mostra o andamento? (se houver: aberto, entregue, cancelado)', selSit)), erro,
+        el('div', { class: 'row' },
+          el('button', { class: 'prim', type: 'button', id: 'colOk', text: 'Confirmar', onclick: () => {
+            const ic = +selCod.value, is = +selSit.value;
+            if (col[ic].ap.value === 'nao') { erro.textContent = 'A coluna que identifica cada linha precisa aparecer. Troque o “Aparece?” dela para Sim ou escolha outra.'; return; }
+            if (is === ic) { erro.textContent = 'A coluna do andamento precisa ser diferente da que identifica cada linha.'; return; }
+            const usados = {}, nomes = nomesAtuais(), cols = col.map((c, j) => { let n = nomes[j]; const b = n; let i = 2; while (usados[n.toLowerCase()]) n = b + ' ' + i++; usados[n.toLowerCase()] = 1;
+              return { n, t: c.ap.value === 'nao' ? 'ignorar' : j === ic ? 'codigo' : j === is ? 'situacao' : c.tp.value }; });
+            d.close(); ok({ conjunto: Core.t(nomeRel.value) || 'Relatório', cols, hi, branco });
+          } }),
+          el('button', { type: 'button', text: 'Cancelar', onclick: () => { d.close(); ok(null); } })));
+    };
+    monta(); d.oncancel = () => ok(null); d.showModal();
   });
 }
 /* ---- leitores por tipo (etapa 7a): cada um devolve [{nome, rows}] ---- */
@@ -433,10 +464,11 @@ async function lerImagens(fila) {   // R-133: mesmo cabeçalho = uma janela; dev
 async function processar(arq, nome, rows) {
   const hi = Core.acharCabecalho(rows);
   if (hi < 0) { toast('Não achei o cabeçalho em ' + arq + '.'); return null; }
-  const hdr = rows[hi].map(Core.t), corpo = rows.slice(hi + 1).filter(r => r.some(x => Core.t(x)));
-  const sig = Core.assinatura(hdr);
+  const sig = Core.assinatura(rows[hi].map(Core.t));
   let fm = fmts[sig];
-  if (!fm) { fm = await perguntarColunas(arq, hdr, corpo, nome); if (!fm) return null; fmts[sig] = fm; store.set('raiox_fmt', fmts); }
+  if (!fm) { const r = await perguntarColunas(arq, rows, hi, nome); if (!r) return null; fm = { conjunto: r.conjunto, cols: r.cols, hi: r.hi }; fmts[sig] = fm; store.set('raiox_fmt', fmts); }
+  const hf = typeof fm.hi === 'number' ? fm.hi : hi, todas = rows.slice(hf + 1), corpo = todas.filter(r => r.some(x => Core.t(x)));
+  if (todas.length - corpo.length > 0) toast((todas.length - corpo.length) + (todas.length - corpo.length === 1 ? ' linha em branco deixada de fora.' : ' linhas em branco deixadas de fora.'));
   return await importar(fm, corpo);
 }
 async function lerBuf(buf, arq, res, fila) {   // um arquivo (ou um de dentro do zip) -> uma ou mais tabelas, cada uma pelo caminho de sempre
@@ -1403,10 +1435,21 @@ function topo() {
   const lp = $('#cfgLogoPrev'); lp.textContent = ''; lp.hidden = !cfg.logo; if (cfg.logo) lp.append(el('img', { src: cfg.logo, alt: 'Logo', style: 'height:34px' }));
   $('#cfgLogoX').hidden = !cfg.logo;
 }
+// Config → Formatos lembrados → Editar: reabre a mesma tela com os dados já guardados (os nomes ficam; muda Aparece?, Tipo e as duas perguntas)
+async function editarFormato(k) {
+  const fm = fmts[k]; if (!fm) return;
+  const amostra = regs.filter(r => r.conjunto === fm.conjunto).slice(0, 5).map(r => fm.cols.map(x => x.t === 'codigo' ? r.codigo : (r.v[x.n] || '')));
+  const rows = [fm.cols.map(x => x.n)].concat(amostra);
+  const r = await perguntarColunas(fm.conjunto, rows, 0, fm.conjunto, { pal: fm.cols.map(x => x.t === 'data' || x.t === 'numero' || x.t === 'categoria' || x.t === 'texto' ? x.t : x.t), nomes: fm.cols.map(x => x.n), base: fm.cols.map(() => 'texto') });
+  if (!r) return;
+  fm.cols = fm.cols.map((x, j) => ({ n: x.n, t: r.cols[j].t })); store.set('raiox_fmt', fmts);
+  if (conjs[fm.conjunto]) { conjs[fm.conjunto].campos = fm.cols.filter(x => x.t !== 'ignorar').map(x => ({ n: x.n, t: x.t })); salvaConjs(); }
+  renderConfig(); render(); toast('Formato atualizado.');
+}
 function renderConfig() {
   const l = $('#listaFmt'); l.textContent = '';
   const ks = Object.keys(fmts); if (!ks.length) l.append(el('p', { class: 'muted', text: 'Nenhum formato lembrado ainda.' }));
-  ks.forEach(k => l.append(el('div', { class: 'row', style: 'margin-bottom:6px' }, el('span', { text: fmts[k].conjunto + ' (' + fmts[k].cols.length + ' colunas)' }), el('button', { type: 'button', text: 'Esquecer', onclick: () => { delete fmts[k]; store.set('raiox_fmt', fmts); renderConfig(); } }))));
+  ks.forEach(k => l.append(el('div', { class: 'row', style: 'margin-bottom:6px' }, el('span', { text: fmts[k].conjunto + ' (' + fmts[k].cols.length + ' colunas)' }), el('button', { type: 'button', text: 'Editar', onclick: () => editarFormato(k) }), el('button', { type: 'button', text: 'Esquecer', onclick: () => { delete fmts[k]; store.set('raiox_fmt', fmts); renderConfig(); } }))));
   renderSin(); renderContas();
   $('#infoDados').textContent = regs.length + ' registros guardados neste aparelho.';
 }
@@ -1433,6 +1476,7 @@ function iniciaConfig() {
     const mud = []; b.registros.forEach(x => { const a = mapa.get(chave(x.conjunto, x.codigo)); if (!a) { regs.push(x); mapa.set(chave(x.conjunto, x.codigo), x); mud.push(x); } else { a.v = Core.juntar(a.v, x.v); mud.push(a); } });
     await IDB.put(mud); salvaConjs(); store.set('raiox_fmt', fmts); F.conjunto = Object.keys(conjs)[0] || ''; iniciaCfgCampos(); topo(); render(); renderConfig(); toast('Backup restaurado.');
   };
+  $('#apagarRecarregar').onclick = () => $('#apagarTudo').click();
   $('#apagarTudo').onclick = async () => {
     const r = await perguntar('Apagar todos os dados', 'Isso apaga os ' + regs.length + ' registros deste aparelho. Baixe um backup antes se quiser guardar. Apagar mesmo?', [{ t: 'Apagar', v: true, prim: true }, { t: 'Cancelar', v: null }]);
     if (!r) return; await IDB.clear(); await IDB.oldClear(); regs = []; mapa = new Map(); conjs = nulo(); salvaConjs(); acomp = nulo(); salvaAcomp(); meus = nulo(); salvaMeus(); contas = nulo(); salvaContas(); layouts = nulo(); salvaLay(); modoEd = false; F.conjunto = ''; render(); renderConfig(); toast('Dados apagados.');
