@@ -588,9 +588,9 @@ def test_forma_opcoes_por_tipo_de_bloco(page):
     edicao(page)
     assert opcoes(sel(page, TOTAL, "Forma")) == ["Número"]
     assert opcoes(sel(page, VALOR, "Forma")) == ["Número"]
-    assert set(opcoes(sel(page, REG, "Forma"))) == {"Barras", "Pizza", "Tabela"}
-    assert set(opcoes(sel(page, "Valor por Região", "Forma"))) == {"Barras", "Pizza", "Tabela"}
-    assert set(opcoes(sel(page, "Evolução por mês (Data)", "Forma"))) == {"Barras", "Linha", "Pizza", "Tabela"}
+    assert set(opcoes(sel(page, REG, "Forma"))) == {"Barras", "Pizza", "Rosca", "Radar", "Tabela"}
+    assert set(opcoes(sel(page, "Valor por Região", "Forma"))) == {"Barras", "Pizza", "Rosca", "Radar", "Bolhas", "Tabela"}
+    assert set(opcoes(sel(page, "Evolução por mês (Data)", "Forma"))) == {"Barras", "Linha", "Área", "Pizza", "Rosca", "Tabela"}
     assert escolhido(sel(page, TOTAL, "Forma")) == "Número"
     assert escolhido(sel(page, REG, "Forma")) == "Barras"             # forma de origem = padrao
 

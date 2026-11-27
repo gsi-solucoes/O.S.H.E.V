@@ -715,10 +715,12 @@ function catalogo(c, soIds) {
       return cartao({ regs: L, nome: 'Evolução por mês (' + k.n + ')' }, barras(g, (m, l) => abrir('Mês ' + m, l))); } }));
   if (ds.length >= 2) out.push({ id: 'tempo', grupo: 'num', nome: 'Tempo entre duas datas', get oque() { const p = parTempo(ds); return 'o tempo que passa entre ' + p[0] + ' e ' + p[1] + ', em faixas e dentro do prazo'; }, get conta() { const p = parTempo(ds); return 'mediana do tempo entre ' + p[0] + ' e ' + p[1]; }, get campos() { return parTempo(ds).join(', '); }, get dataCampo() { return parTempo(ds)[0]; },
     ex: L => { const p = parTempo(ds), it = paresTempo(L, p[0], p[1]); return it.length ? 'Mediana: ' + Core.hm(Core.mediana(it.map(x => x[1]))) : null; },
+    veloc: L => { parTempo(ds); const it = paresTempo(L, F.tA, F.tB), regs = it.map(x => x[0]); return { pct: Core.pctDentro(it.map(x => x[1]), cfg.prazoH * 3600000), regs, rot: 'Dentro de ' + Core.fmtPrazo(cfg.prazoH), abrir: () => abrir('Dentro de ' + Core.fmtPrazo(cfg.prazoH), regs) }; },
     desenha: L => cartaoTempo(L, c, ds, 'Tempo entre duas datas') });
   ss.forEach(k => out.push({ id: 'sit' + SEP + k.n, grupo: 'num', nome: '% por ' + k.n, oque: 'a parte de cada ' + k.n + ' no total', conta: 'percentual de registros por ' + k.n, campos: k.n,
     ex: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0); return g.length ? g[0][0] + ': ' + fmtP(100 * g[0][1].length / n) : null; },
     graf: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0); return { itens: g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), abrir: (v, l) => abrir(k.n + ': ' + v, l) }; },
+    veloc: L => { const conc = L.filter(r => !emAberto(r, k.n)); return { pct: L.length ? 100 * conc.length / L.length : null, regs: conc, rot: 'Concluídos', abrir: () => abrir(k.n + ': Concluídos', conc) }; },
     desenha: L => { const g = ordenaGrupos(agrupa(L, r => r.v[k.n])), n = g.reduce((a, x) => a + x[1].length, 0);
       return cartao({ regs: L, nome: '% por ' + k.n }, barras(g.map(([v, l]) => [v, l.length, l, fmtP(100 * l.length / n)]), (v, l) => abrir(k.n + ': ' + v, l))); } }));
   campos.filter(k => k.t !== 'codigo' && k.t !== 'ignorar').forEach(k => out.push({ id: 'vazio' + SEP + k.n, grupo: 'num', nome: 'Sem valor em ' + k.n, oque: 'quantos registros estão sem ' + k.n, conta: 'registros com o campo ' + k.n + ' vazio', campos: k.n,
@@ -845,8 +847,8 @@ const contaDe = (c, nome) => (contas[c] || []).find(x => x.nome === nome) || nul
 // nome de conta: sem controle, invisíveis nem marcas de direção do texto
 
 /* ---------- etapa 6: editar layout (raiox_layout: conjunto -> { abas:[{id,nome}], itens:[{k,id,aba,tam,oculto,forma}] }) ---------- */
-const LAY_TAM = ['p', 'm', 'g'], LAY_FORMAS = ['numero', 'barras', 'linha', 'pizza', 'tabela'];
-const TAM_NOME = { p: 'Pequeno', m: 'Médio', g: 'Grande' }, FORMA_NOME = { numero: 'Número', barras: 'Barras', linha: 'Linha', pizza: 'Pizza', tabela: 'Tabela' };
+const LAY_TAM = ['p', 'm', 'g'], LAY_FORMAS = ['numero', 'barras', 'linha', 'area', 'pizza', 'rosca', 'radar', 'velocimetro', 'bolhas', 'tabela'];
+const TAM_NOME = { p: 'Pequeno', m: 'Médio', g: 'Grande' }, FORMA_NOME = { numero: 'Número', barras: 'Barras', linha: 'Linha', area: 'Área', pizza: 'Pizza', rosca: 'Rosca', radar: 'Radar', velocimetro: 'Velocímetro', bolhas: 'Bolhas', tabela: 'Tabela' };
 const nomeAbaOk = n => typeof n === 'string' && n.length >= 1 && n.length <= 30 && !NOME_RUIM.test(n);
 const chaveNome = n => Core.norm(n) || n.toLowerCase();
 // valida o layout vindo de fora (backup, localStorage): até 200 conjuntos, 20 abas e 200 itens por conjunto; formato errado = null (rejeita tudo)
@@ -878,7 +880,8 @@ const salvaLay = () => store.set('raiox_layout', layouts);
 let modoEd = false, arrasta = null, selK = null, soltouK = null; const abaAb = nulo();   // modo edição e aba aberta ficam só na memória (recarregar volta ao normal)
 const tipoBloco = b => String(b.id || '').split('\u0001')[0];
 const formaOrig = b => ['cat', 'numcat', 'sit', 'mes'].indexOf(tipoBloco(b)) >= 0 ? 'barras' : 'numero';
-const formasDe = b => { const t = tipoBloco(b); return t === 'mes' ? ['barras', 'linha', 'pizza', 'tabela'] : ['cat', 'numcat', 'sit'].indexOf(t) >= 0 ? ['barras', 'pizza', 'tabela'] : ['numero']; };
+const FORMAS_TIPO = { cat: ['barras', 'pizza', 'rosca', 'radar', 'tabela'], numcat: ['barras', 'pizza', 'rosca', 'radar', 'bolhas', 'tabela'], mes: ['barras', 'linha', 'area', 'pizza', 'rosca', 'tabela'], sit: ['barras', 'pizza', 'rosca', 'radar', 'velocimetro', 'tabela'], tempo: ['numero', 'velocimetro'] };
+const formasDe = b => FORMAS_TIPO[tipoBloco(b)] || ['numero'];
 const novoK = (L, id) => { if (!L.itens.some(x => x.k === id)) return id; let n = 1; while (L.itens.some(x => x.k === id + '\u0002' + n)) n++; return id + '\u0002' + n; };
 // layout efetivo do conjunto (cópia): o salvo, ou o padrão da etapa 2; sempre em dia com "O que acompanhar" (desmarcado sai; novo entra no fim da 1ª aba)
 function layGet(c) {
@@ -904,32 +907,79 @@ const troca = (L, i, d) => { const a = L.itens.findIndex(x => x.k === i.k), j = 
 const sv = (tag, p, ...kids) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [a, v] of Object.entries(p || {})) e.setAttribute(a, String(v)); kids.forEach(k => e.append(k)); return e; };
 const COR_PZ = ['#2563eb', '#16a34a', '#f59e0b', '#dc2626', '#7c3aed', '#0891b2', '#db2777', '#65a30d'];
 const rotI = x => x[3] != null ? x[3] : x[1];
-function pizzaSvg(it, abrir) {
-  const tot = it.reduce((a, x) => a + Math.max(0, x[1]), 0); if (!tot) return barras(it, abrir);
-  const svg = sv('svg', { viewBox: '-1 -1 2 2', width: 160, height: 160, role: 'img', 'aria-label': 'Gráfico de pizza' }); let ang = -Math.PI / 2;
+// rosca (9c.10): a pizza com buraco e o total no centro; o.titulo dá o nome (Rosca: <título>)
+function pizzaSvg(it, abrir, o) {
+  o = o || {}; const tot = it.reduce((a, x) => a + Math.max(0, x[1]), 0); if (!tot) return barras(it, abrir);
+  const nomeG = o.rosca ? 'Rosca: ' + (o.titulo || '') : 'Gráfico de pizza';
+  const svg = sv('svg', { viewBox: '-1 -1 2 2', width: 160, height: 160, role: 'img', 'aria-label': nomeG, title: nomeG }); let ang = -Math.PI / 2;
+  if (o.rosca) svg.append(sv('title', {}, document.createTextNode(nomeG)));
   it.forEach((x, ix) => {
     const f = Math.max(0, x[1]) / tot; if (!f) return; const a2 = ang + f * 2 * Math.PI, cor = COR_PZ[ix % 8];
-    const p = f >= 0.9999 ? sv('circle', { cx: 0, cy: 0, r: 1, fill: cor }) : sv('path', { d: 'M0 0 L' + Math.cos(ang) + ' ' + Math.sin(ang) + ' A1 1 0 ' + (f > 0.5 ? 1 : 0) + ' 1 ' + Math.cos(a2) + ' ' + Math.sin(a2) + ' Z', fill: cor });
+    const p = o.rosca ? sv('path', { d: Core.arcoPath(0, 0, 0.58, 1, ang, a2), fill: cor }) : f >= 0.9999 ? sv('circle', { cx: 0, cy: 0, r: 1, fill: cor }) : sv('path', { d: 'M0 0 L' + Math.cos(ang) + ' ' + Math.sin(ang) + ' A1 1 0 ' + (f > 0.5 ? 1 : 0) + ' 1 ' + Math.cos(a2) + ' ' + Math.sin(a2) + ' Z', fill: cor });
     p.append(sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.setAttribute('aria-label', x[0] + ': ' + rotI(x)); p.setAttribute('role', 'button'); p.setAttribute('tabindex', '0'); p.onclick = () => abrir(x[0], x[2]); p.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(x[0], x[2]); } }; p.style.cursor = 'pointer'; svg.append(p); ang = a2;
   });
+  if (o.rosca) { const t = sv('text', { x: 0, y: 0.09, 'text-anchor': 'middle', 'font-size': 0.28, style: 'fill:var(--ink);font-weight:700' }); t.textContent = Number.isInteger(tot) ? fmtI(tot) : fmtN(tot); svg.append(t); }
   return el('div', { class: 'pizza' }, svg, el('div', { class: 'bars' }, it.map((x, ix) => el('button', { class: 'bar', type: 'button', onclick: () => abrir(x[0], x[2]) }, el('span', { text: x[0] }), el('i', { style: 'width:14px;background:' + COR_PZ[ix % 8] }), el('b', { text: rotI(x) })))));
 }
-function linhaSvg(it, abrir) {
-  const W = 300, H = 100, P = 8, n = it.length, mx = Math.max(1, ...it.map(x => x[1])), X = i => n === 1 ? W / 2 : P + i * (W - 2 * P) / (n - 1), Y = v => H - P - (H - 2 * P) * Math.max(0, v) / mx;
-  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': 'Gráfico de linha' });
+function linhaSvg(it, abrir, o) {
+  o = o || {}; let mx = 1; for (const x of it) if (x[1] > mx) mx = x[1];
+  const nomeG = o.area ? 'Área: ' + (o.titulo || '') : 'Gráfico de linha', W = 300, H = 100, P = 8, n = it.length, X = i => n === 1 ? W / 2 : P + i * (W - 2 * P) / (n - 1), Y = v => H - P - (H - 2 * P) * Math.max(0, v) / mx;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': nomeG, title: nomeG });
+  if (o.area) { svg.append(sv('title', {}, document.createTextNode(nomeG))); svg.append(sv('path', { d: Core.areaPath(it.map((x, i) => ({ x: X(i), y: Y(x[1]) })), H - P), fill: '#2563eb', 'fill-opacity': 0.25, stroke: 'none' })); }
   svg.append(sv('polyline', { points: it.map((x, i) => X(i) + ',' + Y(x[1])).join(' '), fill: 'none', stroke: '#2563eb', 'stroke-width': 2 }));
-  it.forEach((x, i) => { const p = sv('circle', { cx: X(i), cy: Y(x[1]), r: 4, fill: '#2563eb' }, sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.onclick = () => abrir(x[0], x[2]); p.style.cursor = 'pointer'; svg.append(p); });
+  it.forEach((x, i) => { const p = sv('circle', { cx: X(i), cy: Y(x[1]), r: 4, fill: '#2563eb', role: 'button', tabindex: 0, 'aria-label': x[0] + ': ' + rotI(x) }, sv('title', {}, document.createTextNode(x[0] + ': ' + rotI(x)))); p.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(x[0], x[2]); } }; p.onclick = () => abrir(x[0], x[2]); p.style.cursor = 'pointer'; svg.append(p); });
   return el('div', { class: 'linha' }, svg, el('p', { class: 'muted', text: it.length ? it[0][0] + ' a ' + it[n - 1][0] : '' }));
+}
+// radar (9c.10): um eixo por grupo (3 a 10), polígono com os valores
+function radarSvg(it, abrir, titulo) {
+  const W = 360, H = 260, cx = 180, cy = 130, R = 80, g = Core.radarGeom(it.map(x => x[1]), cx, cy, R), nomeG = 'Radar: ' + titulo;
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': nomeG, title: nomeG }, sv('title', {}, document.createTextNode(nomeG)));
+  g.aneis.forEach(p => svg.append(sv('polygon', { points: p, fill: 'none', style: 'stroke:var(--line)' })));
+  g.eixos.forEach((e, i) => {
+    svg.append(sv('line', { x1: cx, y1: cy, x2: e.x, y2: e.y, style: 'stroke:var(--line)' }));
+    const c = Math.cos(e.ang), t = sv('text', { x: cx + (R + 8) * c, y: cy + (R + 8) * Math.sin(e.ang) + 3, 'text-anchor': c > 0.2 ? 'start' : c < -0.2 ? 'end' : 'middle', 'font-size': 10, style: 'fill:var(--ink)' }); t.textContent = it[i][0]; svg.append(t);
+  });
+  svg.append(sv('polygon', { points: g.pontos.map(p => p.x + ',' + p.y).join(' '), 'fill-opacity': 0.25, style: 'fill:var(--accent);stroke:var(--accent);stroke-width:2' }));
+  g.pontos.forEach((p, i) => { const x = it[i], rot = x[0] + ': ' + rotI(x), c = sv('circle', { cx: p.x, cy: p.y, r: 5, role: 'button', tabindex: 0, 'aria-label': rot, style: 'fill:var(--accent);cursor:pointer' }, sv('title', {}, document.createTextNode(rot))); c.onclick = () => abrir(x[0], x[2]); c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(x[0], x[2]); } }; svg.append(c); });
+  return el('div', { class: 'linha' }, svg);
+}
+// bolhas (9c.10): x = registros, y = média, área = soma (só em <Número> por <Grupo>); it = itens sem "Outros" [nome, soma, lista, rótulo]
+function bolhasSvg(it, abrir, titulo) {
+  const W = 300, H = 200, nomeG = 'Bolhas: ' + titulo, gr = it.map(x => ({ n: x[2].length, soma: x[1], media: x[2].length ? x[1] / x[2].length : 0 })), geo = Core.bolhasGeom(gr, W, H, 6, 22);
+  const svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': nomeG, title: nomeG }, sv('title', {}, document.createTextNode(nomeG)));
+  svg.append(sv('line', { x1: 4, y1: H - 4, x2: W - 4, y2: H - 4, style: 'stroke:var(--line)' }), sv('line', { x1: 4, y1: 4, x2: 4, y2: H - 4, style: 'stroke:var(--line)' }));
+  const tx = sv('text', { x: W - 6, y: H - 8, 'text-anchor': 'end', 'font-size': 9, style: 'fill:var(--muted)' }); tx.textContent = 'registros →'; const ty = sv('text', { x: 8, y: 12, 'font-size': 9, style: 'fill:var(--muted)' }); ty.textContent = '↑ média'; svg.append(tx, ty);
+  it.forEach((x, i) => { const rot = x[0] + ': ' + fmtI(gr[i].n) + ' registros, média ' + fmtN(gr[i].media) + ', total ' + fmtN(gr[i].soma), c = sv('circle', { cx: geo[i].x, cy: geo[i].y, r: geo[i].r, fill: COR_PZ[i % 8], 'fill-opacity': 0.7, stroke: COR_PZ[i % 8], role: 'button', tabindex: 0, 'aria-label': rot, style: 'cursor:pointer' }, sv('title', {}, document.createTextNode(rot)));
+    c.onclick = () => abrir(x[0], x[2]); c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrir(x[0], x[2]); } }; svg.append(c); });
+  return el('div', { class: 'linha' }, svg, el('div', { class: 'bars' }, it.map((x, ix) => el('button', { class: 'bar', type: 'button', onclick: () => abrir(x[0], x[2]) }, el('span', { text: x[0] }), el('i', { style: 'width:14px;background:' + COR_PZ[ix % 8] }), el('b', { text: rotI(x) })))));
+}
+// velocímetro (9c.10): meio círculo de 0 a 100%, ponteiro no valor, marca na meta da Config; v = { pct, rot, abrir }
+function velocSvg(v, titulo) {
+  const nomeG = 'Velocímetro: ' + titulo, cx = 100, cy = 100, r = 80, svg = sv('svg', { viewBox: '0 0 200 112', width: '100%', role: 'img', 'aria-label': nomeG, title: nomeG }, sv('title', {}, document.createTextNode(nomeG)));
+  const ab = e => { if (e.type === 'click' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); v.abrir(); } };
+  const trilho = sv('path', { d: Core.velocArco(0, 100, cx, cy, r), fill: 'none', 'stroke-width': 16, style: 'stroke:var(--line);cursor:pointer', role: 'button', tabindex: 0, 'aria-label': nomeG + ': ' + (v.pct == null ? '—' : fmtP(v.pct)) });
+  trilho.onkeydown = ab; svg.onclick = ab; svg.style.cursor = 'pointer'; svg.append(trilho);
+  if (v.pct != null && v.pct > 0) svg.append(sv('path', { d: Core.velocArco(0, Math.min(100, v.pct), cx, cy, r), fill: 'none', 'stroke-width': 16, style: 'stroke:var(--accent);pointer-events:none' }));
+  if (cfg.meta != null && isFinite(cfg.meta)) { const a = Core.velocPonto(cfg.meta, cx, cy, r - 12), b = Core.velocPonto(cfg.meta, cx, cy, r + 12); svg.append(sv('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, 'stroke-width': 3, style: 'stroke:var(--good);pointer-events:none' }, sv('title', {}, document.createTextNode('Meta: ' + cfg.meta + '%')))); }
+  if (v.pct != null) { const p = Core.velocPonto(v.pct, cx, cy, r - 8); svg.append(sv('line', { x1: cx, y1: cy, x2: p.x, y2: p.y, 'stroke-width': 3, style: 'stroke:var(--ink);pointer-events:none' }), sv('circle', { cx, cy, r: 5, style: 'fill:var(--ink);pointer-events:none' })); }
+  const m = Core.meta(v.pct, cfg.meta), metaTxt = cfg.meta != null && isFinite(cfg.meta) ? ' de ' + String(cfg.meta).replace('.', ',') + '%' : '';
+  return el('div', { class: 'linha' }, svg, el('button', { class: 'kpi', type: 'button', onclick: v.abrir, 'aria-label': v.rot + ': ' + (v.pct == null ? '—' : fmtP(v.pct) + metaTxt) }, el('span', { text: v.rot }), el('b', { text: v.pct == null ? '—' : fmtP(v.pct) + metaTxt })), m.txt ? el('p', { class: m.ok ? 'good' : 'muted', text: m.txt }) : null);
 }
 const tabelaForma = (it, abrir) => el('div', { class: 'tw' }, el('table', null, el('thead', null, el('tr', null, el('th', { text: 'Categoria' }), el('th', { text: 'Valor' }))),
   el('tbody', null, it.map(x => el('tr', null, el('td', null, el('button', { type: 'button', text: x[0], onclick: () => abrir(x[0], x[2]) })), el('td', { text: String(rotI(x)) }))))));
 // desenha o bloco na forma escolhida (a de origem usa o desenho de sempre)
 function desenhaItem(b, i, L, c) {
   const f = formasDe(b).indexOf(i.forma) >= 0 ? i.forma : formaOrig(b);
-  if (f === formaOrig(b) || !b.graf) return b.desenha(L, c);
-  const g = b.graf(L), it = g.itens, kids = []; let forma = f;
+  if (f === formaOrig(b)) return b.desenha(L, c);
+  const tit = b.nome || i.titulo || '';
+  if (f === 'velocimetro' && b.veloc) { const v = b.veloc(L), card = cartao(Object.assign({}, b, { regs: L }), velocSvg(v, tit)); card.setAttribute('data-forma', 'velocimetro'); return card; }
+  if (!b.graf) return b.desenha(L, c);
+  const g = b.graf(L), it = g.itens, kids = []; let forma = f, mostra = it;
   if (f === 'pizza' && it.length > 8) { forma = 'barras'; kids.push(el('p', { class: 'muted', text: 'Pizza com mais de 8 fatias: mostrando barras' })); }
-  const corpo = forma === 'barras' ? barras(it, g.abrir) : forma === 'tabela' ? tabelaForma(it, g.abrir) : forma === 'linha' ? linhaSvg(it, g.abrir) : pizzaSvg(it, g.abrir);
+  if (f === 'rosca' && it.length > 8) { forma = 'barras'; kids.push(el('p', { class: 'muted', text: 'Rosca com mais de 8 fatias: mostrando barras' })); }
+  if (f === 'radar' && !Core.radarOk(it.map(x => x[0]))) { forma = 'barras'; kids.push(el('p', { class: 'muted', text: 'Radar precisa de 3 a 10 grupos: mostrando barras' })); }
+  if (f === 'bolhas') { mostra = it.filter(x => x[0] !== 'Outros' && x[2].length); if (mostra.length < 2) { forma = 'barras'; mostra = it; kids.push(el('p', { class: 'muted', text: 'Bolhas precisam de pelo menos 2 grupos: mostrando barras' })); } }
+  const corpo = forma === 'barras' ? barras(it, g.abrir) : forma === 'tabela' ? tabelaForma(it, g.abrir) : forma === 'linha' ? linhaSvg(it, g.abrir) : forma === 'area' ? linhaSvg(it, g.abrir, { area: true, titulo: tit }) : forma === 'radar' ? radarSvg(it, g.abrir, tit) : forma === 'bolhas' ? bolhasSvg(mostra, g.abrir, tit) : pizzaSvg(it, g.abrir, { rosca: forma === 'rosca', titulo: tit });
   const card = cartao(b.aplica ? Object.assign({}, b, { regs: b.aplica(L) }) : Object.assign({}, b, { regs: L }), ...kids, corpo); card.setAttribute('data-forma', forma); return card;
 }
 const layAvisoFechado = () => { try { return localStorage.getItem('raiox_layaviso') === '1'; } catch (e) { return false; } };
@@ -1577,18 +1627,18 @@ function relDefs(c, L) {
   if (cd) {
     const p = ds.length >= 2 ? parTempo(ds) : null, saida = p ? (p[1] !== cd ? p[1] : p[0]) : null, duas = !!saida && saida !== cd;
     defs.push({ id: 'entrou', tit: duas ? 'Entrou e saiu por mês' : 'Entrou por mês (' + cd + ')', frase: 'Quantos entraram (e saíram) em cada mês.', forma: true,
-      formas: duas ? ['barras', 'linha', 'tabela'] : ['barras', 'linha', 'pizza', 'tabela'], desenha: ctx => {
+      formas: duas ? ['barras', 'linha', 'area', 'tabela'] : ['barras', 'linha', 'area', 'pizza', 'rosca', 'tabela'], desenha: ctx => {
         const mE = agrupa(L, r => (r.v[cd] || '').slice(0, 7)), mS = duas ? agrupa(L, r => (r.v[saida] || '').slice(0, 7)) : new Map(), meses = [...new Set([...mE.keys(), ...mS.keys()])].sort();
         const lin = meses.map(m => ({ m, e: mE.has(m) ? mE.get(m) : [], s: mS.has(m) ? mS.get(m) : [] }));
         const tab = tabelaTxt(duas ? ['Mês', 'Entrou', 'Saiu', 'Saldo'] : ['Mês', 'Entrou'], lin.map(x => duas ? [fmtM(x.m), fmtI(x.e.length), fmtI(x.s.length), fmtI(x.e.length - x.s.length)] : [fmtM(x.m), fmtI(x.e.length)]));
         const forma = ctx.forma;
         if (!duas) { const b = { id: 'mes\u0001' + cd, nome: '', graf: () => ({ itens: lin.map(x => [fmtM(x.m), x.e.length, x.e]), abrir: (m, l) => abre('Mês ' + m, l) }), desenha: () => cartao({ regs: L, nome: '' }, barras(lin.map(x => [fmtM(x.m), x.e.length, x.e]), (m, l) => abre('Mês ' + m, l))) };
-          return [forma === 'tabela' ? null : tiraH3(desenhaItem(b, { forma }, L, c)), tab]; }
+          return [forma === 'tabela' ? null : tiraH3(desenhaItem(b, { forma, titulo: 'Entrou por mês (' + cd + ')' }, L, c)), tab]; }
         if (forma === 'tabela') return tab;
-        const mx = Math.max(1, ...lin.map(x => Math.max(x.e.length, x.s.length)));
-        if (forma === 'linha') {
-          const W = 300, H = 100, P = 8, n = lin.length, X = i => n === 1 ? W / 2 : P + i * (W - 2 * P) / (n - 1), Y = v => H - P - (H - 2 * P) * v / mx, svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': 'Linha: Entrou e saiu por mês' });
-          [['e', '#2563eb'], ['s', '#f59e0b']].forEach(([k, cor]) => { svg.append(sv('polyline', { points: lin.map((x, i) => X(i) + ',' + Y(x[k].length)).join(' '), fill: 'none', stroke: cor, 'stroke-width': 2 })); lin.forEach((x, i) => { const pt = sv('circle', { cx: X(i), cy: Y(x[k].length), r: 4, fill: cor }, sv('title', {}, document.createTextNode(fmtM(x.m) + ' ' + (k === 'e' ? 'Entrou' : 'Saiu') + ': ' + x[k].length))); pt.style.cursor = 'pointer'; pt.onclick = () => abre('Mês ' + fmtM(x.m) + (k === 'e' ? ' (Entrou)' : ' (Saiu)'), x[k]); svg.append(pt); }); });
+        let mx = 1; for (const x of lin) { if (x.e.length > mx) mx = x.e.length; if (x.s.length > mx) mx = x.s.length; }
+        if (forma === 'linha' || forma === 'area') {
+          const area = forma === 'area', W = 300, H = 100, P = 8, n = lin.length, X = i => n === 1 ? W / 2 : P + i * (W - 2 * P) / (n - 1), Y = v => H - P - (H - 2 * P) * v / mx, svg = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', role: 'img', 'aria-label': (area ? 'Área' : 'Linha') + ': Entrou e saiu por mês' });
+          [['e', '#2563eb'], ['s', '#f59e0b']].forEach(([k, cor]) => { if (area) svg.append(sv('path', { d: Core.areaPath(lin.map((x, i) => ({ x: X(i), y: Y(x[k].length) })), H - P), fill: cor, 'fill-opacity': 0.25, stroke: 'none' })); svg.append(sv('polyline', { points: lin.map((x, i) => X(i) + ',' + Y(x[k].length)).join(' '), fill: 'none', stroke: cor, 'stroke-width': 2 })); lin.forEach((x, i) => { const pt = sv('circle', { cx: X(i), cy: Y(x[k].length), r: 4, fill: cor, role: 'button', tabindex: 0, 'aria-label': fmtM(x.m) + ' ' + (k === 'e' ? 'Entrou' : 'Saiu') + ': ' + x[k].length }, sv('title', {}, document.createTextNode(fmtM(x.m) + ' ' + (k === 'e' ? 'Entrou' : 'Saiu') + ': ' + x[k].length))); pt.style.cursor = 'pointer'; pt.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pt.onclick(); } }; pt.onclick = () => abre('Mês ' + fmtM(x.m) + (k === 'e' ? ' (Entrou)' : ' (Saiu)'), x[k]); svg.append(pt); }); });
           return [el('div', { class: 'linha' }, svg, el('p', { class: 'muted', text: 'Azul: Entrou · Laranja: Saiu' })), tab];
         }
         return [el('div', { class: 'relGraf2' }, lin.map(x => el('div', { class: 'lin' }, el('span', { text: fmtM(x.m) }), el('div', null,
@@ -1603,9 +1653,9 @@ function relDefs(c, L) {
     return [el('div', { class: 'relNums' }, quad('Média', e.media), quad('Mediana', e.mediana), quad('Mínimo', e.min), quad('Máximo', e.max)), el('p', { text: Core.fraseDist(e, fmtN).join(' ') }), ...tab('5 maiores', true), ...tab('5 menores', false)];
   } }));
   gOrd.forEach(g => { const x0 = concDe(g); if (!x0) return;
-    defs.push({ id: 'conc:' + g.n, tit: g.n + ': quem concentra', frase: 'Quem responde pela maior parte do total.', forma: true, formas: ['barras', 'pizza', 'tabela'], desenha: ctx => {
+    defs.push({ id: 'conc:' + g.n, tit: g.n + ': quem concentra', frase: 'Quem responde pela maior parte do total.', forma: true, formas: ['barras', 'pizza', 'rosca', 'radar', 'tabela'], desenha: ctx => {
       const x = concDe(g), b = { id: 'cat\u0001' + g.n, nome: '', graf: () => ({ itens: x.itens, abrir: x.abrir }), desenha: () => cartao({ regs: L, nome: '' }, barras(x.itens, x.abrir)) };
-      return [ctx.forma === 'tabela' ? null : tiraH3(desenhaItem(b, { forma: ctx.forma }, L, c)), tabelaTxt([g.n, x.medida, '% do total', '% acumulado'], x.cc.linhas.map(l => [l.nome, x.fv(l.valor), fmtP(l.pct), fmtP(l.acum)])), el('p', { text: x.frases.join(' ') })];
+      return [ctx.forma === 'tabela' ? null : tiraH3(desenhaItem(b, { forma: ctx.forma, titulo: g.n + ': quem concentra' }, L, c)), tabelaTxt([g.n, x.medida, '% do total', '% acumulado'], x.cc.linhas.map(l => [l.nome, x.fv(l.valor), fmtP(l.pct), fmtP(l.acum)])), el('p', { text: x.frases.join(' ') })];
     } }); });
   if (ds.length >= 2) defs.push({ id: 'tempo', tit: 'Tempo entre duas datas', frase: 'Quanto tempo passa entre ' + parTempo(ds)[0] + ' e ' + parTempo(ds)[1] + '.', desenha: () => tiraH3(cartaoTempo(L, c, ds, 'Tempo entre duas datas')) });
   if (blocosEscolhidos(c).length) defs.push({ id: 'painel', tit: 'Do seu painel', frase: 'Os indicadores que você escolheu no painel.', desenha: () => {

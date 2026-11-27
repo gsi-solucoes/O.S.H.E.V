@@ -668,7 +668,45 @@ var Core = (function () {
     return /^\d{4}-\d{2}$/.test(ultimoMes || '') ? { atual: mm(ultimoMes), ant: mm(mesMenos1(ultimoMes)) } : null;
   }
 
-  return { entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
+  /* formas de gráfico novas (9c.10): só contas de geometria, sem DOM */
+  var GTAU = Math.PI * 2, gR2 = function (x) { return Math.round(x * 100) / 100; };
+  function gMax(a, ini) { var m = ini; for (var i = 0; i < a.length; i++) if (a[i] > m) m = a[i]; return m; }
+  function gMin(a, ini) { var m = ini; for (var i = 0; i < a.length; i++) if (a[i] < m) m = a[i]; return m; }
+  // fatia de rosca (anel entre r0 e r1, de a0 a a1 em radianos); volta inteira vira quase inteira para o arco não sumir
+  function arcoPath(cx, cy, r0, r1, a0, a1) {
+    if (a1 - a0 >= GTAU - 0.0002) a1 = a0 + GTAU - 0.0002;
+    var g = a1 - a0 > Math.PI ? 1 : 0, P = function (r, a) { return gR2(cx + r * Math.cos(a)) + ' ' + gR2(cy + r * Math.sin(a)); };
+    return 'M' + P(r1, a0) + ' A' + r1 + ' ' + r1 + ' 0 ' + g + ' 1 ' + P(r1, a1) + ' L' + P(r0, a1) + ' A' + r0 + ' ' + r0 + ' 0 ' + g + ' 0 ' + P(r0, a0) + ' Z';
+  }
+  // regra do radar: 3 a 10 grupos e nenhum "Outros"
+  function radarOk(nomes) { if (nomes.length < 3 || nomes.length > 10) return false; for (var i = 0; i < nomes.length; i++) if (nomes[i] === 'Outros') return false; return true; }
+  // radar: eixos (pontas), pontos do polígono e anéis da grade; raio proporcional ao maior valor
+  function radarGeom(valores, cx, cy, R) {
+    var n = valores.length, mx = gMax(valores, 0), eixos = [], pontos = [], aneis = [], i, k;
+    for (i = 0; i < n; i++) {
+      var a = -Math.PI / 2 + i * GTAU / n, f = mx > 0 ? Math.max(0, valores[i]) / mx : 0;
+      eixos.push({ x: gR2(cx + R * Math.cos(a)), y: gR2(cy + R * Math.sin(a)), ang: a });
+      pontos.push({ x: gR2(cx + R * f * Math.cos(a)), y: gR2(cy + R * f * Math.sin(a)) });
+    }
+    [0.5, 1].forEach(function (q) { var p = []; for (k = 0; k < n; k++) p.push(gR2(cx + R * q * Math.cos(eixos[k].ang)) + ',' + gR2(cy + R * q * Math.sin(eixos[k].ang))); aneis.push(p.join(' ')); });
+    return { eixos: eixos, pontos: pontos, aneis: aneis, max: mx };
+  }
+  // velocímetro: meio círculo de 0 a 100% (esquerda a direita); devolve o ponto de uma porcentagem na circunferência de raio r
+  function velocPonto(pct, cx, cy, r) { var p = Math.max(0, Math.min(100, pct)), a = Math.PI + Math.PI * p / 100; return { x: gR2(cx + r * Math.cos(a)), y: gR2(cy + r * Math.sin(a)), ang: a }; }
+  function velocArco(p0, p1, cx, cy, r) { var a = velocPonto(p0, cx, cy, r), b = velocPonto(p1, cx, cy, r); return 'M' + a.x + ' ' + a.y + ' A' + r + ' ' + r + ' 0 0 1 ' + b.x + ' ' + b.y; }
+  // bolhas: x = nº de registros, y = média, área proporcional à soma; g = [{ n, media, soma }]
+  function bolhasGeom(g, W, H, P, rMax) {
+    var ns = g.map(function (x) { return x.n; }), ms = g.map(function (x) { return x.media; }), ss = g.map(function (x) { return Math.max(0, x.soma); });
+    var n0 = gMin(ns, Infinity), n1 = gMax(ns, -Infinity), m0 = gMin(ms, Infinity), m1 = gMax(ms, -Infinity), s1 = gMax(ss, 0), pad = P + rMax;
+    return g.map(function (x, i) {
+      var r = s1 > 0 ? rMax * Math.sqrt(ss[i] / s1) : rMax / 2; if (r < 2) r = 2;
+      return { x: gR2(n1 > n0 ? pad + (x.n - n0) / (n1 - n0) * (W - 2 * pad) : W / 2), y: gR2(m1 > m0 ? H - pad - (x.media - m0) / (m1 - m0) * (H - 2 * pad) : H / 2), r: gR2(r) };
+    });
+  }
+  // área: caminho fechado da linha até o eixo (yBase)
+  function areaPath(pts, yBase) { if (!pts.length) return ''; return 'M' + pts[0].x + ' ' + yBase + ' ' + pts.map(function (p) { return 'L' + p.x + ' ' + p.y; }).join(' ') + ' L' + pts[pts.length - 1].x + ' ' + yBase + ' Z'; }
+
+  return { arcoPath: arcoPath, radarOk: radarOk, radarGeom: radarGeom, velocPonto: velocPonto, velocArco: velocArco, bolhasGeom: bolhasGeom, areaPath: areaPath, entender: entender, decode: decode, parseCSV: parseCSV, acharCabecalho: acharCabecalho, norm: norm, assinatura: assinatura, iso: iso, dataISO: dataISO, numero: numero, palpites: palpites,
     juntar: juntar, FAIXAS: FAIXAS, faixa: faixa, hm: hm, mediana: mediana, pctDentro: pctDentro, msISO: msISO, meta: meta, lev: lev, semelhanca: semelhanca, parecido: parecido,
     compilaFormula: compilaFormula, avaliaFormula: avaliaFormula, lerSinonimos: lerSinonimos, aplicaSinonimos: aplicaSinonimos, repetidos: repetidos, FAIXAS_IDADE: FAIXAS_IDADE, idadeDias: idadeDias, achadosDe: achadosDe, faixaIdade: faixaIdade, fmtPrazo: fmtPrazo, estat: estat, fraseDist: fraseDist, extremos: extremos, concentracao: concentracao, compara: compara, periodoAnterior: periodoAnterior, somaDias: somaDias, tabelaPdf: tabelaPdf, tabelaOcr: tabelaOcr, corrigeOcr: corrigeOcr, itensOcr: itensOcr, t: t };
 })();

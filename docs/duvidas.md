@@ -16,3 +16,12 @@
 - 9c.7 A8b: o buraco de 01/07 a 24/07 existe em Abertura e em Conclusão (2 campos de data): um achado "Dias sem registro" por campo (frases iguais) ou um só? Testes aceitam os dois.
 - 9c.7 A7: `<Grupo> <valor>` = nome do campo + valor ("Grupo Grupo Teste 2")? Teste aceita com ou sem o prefixo; `<valor do andamento>` aceito em qualquer caixa.
 - Formato dos números nas frases (casas decimais de % e valores): testes aceitam 1 ou 2 casas (e sem decimais quando exato), com ou sem ponto de milhar.
+
+## F-85 (Testador, E3 gráficos novos, 27/11/2026)
+- 9c.10 não define `data-forma` para as formas novas (rosca, radar, área, velocímetro, bolhas); os testes usam só `role="img"` + `aria-label` `<Forma>: <título>` e os `aria-label` dos pedaços.
+- Janela de registros aberta pelo clique: sem seletor definido; o teste acha a janela pelo botão `Limpar seleção` e aceita n linhas de `tbody tr` OU o número n no texto.
+- `faltam X para a meta`: formato de X não definido; teste só exige `faltam ... para a meta`. Texto central do velocímetro: aceito no `textContent` do `role="img"` ou no texto da tela.
+- Bolhas: `média`/`total` assumidos com 2 casas decimais pt-BR (`1.234,56`); "área proporcional" medida pela largura do pedaço (largura² ~ soma, tolerância 15%).
+- CA-254 "filtro que deixa 2 regiões": o filtro de categoria só aceita 1 valor; o teste usa `Período De–até` com janela de datas que contém exatamente 2 regiões (calculada em Python).
+- CA-257: assume que a forma aparece no texto do backup (`rosca`, sem exigir a chave).
+- Catálogo `Valor por Cliente` assumido existente (CA-256).
