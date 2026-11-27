@@ -23,6 +23,7 @@ Versão completa e bonita: https://claude.ai/artifact/YC4rkfD15q4YgNCXoh6KSE
 ## Depois
 - **Editar layout:** arraste os quadros, crie abas, mude o tamanho e o tipo de gráfico.
 - **Relatório em Excel** do jeito que está na tela, com capa, período e filtros.
+- 🔨 **Tela Relatório** (em construção, F-83 a F-87): o programa monta o relatório para entender e mostrar (resumo, pendências por idade, quem concentra, o que encontrou), a pessoa ajusta e exporta em Excel ou PDF.
 - **Histórico:** cada arquivo novo se junta aos anteriores; dá para comparar mês com mês e ano com ano.
 - **Clique em qualquer número** e abre uma janela com os registros por trás dele, para imprimir ou copiar.
 
