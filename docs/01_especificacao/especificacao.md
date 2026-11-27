@@ -1,8 +1,9 @@
-# Raio X do Relatório — Especificação v1.9
+# Raio X do Relatório — Especificação v2.0
 
 Agente 2 (Especificador) · 25/11/2026 · base: `docs/00_concepcao/concepcao.md` (portão 1 aprovado pelo Galindo em 25/11/2026 14h18)
 
 **Histórico de versões**
+- v2.0 (27/11/2026, tarefas F-77 + F-76, Especificador): seção 9c "Tela Relatório" (R-140 a R-169, CA-200 a CA-284, decisões provisórias D-64 a D-84, etapas E1 a E5, fontes da pesquisa). Muda o caminho do Excel (botão `Gerar relatório` → `Exportar arquivo`) e o visual do Excel (substitui R-81 e a barra `█` da 0.5 a partir da E4).
 - v1.9 (26/11/2026, tarefa F-65, coordenador): seção 0.10 "etapa 7c: imagem e PDF escaneado com OCR" (R-130 a R-134, regras, CA-74 a CA-77b, CA-110z, decisões D-60 a D-63).
 - v1.8 (26/11/2026, tarefa F-64, coordenador): seção 0.9 "etapa 7b: PDF com texto e tela de conferência" (R-120 a R-125, regras, CA-73, CA-73b a d, CA-77, decisões D-50 a D-52).
 - v1.7 (26/11/2026, tarefa F-58, coordenador): seção 0.8 "etapa 7a: planilhas, JSON, XML e zip" (R-110 a R-112, regras, CA-70 a CA-72 e CA-75a, decisões D-40 a D-43).
@@ -595,6 +596,305 @@ O código atual é um protótipo feito para um caso específico. **Nada do conte
 - Mesma estrutura do app, sem conteúdo de nenhum caso: importar CSV/XLSX (ou .zip), perguntar o que é cada coluna (uma vez por formato), escolher indicadores do catálogo da etapa 2, painel com segmentação por período e categoria, botão "Gerar relatório" com capa.
 - CA-110: a macro importa `tests/dados/vendas.csv`, pergunta as colunas e gera o mesmo Total e Por cliente que o app (conferência manual no Excel 2016, roteiro em `docs/03_homologacao/roteiro-excel.md`).
 - CA-111: `grep -i` dos termos do CA-03 no `.bas` = 0.
+
+## 9c. Tela Relatório (v2.0, 27/11/2026, F-77 + F-76)
+
+**Princípio (Galindo, 26/11/2026).** O **Painel** serve para *acompanhar*: a pessoa escolhe os indicadores, mexe, filtra; responde "quanto é?". O **Relatório** serve para *entender e comunicar*: o Raio X monta sozinho o que importa e a pessoa só ajusta; responde "o que está acontecendo, onde está o problema e o que merece atenção?". Tudo no navegador, offline, sem servidor, sem IA, sem biblioteca nova pela rede. Nada fixo de um ramo: cada parte nasce do **tipo do campo** (Número, Data, Grupo, andamento), nunca do nome. Sem encaixes nem dublês (regra do projeto): os critérios rodam contra `tests/dados/`.
+
+**Linguagem.** Frases curtas, para quem não sabe Excel: "Metade ficou abaixo de…", "estão em aberto", "fazem 62% do total". Nada de "percentil", "outlier", "desvio padrão", "Pareto" ou "aging" na tela (esses termos só aparecem aqui, na especificação).
+
+### 9c.1 Fluxo
+
+1. A pessoa carrega os dados e usa o Painel como hoje.
+2. No fim do Painel, o cartão `Gerar Excel` (R-18) dá lugar ao cartão `Relatório` com o botão **`Gerar relatório`** (R-140). O `Formato` (R-19) sai do Painel e vai para a janela de exportar (R-159).
+3. `Gerar relatório` abre, no próprio app, a **tela Relatório** do relatório aberto no Painel (o do filtro `Relatório`, R-29), com os mesmos filtros e período (⚖️ D-64). O Painel fica escondido; `Voltar ao painel` volta sem perder nada.
+4. A tela mostra, em ordem: capa → `O que tem neste relatório` → `Resumo executivo` → `Números principais` → `O que o Raio X encontrou` → partes por tipo de dado → `Do seu painel` → `Registros` → `Como ler este relatório` (9c.3).
+5. `Editar relatório` liga o modo edição (títulos, textos, observação por parte, esconder/mostrar, ordem, forma do gráfico); `Concluir edição` desliga. O que foi editado fica guardado por relatório (9c.6).
+6. `Exportar arquivo` abre a janela para escolher **Excel** (visual da F-76, só valores, 9c.8) ou **PDF** (a mesma cara da tela, 9c.9).
+
+### 9c.2 Nomes na tela (rótulos exatos)
+
+Mesmas regras da 0.1: textos exatos, testes localizam por papel, rótulo ou texto, nunca por `id` ou classe. Números em pt-BR (milhar com ponto, decimal com vírgula; somas, médias e medianas com 2 casas; percentuais com 1 casa).
+
+| Nº | Rótulo exato | Tipo | Onde / observação |
+|---|---|---|---|
+| R-140 | cartão com título `Relatório`, texto `Monta um relatório pronto para ler, ajustar e exportar.` e botão `Gerar relatório` | cartão e botão | Painel, no fim, no lugar do cartão `Gerar Excel` (R-18), que deixa de existir. Sem registros no relatório aberto, o botão fica desabilitado |
+| R-141 | região `<section aria-label="Relatório">` com barra de botões `Voltar ao painel`, `Editar relatório` (vira `Concluir edição`), `Exportar arquivo` | tela | ocupa o lugar do Painel; a barra de abas (R-03/R-04) continua; tocar na aba `Painel` também volta |
+| R-142 | **capa**: linha pequena `<Área> · <Cliente>` (só as partes preenchidas na Config; sem nenhuma, a linha não aparece); título (heading nível 2) `Relatório <relatório>` (⚖️ D-82); `Registros de dd/mm/aaaa a dd/mm/aaaa` (regra do período da 0.5, R-87; sem datas: `sem datas`); `Filtros: <texto de filtros do Seu painel>`; `Gerado em: dd/mm/aaaa hh:mm`; `Fonte: <relatório> (<N> registros)` (⚖️ D-83); logo da Config, se houver | capa | primeira coisa da tela; mesma faixa escura do topo do app |
+| R-143 | `O que tem neste relatório` | heading + lista | um item por parte **visível**, na ordem: link (`<a href="#…">`) com o título da parte e, depois, uma frase (9c.3, coluna "Frase do índice") |
+| R-144 | `Resumo executivo` | heading + `<ol>` | de 1 a 5 frases automáticas (9c.4) |
+| R-145 | `Números principais` | heading + cartões | 9c.5 |
+| R-146 | `O que o Raio X encontrou` | heading + lista | até 5 achados (9c.7); cada um com título em negrito, frase, linha pequena `Por que apareceu: <regra em palavras>` e botão `Ver os registros`. Sem achado: `O Raio X não encontrou nada fora do comum nestes registros.` |
+| R-147 | `Pendências por idade` | parte | faixas `0 a 7 dias`, `8 a 15 dias`, `16 a 30 dias`, `Mais de 30 dias`; texto pequeno `Idade contada até dd/mm/aaaa.` (hoje, ⚖️ D-65) |
+| R-148 | `Os 10 mais antigos em aberto` | parte (tabela) | colunas `Código`, `<campo de data>`, `Dias em aberto`, `<campo do andamento>`; do mais antigo ao mais novo |
+| R-149 | `Atrasados` | cartão dentro de `Números principais` | texto `<n> atrasados (mais de <prazo> em aberto)`; `<prazo>` = `fmtPrazo` (⚖️ D-66) |
+| R-150 | `Entrou e saiu por mês` (com 2 campos de data) ou `Entrou por mês (<campo de data>)` (com 1) | parte | tabela `Mês`, `Entrou`, `Saiu`, `Saldo` (sem a 2ª data: só `Mês`, `Entrou`) + gráfico |
+| R-151 | `<Número>: como os valores se distribuem` (ex. `Valor: como os valores se distribuem`) | parte, uma por campo Número (até 3, na ordem dos campos) | cartão `Média`, `Mediana`, `Mínimo`, `Máximo`; frase `Metade dos registros ficou abaixo de <mediana>.`; tabelas `5 maiores` e `5 menores` (colunas `Código`, `<1º Grupo>` se houver, `<Número>`) |
+| R-152 | `<Grupo>: quem concentra` (ex. `Cliente: quem concentra`) | parte, uma por campo Grupo (até 3, ⚖️ D-69) | tabela `<Grupo>`, `<medida>`, `% do total`, `% acumulado` (medida = `Soma de <1º Número>` ou `Registros`) + gráfico + frase (9c.4) |
+| R-153 | `Tempo entre duas datas` | parte (só com 2 campos de data) | o mesmo conteúdo do bloco do painel (R-40, CA-96) |
+| R-154 | `Do seu painel` | parte (só com escolha confirmada em `O que acompanhar`) | os blocos do painel, na ordem do layout (etapa 6), sem os escondidos; é **uma** parte (⚖️ D-75) |
+| R-155 | `Registros` | parte | os 100 primeiros na ordem da lista do Painel + `Mostrando 100 de <N> registros. No Excel vão todos.` (com N ≤ 100: `Mostrando os <N> registros.`) (⚖️ D-76) |
+| R-156 | `Como ler este relatório` | parte, sempre a última | uma linha por parte visível, no formato do `Seu painel` (0.3): `<título> — <o que mostra>. Período: … . <Filtros>.` (reaproveita `resumoBlocos`) |
+| R-157 | comparação: `↑ <p>% em relação a <período anterior>`, `↓ <p>% em relação a <período anterior>`, `= igual a <período anterior>`, `sem base para comparar` | texto pequeno sob o número do cartão | 9c.5; `<período anterior>` = `mm/aaaa` (mês) ou `dd/mm/aaaa a dd/mm/aaaa` |
+| R-158 | modo edição: na capa, campo `Título do relatório` (até 80 caracteres); no resumo, caixa `Texto do resumo executivo` (uma frase por linha, até 1.000 caracteres); por parte, grupo `role="group"` com `aria-label` = `Controles de <título original>` contendo `Subir`, `Descer`, `Esconder` (vira `Mostrar`), campo `Título` (até 80), caixa `Observação` (até 500) e select `Forma` (só em parte com gráfico); na barra, `Voltar ao padrão` | controles | capa, `O que tem neste relatório` e `Como ler este relatório` não sobem, não descem e não se escondem. `Voltar ao padrão` pergunta `Voltar ao padrão do relatório?` com `Voltar ao padrão` e `Cancelar` |
+| R-159 | janela `Exportar arquivo` com grupo `Tipo de arquivo` (opções `Excel`, marcada, e `PDF`), select `Formato` (opções de R-19, só aparece com `Excel`), botões `Exportar` e `Cancelar`; mensagens `Gerando…`, `Excel gerado.`, `Na janela que abrir, escolha “Salvar como PDF”.` | janela | `PDF` só aparece a partir da E5 |
+| R-160 | `Forma` (R-105) ganha `Área`, `Rosca`, `Radar`, `Velocímetro`, `Bolhas`; ordem das opções: `Número`, `Barras`, `Linha`, `Área`, `Pizza`, `Rosca`, `Radar`, `Velocímetro`, `Bolhas`, `Tabela` (só as que o dado permite, 9c.10) | select | vale no Painel (Editar layout) e no Relatório |
+| R-161 | avisos: `Rosca com mais de 8 fatias: mostrando barras`; `Radar precisa de 3 a 10 grupos: mostrando barras`; `Bolhas precisam de pelo menos 2 grupos: mostrando barras` | texto | mesma regra do aviso da pizza (R-105) |
+| R-162 | velocímetro: texto central `<p>% de <meta>%` (sem meta: `<p>%`) e, abaixo da meta, `faltam X para a meta` (texto atual, CA-97) | texto | 9c.10 |
+| R-163 | aviso de texto editado: `Texto editado por você: confira se os números ainda valem.` | texto | sob o resumo ou a observação editada, quando os registros mudaram depois da edição |
+
+**Observação editada.** Aparece logo abaixo do título da parte, em itálico, como `Observação: <texto>`. Texto vindo de arquivo, título ou observação entra sempre por `textContent` (seção 10).
+
+### 9c.3 Partes do relatório e quando aparecem
+
+"Campo de data" = o de `Campo de data` (R-31) ou o 1º campo Data; "2ª data" = o 2º campo do par de `Tempo entre duas datas`; "andamento" = o campo marcado em "Qual coluna mostra o andamento?" (9a); "em aberto" = regra D-09 (0.3). Todas as contas usam os registros **depois de filtros e período** (como o painel).
+
+| Parte | Aparece quando | Frase do índice (R-143) |
+|---|---|---|
+| `Resumo executivo` | sempre | `As frases principais, para ler em 1 minuto.` |
+| `Números principais` | sempre | `Os números do período e a comparação com o período anterior.` |
+| `O que o Raio X encontrou` | sempre (com a frase de vazio quando não há achado) | `O que foge do comum e merece atenção.` |
+| `Pendências por idade` + `Os 10 mais antigos em aberto` | campo de data + andamento + ≥ 1 em aberto | `Há quanto tempo os registros em aberto esperam.` |
+| `Entrou e saiu por mês` / `Entrou por mês (<campo>)` | campo de data | `Quantos entraram (e saíram) em cada mês.` |
+| `<Número>: como os valores se distribuem` | campo Número com ≥ 1 valor | `Média, mediana, menores e maiores de <Número>.` |
+| `<Grupo>: quem concentra` | campo Grupo com ≥ 2 valores | `Quem responde pela maior parte do total.` |
+| `Tempo entre duas datas` | 2 campos de data | `Quanto tempo passa entre <data 1> e <data 2>.` |
+| `Do seu painel` | escolha confirmada | `Os indicadores que você escolheu no painel.` |
+| `Registros` | sempre | `A lista dos registros considerados.` |
+| `Como ler este relatório` | sempre | `Como cada parte foi calculada.` |
+
+Ordem padrão = a da tabela (capa e `O que tem neste relatório` antes de tudo). Relatório só com Código e Texto: capa, resumo com 1 frase, `Números principais` só com o total, `O que o Raio X encontrou`, `Registros`, `Como ler este relatório`, sem erro.
+
+**Contas das partes (regras R-164 a R-169).**
+- **R-164 Idade e pendências.** Idade (em dias inteiros, para baixo) = hoje (relógio do aparelho, 00:00 local) − data do registro no campo de data (⚖️ D-65). Data no futuro (idade < 0) fica fora das faixas e vai para o achado A1. Faixas: 0–7, 8–15, 16–30, > 30. `Os 10 mais antigos em aberto`: em aberto com data, ordem crescente de data (empate: código), até 10. Clicar numa faixa ou linha abre a janela com os registros.
+- **R-165 Atrasados.** Em aberto há mais que o prazo da Config (`prazoH`, o mesmo do `Dentro de N h`; ⚖️ D-66): hoje (data e hora do aparelho) − data/hora do registro > prazoH horas (data sem hora = 00:00). `fmtPrazo(h)`: múltiplo de 24 e ≥ 48 → `<h/24> dias`; senão `<h> h` (padrão: `24 h`).
+- **R-166 Entrou e saiu.** Entrou no mês = registros com o campo de data naquele mês. Saiu no mês = registros com a 2ª data naquele mês. Saldo = Entrou − Saiu. Meses do menor ao maior que aparecem em qualquer das duas datas; mês sem registro vale 0. Gráfico padrão: `Barras` com as duas séries (Entrou e Saiu) lado a lado; formas `Linha`, `Área`, `Tabela`.
+- **R-167 Distribuição de um Número.** Média, mediana (regra do CA-96 para quantidade par), mínimo, máximo dos valores numéricos (vazios fora). Frase `Metade dos registros ficou abaixo de <mediana>.`; se média > 1,2 × mediana, mais `A média está acima da mediana porque alguns valores são bem altos.`; se média < 0,8 × mediana, `A média está abaixo da mediana porque alguns valores são bem baixos.` (⚖️ D-70; nada com mediana ≤ 0). `5 maiores`/`5 menores`: empate desempata pelo código.
+- **R-168 Quem concentra.** Grupos ordenados pela medida (soma do 1º Número; sem Número, contagem), do maior ao menor, empate por nome. Tabela com todos os grupos até 10 e `Outros` (soma do resto) como o painel. `% do total` e `% acumulado` com 1 casa. Frase: `Os 3 primeiros de <Grupo> fazem <p>% do total.` (com 2 grupos: `Os 2 primeiros…`) e, quando há ≥ 4 grupos, `Para chegar a 80% do total são <k> de <n>.`, onde k = menor quantidade de grupos cujo acumulado ≥ 80% (⚖️ D-69). Gráfico padrão: `Barras`.
+- **R-169 Comparação com o período anterior** (⚖️ D-67): `Período` = `Mês` → mês anterior; `De–até` → o mesmo número de dias logo antes de `De`; `Tudo` → compara o **último mês com registros** com o mês antes dele. A conta é refeita com os mesmos filtros de categoria e busca. p = (atual − anterior) / anterior × 100, 1 casa, sem sinal (a seta diz o sentido); anterior = 0 ou sem campo de data → `sem base para comparar`. As setas não têm cor de bom ou ruim (⚖️ D-67); só a meta pinta (9c.5).
+
+### 9c.4 Resumo executivo
+
+Frases automáticas, na ordem abaixo, as que os dados permitirem, **no máximo 5** (⚖️ D-71). Números formatados como na tela.
+1. `O relatório tem <N> registros de dd/mm/aaaa a dd/mm/aaaa.` (sem datas: `O relatório tem <N> registros.`) — sempre.
+2. `<a> estão em aberto (<p>% do total); <t> estão atrasados e o mais antigo espera há <d> dias.` — com data + andamento.
+3. `Em <período atual> entraram <n> registros, <p>% a mais que em <período anterior>.` (ou `a menos`; `o mesmo número que`) — com campo de data e base para comparar.
+4. `Atenção: <frase do 1º achado>` — com ≥ 1 achado.
+5. `Os 3 primeiros de <Grupo> fazem <p>% do total.` — 1º campo Grupo da R-168.
+6. `Metade dos registros ficou abaixo de <mediana> em <Número>; a média é <média>.` — 1º campo Número.
+
+Editado pela pessoa (R-158), o resumo vira o texto dela (uma frase por linha, linha vazia some) e não é mais refeito; `Voltar ao padrão` volta às frases automáticas.
+
+### 9c.5 Números principais
+
+Cartões (fundo claro, fio colorido em cima, rótulo pequeno, número grande), cada um clicável (abre os registros) e com a comparação R-157 quando houver base:
+- `Total de registros` — contagem.
+- `Em aberto` — contagem e `% do total` (com andamento).
+- `Concluídos` — `% do total` dos que não estão em aberto, com a meta da Config (`Meta dos indicadores em %`, R-41): abaixo da meta, número com `data-fora-meta="true"`, cor de alerta e `faltam X para a meta`; na meta ou acima, cor boa (CA-97) (⚖️ D-68).
+- `Atrasados` — R-149/R-165 (com data + andamento).
+- `Dentro de <prazo>` — o % do bloco de tempo (com 2 datas), com a mesma regra de meta.
+- Para cada Número (até 3): `Soma de <Número>` e `Mediana de <Número>`.
+
+### 9c.6 Edição e guarda
+
+- O que se edita (R-158): título do relatório, texto do resumo, título e observação de cada parte, esconder/mostrar, ordem (`Subir`/`Descer`; no computador também arrastar, como a etapa 6), forma do gráfico (só as permitidas, 9c.10). Não se edita número (⚖️ D-74).
+- Fora do modo edição, a parte escondida não aparece, não entra em `O que tem neste relatório`, em `Como ler este relatório`, no Excel nem no PDF. Em modo edição aparece esmaecida (`data-escondido="true"`).
+- Guarda por relatório no navegador (`localStorage` `raiox_relatorio`): `{ <relatório>: { titulo, resumo, partes: [{ id, titulo, obs, oculto, forma }] } }`, ordem = ordem da lista. Ausente = padrão. Parte nova (dado novo) entra no fim, antes de `Registros`; parte que deixou de existir é ignorada.
+- Entra no **backup** (chave `relatorio`, validada como `layout`: formato errado rejeita o arquivo inteiro; textos cortados nos limites de R-158; até 50 partes por relatório). `Substituir` troca; `Somar` só traz o de relatório que ainda não tem (como D-32). `Apagar todos os dados` apaga também.
+- Quando os registros mudam depois de editar resumo ou observação, aparece R-163 até a próxima edição daquele texto (⚖️ D-74).
+
+### 9c.7 "O que o Raio X encontrou"
+
+Regras fixas, sem IA, sobre os registros filtrados (⚖️ D-73). Cada regra gera achados `{regra, titulo, frase, porque, codigos}`; o app expõe `window.__achados(<relatório>)` com **todos** os achados (sem corte), na ordem de prioridade, para o teste. Na tela entram **no máximo 2 por regra e 5 no total**, na ordem de prioridade abaixo; dentro da regra, o de mais registros primeiro (⚖️ D-72). Limiares são provisórios (⚖️ D-72).
+
+| Pri. | Regra | Quando aparece (limiar provisório) | Título | Frase | Por que apareceu |
+|---|---|---|---|---|---|
+| A1 | Data no futuro | ≥ 1 registro com qualquer campo Data depois de hoje (Galindo confirmou 26/11) | `Datas no futuro` | `<n> registros com <campo> depois de hoje; a mais distante é dd/mm/aaaa.` | `data maior que a data de hoje` |
+| A2 | Data final antes da inicial | 2 datas; ≥ 1 registro com 2ª data < 1ª data | `Datas fora de ordem` | `<n> registros com <data 2> antes de <data 1>.` | `<data 2> anterior a <data 1>` |
+| A3 | Parados há muito tempo | ≥ 1 em aberto com idade > 30 dias (idade de hoje; o histórico de mudanças fica para a V2) | `Parados há muito tempo` | `<n> registros em aberto há mais de 30 dias; o mais antigo há <d> dias.` | `em aberto há mais de 30 dias` |
+| A4 | Fora da curva | Número com mediana > 0; ≥ 1 valor > 3 × mediana | `Valores fora da curva em <Número>` | `<n> registros com <Número> acima de 3 vezes a mediana (<3×mediana>); o maior é <máx> (<código>).` | `mais de 3 vezes a mediana` |
+| A5 | Pendências crescendo | data + andamento; registros em aberto que entraram em cada um dos 3 últimos meses com registros crescem sempre (m1 < m2 < m3) | `Pendências crescendo` | `Os registros em aberto que entram a cada mês cresceram 3 meses seguidos: <mm/aaaa> <n1>, <mm/aaaa> <n2>, <mm/aaaa> <n3>.` | `3 meses seguidos de alta` |
+| A6 | Mudança brusca | andamento ou Grupo; nos 2 últimos meses com registros, ambos com ≥ 20 registros, a parte de um valor muda ≥ 15 pontos percentuais | `Mudança brusca em <campo>` | `<valor> foi de <p1>% em <mm/aaaa> para <p2>% em <mm/aaaa>.` | `mudou 15 pontos ou mais de um mês para o outro` |
+| A7 | Concentração escondida | andamento + Grupo; para um valor do andamento com ≥ 10 registros, um valor do Grupo tem ≥ 50% desses registros e essa parte é ≥ 2 × a parte dele no total | `Concentração em <valor do andamento>` | `<Grupo> <valor> responde por <p>% dos registros <valor do andamento>, mas só por <q>% do total.` | `metade ou mais de uma situação num só grupo` |
+| A8 | Buracos | (a) campo (não Código) vazio em ≥ 20% dos registros (a 2ª data não conta como vazia em registro em aberto); (b) campo de data com ≥ 30 registros e um intervalo ≥ 14 dias sem registro entre a menor e a maior data | `Campo vazio: <campo>` / `Dias sem registro` | `<campo> está vazio em <p>% dos registros (<n>).` / `Nenhum registro de dd/mm/aaaa a dd/mm/aaaa (<d> dias).` | `vazio em 20% ou mais` / `14 dias ou mais sem registro` |
+| A9 | Possíveis repetidos | ≥ 1 par da busca de repetidos atual (CA-95, `Core.repetidos`, mesma base de até 5.000) | `Possíveis repetidos` | `<n> pares de registros parecidos; confira se são o mesmo.` | `texto muito parecido entre registros` |
+
+`Ver os registros` abre a janela de registros (CA-93) com exatamente os registros do achado (A8b: os registros das duas pontas do intervalo; A6/A7: os registros do valor no(s) mês(es)/situação). Achados nunca alteram dados.
+
+### 9c.8 Excel do "Exportar arquivo" (visual da F-76)
+
+Continua **sem fórmula, sem macro e sem gráfico nativo** (D-12; CA-47). Mesmo nome de arquivo (CA-98) e mesmos formatos (R-19). Cores (⚖️ D-84): faixa escura `#0F2A4A` (azul-marinho do topo do app), destaque `#1F6FEB` (azul do botão do app, no lugar do rosa do modelo), fundo de cartão `#EEF3FB`, zebrado `#F4F6FB`, bordas finas `#DFE4EF`, texto apagado `#5B6683`.
+
+**Ordem das planilhas** (⚖️ D-80): `Capa` → `Como ler este relatório` (agora sempre; uma linha por parte visível) → `Resumo` (resumo executivo, números principais, achados) → `Análises` (partes por tipo de dado visíveis, na ordem do relatório, com título e observação editados) → planilhas de painel (`Painel`…; só se a parte `Do seu painel` está visível) → planilhas de registros (como hoje). Com vários relatórios no arquivo (`Tudo numa planilha`), `Resumo - <relatório>` e `Análises - <relatório>` (regra de nome R-80); cada relatório usa o seu relatório editado (ou o padrão).
+
+- **Capa:** sem coluna vazia antes do conteúdo; coluna A com largura entre 14 e 40 (item 12). A1 = `<Área> · <Cliente>` pequeno (fonte 9, cor destaque). A2 = título do relatório, fonte ≥ 18, negrito, branca sobre faixa escura mesclada A2:F2, **altura da linha ≥ 30** para não cortar (item 12). A3 = `Registros de … a …` sobre a faixa. Depois, rótulos `Período`, `Filtros`, `Gerado em`, `Fonte` na coluna A, valores na B (R-87 a R-89 continuam valendo por texto). Depois, `O que tem neste arquivo`: uma linha por planilha, coluna A = nome da planilha com **link interno** (`#'<planilha>'!A1`), coluna B = uma frase (a do índice ou `A lista dos registros considerados.`). Logo continua (CA-11/12).
+- **Cada planilha (menos a Capa)** — substitui R-81 (⚖️ D-79): A1 = `<relatório> · <Área> · <Cliente>` (só partes preenchidas), fonte 9, cor destaque; A2 = título (nome da planilha ou da aba), negrito branco sobre faixa escura mesclada até a última coluna usada, altura ≥ 24; A3 = itálico apagado `Período: … · Filtros: … · Gerado em: dd/mm/aaaa hh:mm`; A4 vazia; conteúdo da linha 5 em diante. Cor da aba (`tabColor`): `Capa` escura, `Resumo`/`Análises`/painel destaque, registros apagado.
+- **Cartões:** rótulo pequeno (fonte 9) numa linha, número grande (fonte ≥ 14, negrito) na seguinte, fundo `#EEF3FB`, borda de cima média na cor destaque; percentuais na cor destaque. Mesmos rótulos e valores da tela (R-86 continua: rótulo numa linha, valor na de baixo).
+- **Tabelas:** cabeçalho com fundo destaque, letra branca negrita; linhas zebradas; bordas finas; nas planilhas de registros, filtro (`autoFilter`) no cabeçalho e cabeçalho congelado.
+- **Barra (item 11; muda a 0.5 e D-12 em parte, ⚖️ D-78):** a coluna `Barra` deixa de ter `█`; recebe o número n (o mesmo que fazia a barra) com formato que esconde o número (`;;;`) e **barra de dados** (formatação condicional `dataBar`, cor destaque, sem gradiente) no intervalo da tabela. Formatação condicional não é fórmula de célula.
+- **`Como ler este relatório` (item 13):** coluna A com largura fixa 110 e **quebra de texto** em toda célula de texto; nenhuma altura de linha fixa pequena.
+- **Datas nos registros (item 14):** campo Data em que **nenhum** registro tem hora → célula data com formato `dd/mm/yyyy`; com hora em algum → `dd/mm/yyyy hh:mm`. Nunca `00:00` inventado.
+- **Números nos registros (item 15):** campo Número → célula número com `#,##0.00` (mostra `323,90` e `1.192,30`); vazio continua vazio.
+- O Excel mostra os mesmos números da tela para os mesmos filtros; parte escondida não sai; gráfico vira tabela + barra de dados (inclusive rosca, radar, velocímetro, área e bolhas: tabela com as colunas da tela; bolhas com `<Grupo>`, `Registros`, `Média`, `Total`).
+
+### 9c.9 PDF do "Exportar arquivo"
+
+- Sem biblioteca nova (⚖️ D-81): o app monta a tela Relatório no modo impressão (CSS `@media print`, A4 retrato, margens de 12 mm) e chama `window.print()`; a pessoa escolhe `Salvar como PDF` no navegador. Durante a impressão o título do documento é `RaioX_<RELATÓRIO>_<AAAA-MM-DD>` (mesma regra do CA-98, sem extensão), para o nome sugerido do PDF.
+- Sai igual à tela fora do modo edição: capa sozinha na 1ª página; cada parte sem quebrar no meio quando couber (`break-inside: avoid`); gráficos em SVG (vetor); sem botões, controles, janelas nem barra de abas; partes escondidas fora.
+- Em toda página, rodapé pequeno `<relatório> · Período: … · Filtros: … · Gerado em: … · Fonte: …`.
+
+### 9c.10 Formas de gráfico novas (Painel e Relatório; amplia D-34, ⚖️ D-77)
+
+Todas em SVG próprio (sem biblioteca), com `role="img"` e `aria-label` = `<Forma>: <título>`; cada pedaço (fatia, ponto, bolha) é focável, tem `aria-label` = `<nome>: <valor>` e abre a janela de registros com clique, Enter ou espaço (como as barras). Funcionam em 390 px sem rolagem lateral.
+
+| Tipo de bloco/parte | Formas permitidas |
+|---|---|
+| Um número só (cartão) | `Número` |
+| `% por <andamento>` | `Barras`, `Pizza`, `Rosca`, `Radar`, `Velocímetro`, `Tabela` |
+| `Tempo entre duas datas` | `Número`, `Velocímetro` |
+| Por Grupo (contagem), pedido com `Agrupar por`, `<Grupo>: quem concentra` | `Barras`, `Pizza`, `Rosca`, `Radar`, `Tabela` |
+| `<Número> por <Grupo>` | `Barras`, `Pizza`, `Rosca`, `Radar`, `Bolhas`, `Tabela` |
+| Por mês (uma série) | `Barras`, `Linha`, `Área`, `Pizza`, `Rosca`, `Tabela` |
+| `Entrou e saiu por mês` (duas séries) | `Barras`, `Linha`, `Área`, `Tabela` |
+
+- **Rosca:** como a pizza, com o total no centro (`<total>`); > 8 fatias → barras com aviso (R-161).
+- **Velocímetro:** meio círculo de 0 a 100%, ponteiro no valor e marca na meta da Config. `% por <andamento>` mostra o % de **Concluídos** (não em aberto; ⚖️ D-77); `Tempo entre duas datas` mostra o `Dentro de <prazo>`. Texto R-162. Clicar abre os registros que formam o %.
+- **Radar:** um eixo por grupo (3 a 10, sem `Outros`), um polígono com os valores; fora disso → barras com aviso.
+- **Área:** como a linha, com a área até o eixo preenchida.
+- **Bolhas:** só em `<Número> por <Grupo>`: cada grupo (os 10 maiores pela soma, sem `Outros`) é uma bolha; eixo X = quantidade de registros, eixo Y = média do Número, **área** da bolha proporcional à soma; `aria-label` = `<grupo>: <n> registros, média <m>, total <s>`; < 2 grupos → barras com aviso.
+- A forma escolhida fica no layout (Painel) ou no relatório guardado (Relatório) e vai no backup; no Excel não muda nada além da tabela (D-33).
+
+### 9c.11 Critérios de aceite
+
+Dados: `tests/dados/vendas.csv` (500 registros; Código, Data, Cliente, Região, Vendedor, Valor, Situação), `tests/dados/chamados.csv` (300; Código, Abertura, Conclusão, Categoria, Responsável, Situação) e, na E2, `achados.csv` e `sem_achados.csv` (novos, gerados por `tests/gerar_dados.py`, CA-83). Relógio do navegador **fixo em 28/11/2026 12:00** (`page.clock`) em todos os CAs desta seção. "Oráculo" = conta feita em Python sobre o CSV no próprio teste. Simulador: `navegador/` da oficina (Playwright) para tela e PDF; `excel-gerado/` (openpyxl) para o Excel; render do Excel pelo LibreOffice sem tela (CA-271). Cliente `Cliente Teste 01`, área `Área Teste` na Config quando o CA fala da capa.
+
+**E1 — tela, cartões, partes e resumo**
+- CA-200: com `vendas.csv` carregado, o Painel tem o botão `Gerar relatório` e nenhum botão ou título `Gerar Excel`.
+- CA-201: `Gerar relatório` → aparece a região `Relatório` e o Painel some; capa com `Área Teste · Cliente Teste 01`, heading `Relatório vendas`, `Registros de <min> a <max>` (oráculo do campo Data), `Filtros: sem filtros`, `Gerado em: ` + `\d{2}/\d{2}/\d{4} \d{2}:\d{2}`, `Fonte: vendas (500 registros)`. `Voltar ao painel` → Painel de volta, com os mesmos filtros.
+- CA-202: `O que tem neste relatório` lista, na ordem da tela, um link por parte visível (texto = heading da parte; o `href` aponta para um elemento que existe e contém esse heading) seguido da frase da 9c.3.
+- CA-203: `Resumo executivo` tem entre 3 e 5 itens; o 1º é exatamente `O relatório tem 500 registros de <min> a <max>.`; o 2º traz `<a> estão em aberto (<p>% do total)` com a = Pendente + Em transporte (oráculo) e p com 1 casa.
+- CA-204: `Números principais` (vendas): `Total de registros` = 500; `Soma de Valor` e `Mediana de Valor` = oráculo (2 casas); sob `Total de registros`, comparação R-157 de 11/2026 com 10/2026 com p = oráculo; `Concluídos` = % de Entregue + Cancelado (oráculo) e, com meta 90, `data-fora-meta="true"` e `faltam X para a meta`.
+- CA-205: `Pendências por idade` (vendas): as 4 faixas com as contagens do oráculo (idade até 28/11/2026, R-164); soma das faixas = em aberto com data ≤ hoje; `Idade contada até 28/11/2026.`; clicar `Mais de 30 dias` abre a janela com essa contagem.
+- CA-206: `Os 10 mais antigos em aberto` (vendas): 10 linhas, códigos e `Dias em aberto` iguais ao oráculo, do mais antigo ao mais novo.
+- CA-207: cartão `Atrasados` (chamados, prazo padrão 24) = oráculo R-165; Config com prazo `720` → texto `(mais de 30 dias em aberto)` e contagem = novo oráculo.
+- CA-208: chamados → `Entrou e saiu por mês` com `Mês`, `Entrou`, `Saiu`, `Saldo` = oráculo (Abertura e Conclusão); vendas → `Entrou por mês (Data)` só com `Mês` e `Entrou`.
+- CA-209: vendas → `Valor: como os valores se distribuem`: `Média`, `Mediana`, `Mínimo`, `Máximo` = oráculo; frase `Metade dos registros ficou abaixo de <mediana>.`; `5 maiores` e `5 menores` com códigos e valores do oráculo (empate pelo código).
+- CA-210: vendas → `Cliente: quem concentra`: 10 linhas ordenadas por soma de Valor, `% do total` e `% acumulado` = oráculo (1 casa; última linha 100,0%); frases `Os 3 primeiros de Cliente fazem <p>% do total.` e `Para chegar a 80% do total são <k> de 10.` = oráculo. chamados → `Categoria: quem concentra` com medida `Registros`.
+- CA-211: `Filtros` → `Período` = `Mês` 10/2026 → capa `Registros de 01/10/2026 a 31/10/2026` e `Filtros: outubro/2026`; total = registros de outubro (oráculo); comparação com `09/2026`.
+- CA-212: `Editar relatório` → em `Controles de Valor: como os valores se distribuem`, `Título` = `Valores do período`, `Observação` = `Observação de teste 01`; `Esconder` em `Pendências por idade`; `Descer` em `Números principais`; `Concluir edição` → o título novo aparece (e no índice), `Observação: Observação de teste 01` em itálico, `Pendências por idade` não aparece (nem no índice, nem em `Como ler este relatório`), `Números principais` vem depois de `O que o Raio X encontrou`. Recarregar a página e `Gerar relatório` → tudo igual.
+- CA-213: `Forma` de `Cliente: quem concentra` = `Pizza` → barras com o aviso de pizza (10 grupos); `Região: quem concentra` = `Pizza` → `data-forma="pizza"` com 5 fatias.
+- CA-214: editar `Texto do resumo executivo` para 2 linhas → o resumo mostra só essas 2; carregar `vendas_parte2.csv` (junta no mesmo relatório) → o texto fica e aparece R-163; `Voltar ao padrão` + confirmar → as frases automáticas voltam e as edições do CA-212 somem.
+- CA-215: depois do CA-212, `Baixar backup` → o `.json` tem `relatorio.vendas`; `Apagar todos os dados` → `Restaurar backup` + `Substituir` → mesmo relatório editado. Backup com `relatorio` em formato errado → rejeitado inteiro, nada muda.
+- CA-216: `Exportar arquivo` → janela `Exportar arquivo` com `Excel` marcado e `Formato`; `Exportar` → baixa arquivo com o nome do CA-98. Os CAs antigos que clicavam `Gerar Excel` (CA-01, CA-11, CA-12, CA-41 a CA-50, CA-98) passam a usar `Gerar relatório` → `Exportar arquivo` → `Exportar` (auxiliar do Testador) e continuam verdes até a E4.
+- CA-217: offline depois do 1º carregamento, `Gerar relatório` e exportar Excel funcionam; em 390 px a tela Relatório não tem rolagem horizontal; nenhuma requisição a outra origem (CA-02).
+- CA-218: CSV de teste com `<img src=x onerror=alert(1)>` no Cliente e na Observação → aparece como texto na capa/partes/observação; nenhum `dialog` de alerta.
+- CA-219: CSV só com Código e um campo Texto (gerado no teste) → capa, resumo com 1 frase, `Números principais` só com `Total de registros`, `O que o Raio X encontrou`, `Registros`, `Como ler este relatório`; nenhum erro no console.
+- CA-220: `Como ler este relatório` tem uma linha por parte visível, no formato R-156; `Registros` mostra 100 linhas e `Mostrando 100 de 500 registros. No Excel vão todos.`
+- CA-221: 72 mil registros (CA-82) → `Gerar relatório` mostra a tela em ≤ 5 s.
+
+**E2 — "O que o Raio X encontrou"**
+
+`achados.csv` (`Código;Abertura;Conclusão;Grupo;Responsável;Valor;Situação`, 240 registros `A00001`…`A00240`, semente fixa) precisa ter, e o teste confere no CSV antes de conferir a tela: P1 exatamente 2 Aberturas em 2027; P2 exatamente 3 registros com Conclusão antes da Abertura; P3 exatamente 4 Valores > 3 × mediana; P4 Responsável vazio em 30% (72); P5 nenhum registro de 01/07/2026 a 24/07/2026, com registros nos dias 30/06 e 25/07; P6 registros `Aberto` que entraram em 08, 09 e 10/2026 em alta (ex.: 5, 9, 14); P7 `Aberto` com ≥ 20 registros em 09 e 10/2026 e parte de `Aberto` subindo ≥ 15 pontos de 09 para 10/2026; P8 ≥ 60% dos `Aberto` em `Grupo Teste 2`, que tem ≤ 25% do total; P9 ≥ 1 em aberto com Abertura antes de 28/10/2026; nenhum campo de texto livre parecido (0 repetidos). Situações: `Aberto`, `Concluido`. `sem_achados.csv`: 60 registros, um por dia de 01/09/2026 a 30/10/2026, todos `Concluido`, Conclusão 1 dia depois, Valor de 100 a 110, nenhum vazio.
+- CA-230: `achados.csv` → `O que o Raio X encontrou` mostra 5 achados, nesta ordem de títulos: `Datas no futuro`, `Datas fora de ordem`, `Parados há muito tempo`, `Valores fora da curva em Valor`, `Pendências crescendo`.
+- CA-231: `window.__achados("achados")` tem, nesta ordem de regra, A1, A2, A3, A4, A5, A6 (`Situação`), A7, A8 (entre eles `Campo vazio: Responsável` e `Dias sem registro`; nenhum `Campo vazio: Conclusão`, porque os vazios são de registros em aberto) e nenhum A9; as frases batem com o oráculo (ex.: A1 `2 registros com Abertura depois de hoje; a mais distante é dd/mm/2027.`).
+- CA-232: cada achado tem `Por que apareceu: <texto da tabela 9c.7>`; `Ver os registros` de A4 abre a janela com os 4 códigos de P3 (e só eles); de A2, os 3 de P2.
+- CA-233: `sem_achados.csv` → `O Raio X não encontrou nada fora do comum nestes registros.`; `window.__achados` vazio; o resumo não tem frase `Atenção:`.
+- CA-234: `achados.csv` com `Período` = `Mês` 10/2026 → não há `Datas no futuro` (fora do filtro) e os outros achados seguem o oráculo dos registros de outubro.
+- CA-235: o 4º item do resumo executivo de `achados.csv` é `Atenção: ` + a frase do 1º achado.
+- CA-236: com vendas e chamados, nenhum achado cita valor, nome de campo ou palavra que não venha dos dados ou da tabela 9c.7 (busca dos termos de `tests/termos_proibidos.txt` = 0, CA-03).
+
+**E3 — formas de gráfico novas**
+- CA-250: em `Editar layout` (vendas e chamados com todos os indicadores), as opções de `Forma` são exatamente: `Por Cliente` → `Barras, Pizza, Rosca, Radar, Tabela`; `Valor por Região` → `Barras, Pizza, Rosca, Radar, Bolhas, Tabela`; `Evolução por mês (Data)` → `Barras, Linha, Área, Pizza, Rosca, Tabela`; `% por Situação` → `Barras, Pizza, Rosca, Radar, Velocímetro, Tabela`; `Tempo entre duas datas` → `Número, Velocímetro`; `Total de registros` → só `Número`.
+- CA-251: `Por Região` em `Rosca` → `role="img"` com nome `Rosca: Por Região`, 5 pedaços com `<Região>: <n>` = oráculo, `500` no centro; clicar num pedaço abre a janela com n registros.
+- CA-252: `Por Cliente` (10) em `Rosca` → barras + `Rosca com mais de 8 fatias: mostrando barras`.
+- CA-253: `% por Situação` (vendas) em `Velocímetro` → texto `<p>% de 90%` com p = % Entregue + Cancelado (oráculo, 1 casa) e `faltam X para a meta`; meta vazia na Config → `<p>%`.
+- CA-254: `Por Região` em `Radar` → 5 eixos com os nomes das regiões e 5 pontos `<Região>: <n>`; com filtro que deixa 2 regiões → barras + `Radar precisa de 3 a 10 grupos: mostrando barras`.
+- CA-255: `Evolução por mês (Data)` em `Área` → um ponto por mês com `<mm/aaaa>: <n>` = oráculo.
+- CA-256: `Valor por Cliente` em `Bolhas` → 10 bolhas com `<Cliente>: <n> registros, média <m>, total <s>` = oráculo; a ordem dos raios é a ordem das somas (área proporcional); clicar abre a janela com n registros; com filtro de 1 cliente → barras + aviso de bolhas.
+- CA-257: forma escolhida no Painel volta igual depois de recarregar e de backup/restaurar (`Substituir`); a planilha `Painel` do Excel continua com a tabela do bloco.
+- CA-258: no Relatório, `Forma` de `Região: quem concentra` oferece as mesmas opções de `Por Região`; `Rosca` funciona igual ao CA-251.
+- CA-259: com teclado, `Tab` chega a um pedaço do gráfico e `Enter` abre a janela; em 390 px nenhum gráfico novo causa rolagem horizontal.
+
+**E4 — Excel visual (F-76)**
+- CA-260: vendas, `Exportar` Excel → planilhas `Capa`, `Como ler este relatório`, `Resumo`, `Análises`, (`Painel`, com escolha confirmada), `vendas`, nessa ordem.
+- CA-261: `Capa`: A1 = `Área Teste · Cliente Teste 01`; A2 = `Relatório vendas`, fonte ≥ 18, negrito, cor de fundo `0F2A4A`, altura da linha ≥ 30; nenhuma coluna totalmente vazia antes da última coluna usada; largura da coluna A entre 14 e 40; `Período`, `Filtros`, `Gerado em`, `Fonte` na coluna A com o valor à direita; `O que tem neste arquivo` com uma linha por planilha, cada uma com link interno `#'<planilha>'!A1` para planilha que existe.
+- CA-262: em `Resumo`, `Análises` e `Painel`: A1 contém `vendas · Área Teste · Cliente Teste 01`, A2 = nome da planilha com fundo `0F2A4A` e letra branca, A3 itálico começando com `Período: `; nenhum conteúdo antes da linha 5. (Substitui A1/A2 de R-81 nos CAs 41, 45 e 50, que o Testador ajusta.)
+- CA-263: `Resumo` tem as frases do resumo da tela (mesmo texto e ordem), os cartões de `Números principais` (rótulo/valor iguais à tela; número com fonte ≥ 14 e negrito; fundo `EEF3FB`; borda de cima na cor `1F6FEB`) e os achados (título e frase). `Análises` tem as partes visíveis com os mesmos títulos (editados, se houver), observação em itálico logo abaixo do título e as tabelas iguais à tela (`Cliente: quem concentra` linha a linha).
+- CA-264: nenhuma célula de nenhuma planilha contém `█`; cada coluna `Barra` tem números (os n da regra antiga) e uma regra `dataBar` de formatação condicional cobrindo exatamente esse intervalo; cabeçalhos de tabela com fundo `1F6FEB`; linhas de dados zebradas; planilhas de registros com `autoFilter` no cabeçalho; todas as planilhas com `tabColor`.
+- CA-265: `Como ler este relatório`: largura da coluna A = 110 e `wrap_text` verdadeiro em toda célula com texto.
+- CA-266: planilha `vendas`: células de `Data` são datas com formato `dd/mm/yyyy` (nenhuma mostra `00:00`); planilha de `chamados`: `Abertura` com `dd/mm/yyyy hh:mm`.
+- CA-267: planilha `vendas`: `Valor` é número com formato `#,##0.00` em todas as linhas (o valor `323,9` do CSV vira o número 323.9, exibido `323,90`).
+- CA-268: parte escondida no relatório (CA-212) não aparece em `Análises` nem em `Como ler este relatório`; `Do seu painel` escondida → não há planilha `Painel`.
+- CA-269: em todos os arquivos desta etapa, nenhuma fórmula (`data_type == 'f'`), nenhum `xl/vbaProject.bin`, nenhum gráfico (`xl/charts/`), e todo link começa com `#` (CA-47 e simulador `excel-gerado/`).
+- CA-270: `Tudo numa planilha` com vendas e chamados → `Resumo - vendas`, `Análises - vendas`, `Resumo - chamados`, `Análises - chamados` e o resto como o CA-45.
+- CA-271: o `.xlsx` convertido em PDF pelo LibreOffice sem tela (`soffice --headless --convert-to pdf`) tem, na 1ª página, o título `Relatório vendas` inteiro (texto extraído) e nenhuma página em branco entre a capa e o resumo. Fica no roteiro de homologação a olhada humana no Excel real (o LibreOffice não imita 100% barras de dados).
+
+**E5 — PDF**
+- CA-280: `Exportar arquivo` → `PDF` → `Exportar` → `window.print` chamado 1 vez (o teste troca por um espião), com o título do documento `RaioX_VENDAS_<AAAA-MM-DD>` durante a chamada; depois volta o título normal e aparece `Na janela que abrir, escolha “Salvar como PDF”.`; o `Formato` não aparece com `PDF`.
+- CA-281: `page.pdf()` com mídia de impressão, A4 → a 1ª página tem só a capa; o texto do PDF tem todos os headings das partes visíveis e nenhum de `Voltar ao painel`, `Editar relatório`, `Exportar arquivo`, `Subir`, nem o heading de parte escondida.
+- CA-282: toda página do PDF tem o rodapé com `Gerado em:` e `Fonte: vendas (500 registros)`.
+- CA-283: os rótulos dos gráficos (ex.: nomes das regiões em `Região: quem concentra`) estão no texto do PDF (gráfico em vetor, não imagem).
+- CA-284: offline, o PDF sai igual (CA-281 com contexto offline).
+
+**Fumaça.** Não há encaixe nem serviço real (regra do projeto); não há teste de fumaça. Nada desta seção depende de estrela; `docs/caminho-das-estrelas.md` não muda.
+
+### 9c.12 Etapas de construção (uma por tarefa)
+
+Cada etapa: teste que falha → código → suíte inteira verde → Revisor → `main` → POP. Cada uma deixa o app funcionando sozinha.
+
+| Etapa | O que entra | CAs | Depende de | POP |
+|---|---|---|---|---|
+| **E1** Tela + cartões + resumo | R-140 a R-158, R-163 a R-169; capa, índice, resumo executivo, números principais com comparação e meta, partes por tipo (pendências, mais antigos, entrou/saiu, distribuição, quem concentra, tempo, do seu painel, registros, como ler) com as formas já existentes; edição e guarda; `Exportar arquivo` só com Excel (gera o Excel de hoje) | CA-200 a CA-221 | — | P-g novo ("Gerar relatório"), ⚖️ D-64 a D-71, D-74 a D-76, D-82, D-83 |
+| **E2** O que o Raio X encontrou | 9c.7, `window.__achados`, frase 4 do resumo, `achados.csv` e `sem_achados.csv` no gerador | CA-230 a CA-236 | E1 | ⚖️ D-72, D-73 |
+| **E3** Gráficos novos | R-160 a R-162, 9c.10 no Painel e no Relatório | CA-250 a CA-259 | E1 (CA-258) | P-w (Forma), ⚖️ D-77 |
+| **E4** Excel visual | 9c.8 (F-76 inteira, itens 11 a 15), planilhas `Resumo` e `Análises`, ajuste dos CAs antigos 41/45/50 | CA-260 a CA-271 | E1 (E2 para os achados no `Resumo`) | P-g, ⚖️ D-78 a D-80, D-84 |
+| **E5** PDF | 9c.9, opção `PDF` em R-159 | CA-280 a CA-284 | E1 (E3 opcional) | P-g, ⚖️ D-81 |
+
+Se a E1 ficar grande para uma tarefa, o coordenador pode partir em **E1a** (tela, capa, índice, resumo, números principais, exportar, edição: CA-200 a CA-204, CA-211 a CA-221) e **E1b** (partes por tipo de dado: CA-205 a CA-210).
+
+### 9c.13 Decisões provisórias (⚖️, vão ao quadro do POP)
+
+- **D-64** O relatório é o do relatório aberto no Painel, com os mesmos filtros; o Excel continua com `Formato` e pode levar todos os relatórios, cada um com o seu relatório (editado ou padrão). Motivo: o Painel mostra um relatório por vez.
+- **D-65** Idade contada até hoje (relógio do aparelho), não até a data mais recente dos dados (diferente de D-10), porque o Galindo pediu "a idade agora". Data no futuro sai das faixas e vira achado.
+- **D-66** Atrasado usa o prazo que já existe na Config (`prazoH`, padrão 24 h), sem campo novo; mostrado em dias quando o prazo é múltiplo de 24 e ≥ 48 h.
+- **D-67** Período anterior: mês anterior / mesmo número de dias antes / último mês com registros contra o anterior (com `Tudo`). Setas sem cor de bom ou ruim (o app não sabe se subir é bom).
+- **D-68** A meta da Config vale também para `Concluídos` (% que não está em aberto), além do `Dentro de <prazo>`.
+- **D-69** Até 3 campos Grupo em `quem concentra`; medida = soma do 1º Número (senão contagem); frase dos 3 primeiros + quantos para chegar a 80%.
+- **D-70** Aviso de média puxada quando média > 1,2× ou < 0,8× a mediana.
+- **D-71** Resumo executivo: ordem fixa, até 5 frases; com poucos dados pode ter menos de 3.
+- **D-72** Limiares dos achados (tabela 9c.7: 3× mediana, 30 dias, 3 meses, 15 pontos com ≥ 20 registros, 50% e 2×, 20% vazio, 14 dias, 1 par), a prioridade e o corte de 2 por regra e 5 no total.
+- **D-73** Achados usam os registros filtrados (com filtro de mês, data no futuro não aparece).
+- **D-74** Edita-se texto, título, observação, ordem, esconder e forma; número não se edita. Texto editado não é refeito quando os dados mudam, mas ganha o aviso R-163.
+- **D-75** `Do seu painel` é uma parte só (a ordem interna é a do Editar layout); escondê-la tira as planilhas de painel do Excel.
+- **D-76** Tela e PDF mostram os 100 primeiros registros; o Excel leva todos.
+- **D-77** Formas permitidas da 9c.10; o velocímetro de `% por <andamento>` mostra `Concluídos`.
+- **D-78** No Excel, a barra em `█` vira barra de dados (formatação condicional, não é fórmula); muda D-12 só nesse ponto (continua sem gráfico nativo, fórmula ou macro).
+- **D-79** Nas planilhas, A1/A2/A3 passam a ser linha pequena, faixa de título e linha em itálico (substitui R-81: A1 `Painel`, A2 `Relatório: <conjunto>`).
+- **D-80** Planilhas novas `Resumo` e `Análises` entre `Como ler este relatório` e as de painel; `Como ler este relatório` passa a existir sempre.
+- **D-81** PDF pela impressão do navegador ("Salvar como PDF"), sem biblioteca nova; arquivo PDF baixado direto fica para a V2.
+- **D-82** Título padrão `Relatório <relatório>` (a pessoa troca em `Título do relatório`).
+- **D-83** `Fonte` = nome do relatório e quantidade de registros (o app não guarda o nome do arquivo de origem).
+- **D-84** Cores do Excel e do relatório: `#0F2A4A` (faixa), `#1F6FEB` (destaque), `#EEF3FB`, `#F4F6FB`, `#DFE4EF`, `#5B6683`.
+
+### 9c.14 Perguntas abertas (PERGUNTAR AO GALINDO, nenhuma trava a linha)
+
+- **P-07** Atrasado pelo prazo de horas da Config (D-66) ou um prazo próprio em dias para pendências? Provisório: o mesmo prazo.
+- **P-08** A meta vale para `Concluídos` (D-68)? Provisório: sim.
+- **P-09** PDF pela janela de impressão do navegador (D-81) serve, ou precisa baixar o arquivo direto? Provisório: impressão.
+- **P-10** Os limiares dos achados (D-72) estão bons para o primeiro teste? Provisório: os da tabela 9c.7.
+- **P-11** Comparação com `Tudo` usa o último mês com registros, mesmo que incompleto (D-67)? Provisório: sim, e o texto diz o mês.
+
+### 9c.15 Fontes da pesquisa (relatório gerencial, pendências por idade, concentração)
+
+A pesquisa web não estava disponível na sessão do Especificador (sem ferramenta de busca); as referências abaixo são conhecidas e públicas, citadas de memória. **O Revisor confere se cada link abre** antes de fechar a E1 e troca o que tiver mudado.
+- Resumo executivo no início, conclusões primeiro: Wikipedia, "Executive summary" — https://en.wikipedia.org/wiki/Executive_summary
+- Notação de relatório gerencial, comparação com período anterior e meta: IBCS (International Business Communication Standards) — https://www.ibcs.com/standards/
+- Painéis e relatórios para leitura rápida; crítica ao velocímetro e alternativa do "bullet graph" (por isso o velocímetro é só uma forma, com a meta marcada): Stephen Few, Perceptual Edge — https://www.perceptualedge.com/articles/misc/Bullet_Graph_Design_Spec.pdf
+- Idade das pendências por faixas (relatório de "aging"): Investopedia, "Aging Schedule" — https://www.investopedia.com/terms/a/agingschedule.asp
+- Idade do item em andamento como medida de fluxo (pendências paradas): The Kanban Guide, "Work Item Age" — https://kanbanguides.org/english/
+- Concentração (80/20) e gráfico com % acumulado: ASQ, "What is a Pareto Chart?" — https://asq.org/quality-resources/pareto ; Wikipedia, "Pareto chart" — https://en.wikipedia.org/wiki/Pareto_chart
+- Média e mediana juntas (a mediana resiste a valores extremos): Wikipedia, "Median" — https://en.wikipedia.org/wiki/Median
+- Valores fora da curva (regra simples baseada na mediana, sem estatística avançada): NIST/SEMATECH e-Handbook, "What are outliers in the data?" — https://www.itl.nist.gov/div898/handbook/prc/section1/prc16.htm
 
 ## 10. Segurança (Método 6, ajustado a app sem servidor)
 
