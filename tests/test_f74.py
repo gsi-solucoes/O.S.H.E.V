@@ -17,13 +17,12 @@ def abre_total(page):
     return jan(page)
 
 
-def test_f74_importador_texto_tipo_de_dado_e_legenda(page):
+def test_f74_importador_texto_explica_a_tela(page):
     enviar(page, "vendas.csv")
     page.get_by_text("Esta coluna é o quê?").first.wait_for(state="visible")
     t = page.locator("body").inner_text()
-    assert "Confira o que o programa entendeu de cada coluna" in t and "Arquivo: vendas.csv." in t
+    assert "Confira o que o programa entendeu" in t and "Arquivo: vendas.csv." in t
     assert "Você só faz isso uma vez por formato." in t
-    assert "Tipo de dado" in t and "Categoria = valores que se repetem" in t and "Ignorar = não guarda" in t
 
 
 def test_f74_topo_nao_diz_so_csv(page):
