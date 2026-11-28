@@ -1,0 +1,78 @@
+Placa:;ABC-1000;;
+Modelo:;Gol;Ano:;2020
+Data;Litros;Valor;Posto
+23/10/2026;45,2;R$ 144,69;Shell Centro
+16/10/2026;40,6;R$ 263,88;BR Norte
+10/10/2026;23,0;R$ 281,20;Shell Centro
+26/10/2026;47,4;R$ 260,39;BR Norte
+;;;
+Placa:;ABC-1001;;
+Modelo:;HB20;Ano:;2021
+Data;Litros;Valor;Posto
+17/10/2026;48,2;R$ 206,01;Shell Centro
+13/10/2026;51,1;R$ 123,44;BR Norte
+;;;
+Placa:;ABC-1002;;
+Modelo:;Strada;Ano:;2015
+Data;Litros;Valor;Posto
+17/10/2026;36,7;R$ 284,38;Ipiranga Sul
+;;;
+Placa:;ABC-1003;;
+Modelo:;Strada;Ano:;2016
+Data;Litros;Valor;Posto
+15/10/2026;40,0;R$ 316,21;Shell Centro
+19/10/2026;38,2;R$ 221,79;Ipiranga Sul
+15/10/2026;40,9;R$ 283,90;Shell Centro
+18/10/2026;34,0;R$ 160,82;Shell Centro
+;;;
+Placa:;ABC-1004;;
+Modelo:;Gol;Ano:;2023
+Data;Litros;Valor;Posto
+15/10/2026;50,4;R$ 274,24;Ipiranga Sul
+;;;
+Placa:;ABC-1005;;
+Modelo:;Gol;Ano:;2017
+Data;Litros;Valor;Posto
+26/10/2026;50,9;R$ 145,20;BR Norte
+28/10/2026;26,5;R$ 179,54;BR Norte
+;;;
+Placa:;ABC-1006;;
+Modelo:;HB20;Ano:;2016
+Data;Litros;Valor;Posto
+10/10/2026;26,6;R$ 154,33;Ipiranga Sul
+16/10/2026;55,0;R$ 318,53;Ipiranga Sul
+15/10/2026;26,2;R$ 242,61;Ipiranga Sul
+04/10/2026;38,5;R$ 244,35;Shell Centro
+;;;
+Placa:;ABC-1007;;
+Modelo:;Onix;Ano:;2018
+Data;Litros;Valor;Posto
+03/10/2026;50,8;R$ 275,42;Ipiranga Sul
+;;;
+Placa:;ABC-1008;;
+Modelo:;Onix;Ano:;2015
+Data;Litros;Valor;Posto
+28/10/2026;25,5;R$ 253,87;BR Norte
+26/10/2026;38,8;R$ 138,79;BR Norte
+09/10/2026;39,5;R$ 255,93;Shell Centro
+;;;
+Placa:;ABC-1009;;
+Modelo:;Strada;Ano:;2024
+Data;Litros;Valor;Posto
+22/10/2026;39,5;R$ 135,33;Shell Centro
+14/10/2026;26,0;R$ 285,07;Ipiranga Sul
+24/10/2026;48,1;R$ 275,80;Shell Centro
+;;;
+Placa:;ABC-1010;;
+Modelo:;Strada;Ano:;2019
+Data;Litros;Valor;Posto
+10/10/2026;52,6;R$ 151,33;Ipiranga Sul
+;;;
+Placa:;ABC-1011;;
+Modelo:;Gol;Ano:;2015
+Data;Litros;Valor;Posto
+28/10/2026;51,4;R$ 308,32;Ipiranga Sul
+01/10/2026;22,0;R$ 170,02;Ipiranga Sul
+04/10/2026;23,3;R$ 253,73;Ipiranga Sul
+11/10/2026;47,3;R$ 265,80;BR Norte
+;;;

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teste das Perguntas</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1d2330;--mut:#5d6677;--bd:#dde1e8;--pri:#1f5fbf;--pri2:#e7effb;--warn:#a85b00;--warn2:#fff3e2;--ok:#1d7a46;--ok2:#e5f5ec;--bad:#b3261e;--bad2:#fde9e7}
+@media (prefers-color-scheme:dark){:root{--bg:#12151b;--card:#1b2029;--tx:#e6e9ef;--mut:#9aa3b2;--bd:#2c3340;--pri:#6ea2ff;--pri2:#1d2b45;--warn:#f0a646;--warn2:#3a2a12;--ok:#5fd08f;--ok2:#163225;--bad:#ff8a80;--bad2:#3d1c1a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:18px 16px 8px;max-width:1100px;margin:auto}h1{font-size:20px;margin:0 0 4px}h2{font-size:17px;margin:22px 0 8px}
+.mut{color:var(--mut)}main{max-width:1100px;margin:auto;padding:0 16px 60px}
+select,input,textarea,button{font:inherit;color:inherit}
+select,input[type=text],textarea{background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:7px 9px;width:100%}
+button{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer}button.sec{background:var(--pri2);color:var(--pri)}
+.resumo{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 18px}
+.resumo b{font-size:18px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.card.fora{opacity:.45}
+.q{font-weight:600;margin:0 0 6px}.lin{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0}
+.lbl{font-size:12px;color:var(--mut);margin:6px 0 2px}
+.chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}.chip{background:var(--pri2);color:var(--tx);border-radius:6px;padding:2px 7px;font-size:13px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{display:inline-block;font-size:12px;border-radius:6px;padding:1px 7px;margin-right:4px;background:var(--pri2);color:var(--pri)}
+.tag.w{background:var(--warn2);color:var(--warn)}.tag.ok{background:var(--ok2);color:var(--ok)}
+.barra{height:6px;background:var(--bd);border-radius:4px;overflow:hidden;margin-top:4px}.barra i{display:block;height:100%;background:var(--pri)}
+.marc{background:var(--warn2);border-radius:8px;padding:8px;margin-top:8px}.marc .q{color:var(--warn)}
+.marc .it{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center;margin-top:6px;font-size:13px}
+details.caixa{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:10px 14px;margin-top:12px}
+details.caixa summary{cursor:pointer;font-weight:600}.caixa .ops{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.caixa label{display:flex;gap:8px;align-items:flex-start;padding:5px 0;border-top:1px solid var(--bd)}
+.tabwrap{overflow:auto;background:var(--card);border:1px solid var(--bd);border-radius:12px;max-height:70vh}
+table{border-collapse:collapse;font-size:13px;min-width:100%}th,td{border-bottom:1px solid var(--bd);padding:6px 8px;text-align:left;white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+th{position:sticky;top:0;background:var(--pri2);z-index:1}td.mov{background:var(--warn2)}
+.sn{display:flex;gap:8px;margin:10px 0 6px}.trata{margin:10px 0 4px;font-size:14px}.trata a{color:var(--pri)}.opcoes label{display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:14px}details.desc{margin-top:8px;font-size:13px}details.desc summary{cursor:pointer;color:var(--mut)}details.desc input{margin-top:6px}
+.arr{font-size:12px;border-left:3px solid var(--pri);padding:4px 8px;margin:6px 0;background:var(--bg);overflow-wrap:anywhere}.arr .alvo{background:var(--warn2);padding:0 4px;border-radius:4px}
+.moldura{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;margin:8px 0 10px;font-size:11px}.moldura .cx{background:var(--bg);border:1px solid var(--bd);border-radius:5px;padding:3px 4px;min-height:22px;overflow:hidden;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;color:var(--mut);line-height:1.25}.moldura .cx.alvo{background:var(--warn2);color:var(--tx);font-weight:700;border-color:var(--warn);white-space:normal;overflow-wrap:anywhere}
+.visor{max-height:min(60vh,460px);overflow:auto;border:1px solid var(--bd);border-radius:10px;margin:8px 0;cursor:grab;background:var(--card)}.folha{display:inline-block;padding:6px}
+.folha table{font-size:11px;line-height:1.2;margin-bottom:4px;border-collapse:collapse}.folha td{white-space:nowrap;padding:2px 5px;border:1px solid var(--bd);color:var(--mut)}.folha td.cheio{color:var(--tx)}
+.folha tr.cab td{background:var(--pri2);color:var(--tx);font-weight:600}.folha td.alvo{background:var(--warn2);color:var(--tx);font-weight:800;outline:3px solid var(--warn);outline-offset:-3px}
+.folha td.igual{background:var(--ok2);color:var(--tx);font-weight:700;outline:2px solid var(--ok);outline-offset:-2px}.apag td{opacity:.45}
+.tit{font-size:12px;font-weight:700;margin:4px 0}.tit.outro{font-weight:400;color:var(--mut);margin-top:12px}.lupa{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}.lupa button{padding:5px 10px;font-size:13px}
+.certos{background:var(--card);border:1px solid var(--bd);border-radius:12px}.certo{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--bd)}.certo:first-child{border-top:0}.certo button{padding:5px 10px;font-size:13px;flex:none}
+.como{margin:8px 0 2px}.como input{font-weight:600}
+th .xcol{margin-left:6px;border:0;background:transparent;color:var(--mut);font-size:15px;line-height:1;padding:0 3px;cursor:pointer;border-radius:4px}th .xcol:hover{background:var(--bad2,#fde9e7);color:#b3261e}
+.tiradas{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0 8px;font-size:13px}.tiradas .volta{border:0;background:transparent;color:var(--pri);text-decoration:underline;font:inherit;font-size:12px;padding:0;cursor:pointer}
+.datas{background:var(--ok2);border-radius:10px;padding:8px 12px;margin:8px 0;font-size:14px}
+textarea{min-height:140px;font-family:ui-monospace,monospace;font-size:12px}
+.abas{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.abas button{background:var(--card);color:var(--tx);border:1px solid var(--bd)}.abas button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+@media (max-width:600px){.lin,.marc .it{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>Teste das perguntas: “Este grupo é o quê?”</h1>
+<div class="mut">Protótipo de teste, fora do app. Escolha um arquivo, responda as perguntas e veja a planilha se montar embaixo.</div>
+<div class="abas" id="abas"></div>
+</header>
+<main>
+<div class="resumo" id="resumo"></div>
+<h2>1. Preciso da sua ajuda <span class="mut" id="nAjuda" style="font-weight:400;font-size:14px"></span></h2>
+<div id="datas"></div>
+<div class="cards" id="cards"></div>
+<h2>2. Já identifiquei sozinho <span class="mut" style="font-weight:400;font-size:14px">(confira se quiser; toque em corrigir para mudar)</span></h2>
+<div id="certos"></div>
+<details class="caixa" id="caixa"><summary id="caixaTit"></summary>
+<div class="mut" style="margin-top:6px">Colunas e grupos quase vazios ou só com sujeira. Marque e exclua de uma vez.</div>
+<div class="ops"><button class="sec" id="todas">Selecionar todas</button><button id="excluir">Excluir selecionadas</button><button class="sec" id="voltar">Trazer de volta</button></div>
+<div id="caixaLista"></div></details>
+<h2>3. Planilha sendo montada <span class="mut" style="font-weight:400;font-size:14px">(primeiros 40 registros)</span></h2>
+<div id="tiradas"></div>
+<div class="tabwrap"><table id="tab"></table></div>
+<h2>4. Suas respostas</h2>
+<div class="mut">Quando terminar, toque em copiar e cole aqui na conversa.</div>
+<p><button id="copiar">Copiar respostas</button></p>
+<textarea id="saida" readonly></textarea>
+</main>
+<script>
+/*DADOS*/
+const COMO_DATA={'Abertura / pedido':'Data de abertura','Compra / nota':'Data da compra','Início do serviço':'Início do serviço','Fim do serviço / executado':'Fim do serviço','Encerramento / baixa':'Data de encerramento','Previsão / programada':'Data prevista','Competência / período':'Competência','Nascimento':'Data de nascimento'};
+const TIPOS2=[['Código','identifica cada registro, não se repete (ex.: nº da OS)'],['Data','dia, com ou sem hora'],['Categoria','se repete; serve para agrupar e contar (ex.: setor, tipo)'],['Situação','andamento do registro (aberto, concluído, cancelado)'],['Número','quantidade ou medida; dá para somar e fazer média'],['Valor (R$)','dinheiro; dá para somar'],['Tempo (duração)','quanto durou (ex.: 2:30); dá para somar e fazer média'],['Texto','escrito livre, como descrição ou observação'],['Ignorar','não usar esta informação']];
+const TIPOS=['Código (identifica o registro)','Data','Categoria','Situação','Número','Valor (R$)','Tempo (duração)','Texto','Ignorar'];
+const QUALDATA=['(qual data é?)','Abertura / pedido','Início do serviço','Fim do serviço / executado','Encerramento / baixa','Previsão / programada','Competência / período','Compra / nota','Nascimento','Outra'];
+let A=0, R={};
+const $=s=>document.querySelector(s), el=(t,a={},...f)=>{const e=document.createElement(t);for(const k in a){if(k==='on')for(const ev in a.on)e.addEventListener(ev,a.on[ev]);else if(k in e)e[k]=a[k];else e.setAttribute(k,a[k])}f.flat().forEach(x=>e.append(x));return e};
+function estado(){const d=DADOS[A];if(!R[A]){R[A]={g:{},mov:{}};d.grupos.forEach(g=>{const quase=(g.pre<5&&!g.ctx);R[A].g[g.id]={nome:((/\(sem nome\)$| · \d+$/.test(g.nome))&&g.nc)?g.nc.nome:g.nome.replace(/ \(sem nome\)$/,''),tipo:(/situa|status/i.test(g.nome)&&g.sug==='Categoria')?'Situação':g.sug.replace(' (identifica o registro)',''),desc:'',qual:(g.qd&&g.qd.sig!=='?'?g.qd.sig:''),fora:false,quase,sel:false}})}return R[A]}
+function abas(){$('#abas').replaceChildren(...DADOS.map((d,i)=>el('button',{className:i===A?'on':'',textContent:d.desc,on:{click:()=>{A=i;tudo()}}})))}
+function resumo(){const d=DADOS[A];$('#resumo').replaceChildren(
+ el('div',{},el('div',{className:'mut',textContent:'Arquivo'}),el('div',{textContent:d.arquivo})),
+ el('div',{},el('div',{className:'mut',textContent:'Registros achados'}),el('b',{textContent:d.reg.toLocaleString('pt-BR')})),
+ el('div',{},el('div',{className:'mut',textContent:'Grupos'}),el('b',{textContent:d.grupos.length})),
+ el('div',{},el('div',{className:'mut',textContent:'Como achou o registro'}),el('div',{textContent:d.como})),
+ el('div',{},el('div',{className:'mut',textContent:'Linhas de total conferidas'}),el('div',{textContent:d.totais+(d.notas?' · notas de rodapé: '+d.notas:'')})))}
+function datas(){const d=DADOS[A];$('#datas').replaceChildren(...(d.datas.length?[el('div',{className:'datas'},el('b',{textContent:'Linha do tempo das datas: '}),...d.datas.map(x=>el('div',{textContent:`“${x.antes}” vem antes de “${x.depois}” (diferença típica ${x.tipico})`+(x.n_furam?` · ${x.n_furam} registro(s) fora da ordem`:'')})))]:[]))}
+function cards(){const d=DADOS[A],s=estado();const nomes=d.grupos.map(g=>g.id);
+ const aj=d.grupos.filter(g=>!s.g[g.id].quase&&(g.duvida||s.g[g.id].abrir));$('#nAjuda').textContent='('+aj.length+' de '+d.grupos.length+' grupos)';
+ if(!aj.length){$('#cards').replaceChildren(el('div',{className:'card',textContent:'✅ Nada para perguntar: identifiquei tudo sozinho. Confira a lista abaixo se quiser.'}));return}
+ $('#cards').replaceChildren(...aj.map(g=>{const st=s.g[g.id];
+  const temNome=!/\(sem nome\)$/.test(g.nome)&&!/ · \d+$/.test(g.nome);
+  const T=TIPOS2.find(t=>t[0]===st.tipo)||TIPOS2[7];
+  const c=el('div',{className:'card'+(st.fora?' fora':'')},
+   el('div',{className:'q',style:'font-size:16px',textContent:temNome?`Isto aqui é “${g.nome}”?`:'Isto aqui é o quê?'}),
+   el('div',{className:'chips'},...g.ex.map(x=>el('span',{className:'chip',title:x,textContent:x}))),
+   el('div',{className:'mut',style:'font-size:12px',textContent:`preenchido em ${g.pre}% dos registros · ${g.distintos} valores diferentes`+(g.lista>1?` · até ${g.lista} por registro`:'')+(g.ctx?' · vale para vários registros':'')}),
+   el('div',{className:'barra'},el('i',{style:'width:'+g.pre+'%'})),
+   (g.vistas&&g.vistas.length)?el('div',{},el('div',{className:'visor','data-g':g.id,title:'arraste para andar pela folha'},el('div',{className:'folha'},
+     ...(()=>{const v=g.vistas[st.vi||0];return [el('div',{className:'tit',textContent:'Neste arquivo · '+v.ident}),tabV(v),...(v.extras||[]).flatMap(x=>[el('div',{className:'tit outro',textContent:`O mesmo registro em “${x.arq}” (${x.ident}) — iguais em verde:`}),tabV(x)])]})())),
+     el('div',{className:'lupa'},el('button',{className:'sec',textContent:'🔍 −',on:{click:()=>{st.z=Math.max(1,(st.z||1)/1.35);aplicaV()}}}),el('button',{className:'sec',textContent:'🔍 +',on:{click:()=>{st.z=Math.min(8,(st.z||1)*1.35);aplicaV()}}}),el('button',{className:'sec',textContent:'ver inteiro',on:{click:()=>{st.z=1;aplicaV()}}}),
+       g.vistas.length>1?el('button',{className:'sec',textContent:'outro exemplo ▶',on:{click:()=>{st.vi=((st.vi||0)+1)%g.vistas.length;tudo()}}}):'')):'',
+   g.cod?el('div',{className:'datas',style:'margin:8px 0'},el('b',{textContent:'💡 É o código do '+g.cod}),el('div',{style:'font-size:13px',textContent:`Cada número anda sempre com o mesmo ${g.cod} (ex.: o mesmo número sempre com o mesmo nome). Vou tratar como Categoria, não como quantidade.`})):'',
+   g.nc?el('div',{className:'datas',style:'margin:8px 0'},el('b',{textContent:'💡 Sugestão de nome: “'+g.nc.nome+'”'}),el('div',{style:'font-size:13px',textContent:`O conteúdo é igual ao “${g.nc.nome}” do arquivo “${g.nc.arq}” em ${g.nc.pct}% de ${g.nc.n} registros em comum.`}),
+     st.nome!==g.nc.nome?el('button',{className:'sec',style:'margin-top:6px',textContent:'Usar “'+g.nc.nome+'”',on:{click:()=>{st.nome=g.nc.nome;st.ok=false;tudo()}}}):el('div',{className:'mut',style:'font-size:12px;margin-top:4px',textContent:'✓ usando este nome'})):'',
+   temNome?el('div',{className:'sn'},
+     el('button',{className:st.ok===true?'':'sec',textContent:'Sim',on:{click:()=>{st.ok=true;st.nome=g.nome;tudo()}}}),
+     el('button',{className:st.ok===false?'':'sec',textContent:'Não, é outra coisa',on:{click:()=>{st.ok=false;tudo()}}})):'',
+   (!temNome||st.ok===false)?el('input',{type:'text',value:temNome&&st.nome===g.nome?'':st.nome,placeholder:'Escreva o que é (ex.: Setor, Nº da OS)',on:{input:e=>{st.nome=e.target.value||g.nome;tabela();saida()}}}):'',
+   el('div',{className:'como'},el('div',{className:'lbl',textContent:'Entra na planilha como:'}),el('input',{type:'text',value:comoDe(g,st),on:{input:e=>{st.como=e.target.value;st.comoEditado=true;tabela();saida()}}})),
+   el('div',{className:'trata'},'Vou tratar como ',el('b',{textContent:T[0]}),el('span',{className:'mut',textContent:': '+T[1]+'. '}),
+     el('a',{href:'#',textContent:st.trocar?'fechar':'trocar',on:{click:e=>{e.preventDefault();st.trocar=!st.trocar;tudo()}}})),
+   st.trocar?el('div',{className:'opcoes'},...TIPOS2.map(t=>el('label',{},el('input',{type:'radio',name:'t'+g.id,checked:t[0]===st.tipo,on:{change:()=>{st.tipo=t[0];st.fora=t[0]==='Ignorar';st.trocar=false;tudo()}}}),el('span',{},el('b',{textContent:t[0]}),el('span',{className:'mut',textContent:' — '+t[1]}))))):'',
+   st.tipo==='Data'?el('div',{},g.qd?el('div',{className:'datas',style:'margin:8px 0 4px;background:'+(g.qd.conf==='baixa'?'var(--warn2)':'var(--ok2)')},el('b',{textContent:(g.qd.sig==='?'?'Não descobri qual data é':'Acho que é a data de: '+g.qd.sig)+' (confiança '+g.qd.conf+')'}),el('div',{style:'font-size:13px',textContent:'Por quê: '+g.qd.mot})):'',
+     el('select',{on:{change:e=>{st.qual=e.target.value;if(!st.comoEditado)st.como=null;tudo()}}},...QUALDATA.map(t=>el('option',{textContent:t,selected:t===st.qual||(!st.qual&&t[0]==='(')})))):'',
+   el('details',{className:'desc'},el('summary',{textContent:'Explicar com minhas palavras (opcional)'}),el('input',{type:'text',value:st.desc,placeholder:'ex.: setor que pediu o serviço',on:{input:e=>{st.desc=e.target.value;saida()}}})));
+  if(g.marc.length){const box=el('div',{className:'marc'},el('div',{className:'q',textContent:`⚠️ ${g.nmarc} célula(s) parecem não ser deste grupo`}));
+   g.marc.forEach((m,i)=>{const k=g.id+':'+i;const opts=['(deixar aqui)',...d.grupos.filter(x=>x.id!==g.id).map(x=>s.g[x.id].nome),'Grupo novo','Ignorar'];
+    if(!(k in s.mov)){s.mov[k]=m.sug==='grupo novo'?'Grupo novo':(opts.includes(m.sug)?m.sug:'(deixar aqui)')}
+    box.append(el('div',{className:'it'},el('div',{},el('b',{textContent:m.v}),el('div',{className:'mut',textContent:'registro '+m.reg+' · '+m.mot})),
+     el('select',{on:{change:e=>{s.mov[k]=e.target.value;tabela();saida()}}},...opts.map(o=>el('option',{textContent:o==='(deixar aqui)'?o:'mover para: '+o,value:o,selected:o===s.mov[k]})))))});
+   if(g.nmarc>g.marc.length)box.append(el('div',{className:'mut',style:'font-size:12px;margin-top:6px',textContent:`(mostrando ${g.marc.length} de ${g.nmarc})`}));c.append(box)}
+  if(g.aviso)c.append(el('div',{className:'marc'},el('div',{textContent:'⚠️ '+g.aviso})));
+  return c}))}
+function caixa(){const d=DADOS[A],s=estado();const q=d.grupos.filter(g=>s.g[g.id].quase);
+ $('#caixaTit').textContent=`Quase vazios e sujeira: ${q.length} grupo(s)`+(d.sujeira.length?` + ${d.sujeira.length} coluna(s) só com sujeira`:'')+' ▾';
+ $('#caixaLista').replaceChildren(...q.map(g=>{const st=s.g[g.id];return el('label',{},el('input',{type:'checkbox',checked:st.sel,on:{change:e=>{st.sel=e.target.checked}}}),
+   el('div',{},el('b',{textContent:st.nome+(st.fora?' (excluído)':'')}),el('div',{className:'mut',style:'font-size:13px',textContent:`preenchido em ${g.pre}% · ex.: ${g.ex.slice(0,3).join(' · ')}`})))}),
+  ...(d.sujeira.length?[el('div',{className:'mut',style:'padding:6px 0;border-top:1px solid var(--bd)',textContent:'Colunas do arquivo só com traço/asterisco/pontuação (já ignoradas): '+d.sujeira.join(', ')})]:[]))}
+function tabela(){const d=DADOS[A],s=estado();const cols=d.grupos.filter(g=>!s.g[g.id].fora);
+ const fora=d.grupos.filter(g=>s.g[g.id].fora);
+ $('#tiradas').replaceChildren(...(fora.length?[el('div',{className:'tiradas'},el('span',{className:'mut',textContent:'Colunas tiradas: '}),...fora.map(g=>{const st=s.g[g.id];return el('span',{className:'chip'},st.nome+' ',el('button',{className:'volta',textContent:'voltar',on:{click:()=>{st.fora=false;st.tipo=st.tipoAntes&&st.tipoAntes!=='Ignorar'?st.tipoAntes:g.sug.replace(' (identifica o registro)','');tudo()}}}))}))]:[]));
+ const movidos={};d.grupos.forEach(g=>g.marc.forEach((m,i)=>{const dest=s.mov[g.id+':'+i];if(dest&&dest!=='(deixar aqui)')(movidos[m.reg-1]=movidos[m.reg-1]||[]).push({de:g.id,v:m.v,para:dest})}));
+ const extra=[...new Set(Object.values(movidos).flat().filter(x=>x.para==='Grupo novo').map(()=>'Grupo novo'))];
+ const head=el('tr',{},el('th',{textContent:'#'}),...cols.map(g=>el('th',{title:'no arquivo: '+s.g[g.id].nome},el('span',{textContent:comoDe(g,s.g[g.id])}),el('button',{className:'xcol',title:'tirar esta coluna',textContent:'×',on:{click:()=>{const st=s.g[g.id];st.fora=true;st.tipoAntes=st.tipo;st.tipo='Ignorar';tudo()}}}))),...extra.map(x=>el('th',{textContent:x})));
+ const rows=d.linhas.map((l,ri)=>{const mv=movidos[ri]||[];return el('tr',{},el('td',{textContent:ri+1}),...cols.map(g=>{let v=l[g.id]||'',mov=false;
+   mv.forEach(m=>{if(m.de===g.id){v=v.split(' | ').filter(x=>x!==m.v).join(' | ');mov=true}if(m.para===s.g[g.id].nome){v=v?v+' | '+m.v:m.v;mov=true}});
+   return el('td',{className:mov?'mov':'',title:v,textContent:v})}),...extra.map(()=>{const n=mv.filter(m=>m.para==='Grupo novo').map(m=>m.v).join(' | ');return el('td',{className:n?'mov':'',textContent:n})}))});
+ $('#tab').replaceChildren(el('thead',{},head),el('tbody',{},...rows))}
+function saida(){const d=DADOS[A],s=estado();Object.values(s.g).forEach(x=>{x.nome=(x.nome||'').trim()});const L=['Arquivo: '+d.arquivo,'Registros: '+d.reg];
+ d.grupos.forEach(g=>{const st=s.g[g.id];L.push(`- ${g.nome} → ${st.fora?'EXCLUÍDO':`"${st.nome}" entra como "${comoDe(g,st)}" = ${st.tipo}${st.qual&&st.qual[0]!=='('?' ('+st.qual+')':''}${st.desc?' | '+st.desc:''}`}`)});
+ const mv=Object.entries(s.mov).filter(([k,v])=>v!=='(deixar aqui)');if(mv.length){L.push('Movidas:');mv.forEach(([k,v])=>{const[gid,i]=k.split(':');const g=d.grupos.find(x=>x.id===gid);L.push(`  "${g.marc[i].v}" (de ${g.nome}) → ${v}`)})}
+ $('#saida').value=L.join('\n')}
+function comoDe(g,st){if(st.como!=null&&st.como!=='')return st.como;if(g.cod)return 'Código do '+g.cod;if(st.tipo==='Data'){const q=st.qual&&st.qual[0]!=='('?st.qual:(g.qd&&g.qd.sig);if(q&&COMO_DATA[q])return COMO_DATA[q]}return st.nome}
+function certos(){const d=DADOS[A],s=estado();const L=d.grupos.filter(g=>!g.duvida&&!s.g[g.id].abrir&&!s.g[g.id].quase);
+ $('#certos').replaceChildren(el('div',{className:'certos'},...L.map(g=>{const st=s.g[g.id];return el('div',{className:'certo'},
+  el('div',{},el('b',{textContent:st.nome}),el('span',{className:'mut',textContent:' → entra como “'+comoDe(g,st)+'” · '+st.tipo}),
+   el('div',{className:'mut',style:'font-size:12px',textContent:(g.cod?'cada número anda sempre com o mesmo '+g.cod+': é o código dele · ':'')+(g.qd?'por quê: '+g.qd.mot+' · ':'')+(g.nc&&g.nc.nome!==st.nome?'no arquivo “'+g.nc.arq+'” se chama “'+g.nc.nome+'” · ':'')+'ex.: '+g.ex.slice(0,3).join(' · ')})),
+  el('button',{className:'sec',textContent:'corrigir',on:{click:()=>{st.abrir=true;tudo()}}}))})))}
+function tabV(v){return el('table',{},...v.rows.map((row,ri)=>el('tr',{className:(v.cab&&ri===0?'cab':'')+((v.apagadas||[]).includes(ri)?' apag':'')},...row.map(([c,n,col])=>el('td',{colSpan:n,className:(v.alvo&&v.alvo[0]===ri&&v.alvo[1]===col)?'alvo':((v.marcas||[]).some(m=>m[0]===ri&&m[1]===col)?'igual':(c?'cheio':'')),textContent:c})))))}
+function aplicaV(){const s=estado();document.querySelectorAll('.visor').forEach(o=>{const st=s.g[o.dataset.g]||{},f=o.querySelector('.folha');f.style.zoom=1;
+ const base=Math.min(1,(o.clientWidth-4)/f.scrollWidth,(Math.min(innerHeight*.6,460)-4)/f.scrollHeight),z=base*(st.z||1);f.style.zoom=z;
+ if((st.z||1)>1.01){const a=o.querySelector('td.alvo');if(a){o.scrollLeft=a.offsetLeft*z-o.clientWidth/2+a.offsetWidth*z/2;o.scrollTop=a.offsetTop*z-o.clientHeight/2}}
+ let x0,y0,l0,t0,on=false;o.onpointerdown=e=>{if(e.pointerType!=='mouse')return;on=true;x0=e.clientX;y0=e.clientY;l0=o.scrollLeft;t0=o.scrollTop};o.onpointermove=e=>{if(on){o.scrollLeft=l0-(e.clientX-x0);o.scrollTop=t0-(e.clientY-y0)}};o.onpointerup=o.onpointerleave=()=>{on=false}})}
+function tudo(rebuild=true){abas();resumo();datas();cards();certos();caixa();tabela();saida();requestAnimationFrame(aplicaV)}
+$('#todas').onclick=()=>{const s=estado();Object.values(s.g).forEach(g=>{if(g.quase)g.sel=true});caixa()};
+$('#excluir').onclick=()=>{const s=estado();Object.values(s.g).forEach(g=>{if(g.quase&&g.sel){g.fora=true;g.tipo='Ignorar'}});caixa();tabela();saida()};
+$('#voltar').onclick=()=>{const s=estado();Object.values(s.g).forEach(g=>{if(g.quase&&g.sel){g.fora=false;g.sel=false}});caixa();tabela();saida()};
+$('#copiar').onclick=async()=>{saida();try{await navigator.clipboard.writeText($('#saida').value);$('#copiar').textContent='Copiado ✓'}catch(e){$('#saida').select()}setTimeout(()=>$('#copiar').textContent='Copiar respostas',2000)};
+tudo();
+</script>
+</body>
+</html>

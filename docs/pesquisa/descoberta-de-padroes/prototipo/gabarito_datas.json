@@ -1,0 +1,39 @@
+{
+ "NAO_ATENDIDAS_R_ORDEM_SERVICO.csv": {
+  "Data Pedido": "Abertura / pedido",
+  "Data Inicial": "Início do serviço",
+  "Data Final": "Fim do serviço / executado"
+ },
+ "relatoriodetalhadas.csv": {
+  "Dt. Pedido": "Abertura / pedido",
+  "Dt. Execução": "Encerramento / baixa",
+  "Dt. Prev. Exec.": "Previsão / programada"
+ },
+ "relatorioresumidas.csv": {
+  "Dt Programada": "Abertura / pedido"
+ },
+ "3_atendimentos_agrupado.tsv.csv": {
+  "Abertura": "Abertura / pedido",
+  "Fechamento": "Encerramento / baixa"
+ },
+ "2_ficha_alunos.csv": {
+  "Nascimento": "Nascimento",
+  "Data": "Outra"
+ },
+ "1_vendas_loja.csv": {
+  "Data": "Abertura / pedido"
+ },
+ "4_chamados_rotulo_na_celula.csv": {
+  "ABERTO EM": "Abertura / pedido"
+ },
+ "5_notas_sem_cabecalho.csv": {
+  "Grupo 1 (sem nome)": "?"
+ },
+ "6_datas_sem_rotulo.csv": {
+  "Grupo 2 (sem nome)": "Início do serviço",
+  "Grupo 3 (sem nome)": "Encerramento / baixa",
+  "Grupo 4 (sem nome)": "Abertura / pedido",
+  "Grupo 5 (sem nome)": "Fim do serviço / executado",
+  "Grupo 6 (sem nome)": "Compra / nota"
+ }
+}

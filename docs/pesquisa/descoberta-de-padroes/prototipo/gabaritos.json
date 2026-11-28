@@ -1,0 +1,173 @@
+{
+ "NAO_ATENDIDAS_R_ORDEM_SERVICO.csv": {
+  "formato": "A ficha simples",
+  "registros": 107,
+  "amostras": [],
+  "ruido": [],
+  "nota": "amostras com dados reais ficam fora do repositório; refazer pela análise manual"
+ },
+ "R_ORDEM_SERVICO [xlsx].csv": {
+  "formato": "B ficha com cabeçalho de página",
+  "registros": 96,
+  "amostras": [],
+  "ruido": [
+   "Página:",
+   "Emitido por:",
+   "01/03/2024 17:07",
+   "24"
+  ],
+  "nota": "amostras com dados reais ficam fora do repositório; refazer pela análise manual"
+ },
+ "relatoriodetalhadas.csv": {
+  "formato": "C agrupado",
+  "registros": 904,
+  "amostras": [],
+  "ruido": [
+   "1",
+   "3",
+   "904",
+   "Total da Setor:",
+   "Total da Oficina:"
+  ],
+  "nota": "amostras com dados reais ficam fora do repositório; refazer pela análise manual"
+ },
+ "ORDEM DE SERVIÇO RESUMIDA - KAUE [xls].csv": {
+  "formato": "D agrupado, outro espaçamento",
+  "registros": 2416,
+  "amostras": [],
+  "ruido": [
+   "1",
+   "Total da Setor:"
+  ],
+  "nota": "amostras com dados reais ficam fora do repositório; refazer pela análise manual"
+ },
+ "relatorioresumidas.csv": {
+  "formato": "E tabela, cabeçalho repetido e deslocado",
+  "registros": 904,
+  "amostras": [],
+  "ruido": [
+   "904",
+   "Total de Ordem de Serviço :"
+  ],
+  "nota": "amostras com dados reais ficam fora do repositório; refazer pela análise manual"
+ },
+ "ABERTAS_R_ORDEM_SERVICO.csv": {
+  "formato": "G formulário vazio",
+  "registros": 0,
+  "amostras": [],
+  "ruido": [],
+  "nota": "amostras com dados reais ficam fora do repositório; refazer pela análise manual"
+ },
+ "1_vendas_loja.csv": {
+  "formato": "H1 tabela com coluna faltando",
+  "registros": 60,
+  "amostras": [
+   {
+    "id": "9100",
+    "Data": "11/11/2026",
+    "Cliente": "BRUNO LIMA",
+    "Cidade": "BAURU",
+    "Produto": "MACARRAO 500G",
+    "Qtde": "2",
+    "Total": "R$ 79,68"
+   },
+   {
+    "id": "9104",
+    "Data": "19/11/2026",
+    "Cliente": "ANA PAULA SOUZA",
+    "Cidade": "",
+    "Produto": "OLEO 900ML",
+    "Qtde": "13",
+    "Total": "R$ 55,28"
+   }
+  ],
+  "ruido": []
+ },
+ "2_ficha_alunos.csv": {
+  "formato": "H2 ficha, rótulo em cima",
+  "registros": 25,
+  "amostras": [
+   {
+    "id": "20260",
+    "Nome": "BRUNO LIMA",
+    "Turma": "8C",
+    "Nascimento": "09/08/2013",
+    "Ocorrência": "ESQUECEU MATERIAL",
+    "Data ocorrência": "08/11/2026"
+   },
+   {
+    "id": "20261",
+    "Nome": "BRUNO LIMA",
+    "Turma": "7B",
+    "Nascimento": "05/07/2013"
+   }
+  ],
+  "ruido": [
+   "FICHA DO ALUNO"
+  ]
+ },
+ "3_atendimentos_agrupado.tsv.csv": {
+  "formato": "H3 agrupado com subtotal",
+  "registros": 31,
+  "amostras": [
+   {
+    "id": "A-42040",
+    "Vendedor": "ANA PAULA SOUZA",
+    "Abertura": "18/11/2026 13:02",
+    "Fechamento": "18/11/2026 15:56",
+    "Duração": "2:13"
+   },
+   {
+    "id": "A-42529",
+    "Abertura": "09/11/2026 11:32",
+    "Fechamento": "09/11/2026 13:49",
+    "Duração": "0:05"
+   }
+  ],
+  "ruido": [
+   "10",
+   "5",
+   "Subtotal:"
+  ]
+ },
+ "4_chamados_rotulo_na_celula.csv": {
+  "formato": "H4 rótulo dentro da célula",
+  "registros": 30,
+  "amostras": [
+   {
+    "id": "500",
+    "Aberto em": "14/11/2026 09:32",
+    "Cliente": "CARLA DIAS",
+    "Cidade": "SANTOS",
+    "Defeito": "SEM SOM"
+   },
+   {
+    "id": "501",
+    "Aberto em": "26/11/2026 09:27",
+    "Cliente": "ANA PAULA SOUZA",
+    "Cidade": "BAURU",
+    "Defeito": "TELA QUEBRADA"
+   }
+  ],
+  "ruido": []
+ },
+ "5_notas_sem_cabecalho.csv": {
+  "formato": "H5 sem cabeçalho, centavos partidos",
+  "registros": 40,
+  "amostras": [
+   {
+    "id": "NF330000",
+    "Data": "11/11/2026",
+    "Produto": "MACARRAO 500G",
+    "Valor": "R$ 864,31"
+   },
+   {
+    "id": "NF330001",
+    "Data": "16/11/2026",
+    "Produto": "OLEO 900ML",
+    "Valor": "R$ 245,70"
+   }
+  ],
+  "ruido": []
+ }
+}

@@ -1,0 +1,8 @@
+Arquivo: NAO_ATENDIDAS_R_ORDEM_SERVICO.csv (respostas do Galindo, 27/11/2026)
+Ordem de Serviço · 1 → "Ordem de Serviço" = Código
+Ordem de Serviço · 2 → "Solicitação de Serviço" = Texto
+Situação = Situação | Tipo = Categoria | Especialidade = Categoria | Solicitante = Categoria
+Data Pedido = Data (Abertura / pedido) | Setor = Categoria | Localidade = Texto
+Data Final = Data (Fim do serviço) | Serviço = Categoria | Funcionário = Categoria | Data Inicial = Data (Início do serviço)
+Observações = Texto | Ordem de Serviço Relacionadas = Texto
+Tipo (2) = Categoria | Situação (2) = Situação | Data Inicial (2) = Data (Início do serviço) | Data Final (2) = Categoria (ERRO do app: data cortada "12/11/2026 10:")

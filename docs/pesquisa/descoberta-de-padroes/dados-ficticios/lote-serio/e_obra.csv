@@ -1,0 +1,26 @@
+Etapa: FUNDAÇÃO,,,
+Material,Qtde,Unidade,Custo
+Tinta,47,barra,"R$ 542,00"
+Ferro 10mm,26,barra,"R$ 823,00"
+Tijolo,52,barra,"R$ 330,00"
+Tijolo,7,milheiro,"R$ 273,00"
+Subtotal,,,"R$ 1968,00"
+,,,
+Etapa: ESTRUTURA,,,
+Material,Qtde,Unidade,Custo
+Argamassa,66,lata,"R$ 793,00"
+Tinta,39,milheiro,"R$ 834,00"
+Cimento,66,lata,"R$ 681,00"
+Brita,63,barra,"R$ 660,00"
+Subtotal,,,"R$ 2968,00"
+,,,
+Etapa: ACABAMENTO,,,
+Material,Qtde,Unidade,Custo
+Areia,10,lata,"R$ 418,00"
+Areia,33,lata,"R$ 867,00"
+Tinta,50,saco,"R$ 583,00"
+Areia,4,milheiro,"R$ 673,00"
+Areia,55,lata,"R$ 296,00"
+Areia,66,m³,"R$ 589,00"
+Subtotal,,,"R$ 3426,00"
+,,,

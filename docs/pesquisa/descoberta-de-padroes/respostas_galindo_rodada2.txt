@@ -1,0 +1,11 @@
+(Galindo, 27/11/2026 — 2ª rodada)
+NAO_ATENDIDAS: Ordem de Serviço · 1 → "Nr.OS" (Código); Ordem de Serviço · 2 → "Servico" (Texto); Data Final (2) → Data (Fim do serviço)
+  [unificou nomes com o relatório detalhado]; demais iguais à 1ª rodada.
+relatoriodetalhadas: confirmou as 13 decisões automáticas (Oficina, Setor, Nr.OS, Dt. Pedido=Abertura, Tipo de OS,
+  Dt. Execução=Encerramento, Situação, Solicitante, Servico, Funcionário da Oficina, Bem=Texto, Nr. da Plaqueta=Número*,
+  Dt. Prev. Exec.=Previsão). *sugerido Código (patrimônio não se soma) — aguardando resposta.
+
+(3ª rodada) resumido: Ord Serviço=Código; Dt Programada=Data (Abertura) [explicação digitada no campo de nome]; Marca→"Solicitação de
+serviço" (Texto); Equipamento→"Código do setor" (Categoria); Setor (Categoria). CONCLUIDAS: Nr.OS, Servico, datas (Pedido=Abertura,
+Término=Encerramento, Inicial=Início, Final=Fim), Localidade=Categoria, Bem/Nr. do Patrimônio/Série=Número. vendas, chamados, 7: tudo
+como o app. 6_sem_rotulo: Grupo 2=Início, Grupo 5=Fim (acertou com a conclusão escrita), demais pelo cruzamento.

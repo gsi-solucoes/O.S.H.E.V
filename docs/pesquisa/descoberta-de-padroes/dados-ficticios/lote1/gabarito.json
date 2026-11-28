@@ -1,0 +1,59 @@
+{
+ "1_vendas_loja.csv": {
+  "registros": 60,
+  "grupos_esperados": [
+   "Pedido",
+   "Data",
+   "Cliente",
+   "Cidade",
+   "Produto",
+   "Qtde",
+   "Total"
+  ],
+  "pegadinha": "7 linhas sem a coluna Cidade: o resto não pode escorregar de grupo"
+ },
+ "2_ficha_alunos.csv": {
+  "registros": 25,
+  "grupos_esperados": [
+   "Matrícula",
+   "Nome",
+   "Turma",
+   "Nascimento",
+   "Ocorrência (lista)",
+   "Data da ocorrência (lista)"
+  ],
+  "pegadinha": "rótulo em cima do valor; nº de ocorrências varia de 0 a 3 por aluno"
+ },
+ "3_atendimentos_agrupado.tsv.csv": {
+  "registros": 31,
+  "grupos_esperados": [
+   "Vendedor (contexto)",
+   "Protocolo",
+   "Abertura",
+   "Fechamento",
+   "Duração"
+  ],
+  "pegadinha": "subtotal no fim de cada grupo não é registro; Abertura antes de Fechamento"
+ },
+ "4_chamados_rotulo_na_celula.csv": {
+  "registros": 30,
+  "grupos_esperados": [
+   "CHAMADO",
+   "ABERTO EM",
+   "CLIENTE",
+   "CIDADE",
+   "DEFEITO"
+  ],
+  "pegadinha": "rótulo e valor dentro da mesma célula, em maiúsculas"
+ },
+ "5_notas_sem_cabecalho.csv": {
+  "registros": 40,
+  "grupos_esperados": [
+   "Grupo sem nome: data",
+   "código NF",
+   "produto",
+   "valor"
+  ],
+  "pegadinha": "não há rótulo nenhum: tudo deve virar \"sem nome\" e ser perguntado"
+ }
+}
